@@ -4,8 +4,8 @@ This is the backend service for the Flocki church management system.
 
 ## Run app locally
 Ensure that you are setup with a Python 3.6+ environment. 
-It is recommended to use a virtual environment for this script.
-Run the following command inside this directory:
+It is recommended to use a virtual environment. To do this, run 
+the following command inside this directory:
 ```
 virtualenv venv
 ```
@@ -22,7 +22,7 @@ pip3 install -r requirements.txt
 
 Then, to run the app locally, run the following: 
 ```
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 
 #Run with Docker
