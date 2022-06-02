@@ -25,7 +25,7 @@ Then, to run the app locally, run the following:
 uvicorn app.main:app --reload
 ```
 
-#Run with Docker
+# Run with Docker
 ## Build docker image locally
 
 To build a docker image, run the following:
