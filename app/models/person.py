@@ -25,7 +25,7 @@ class SocialMediaLink(BaseModel):
     url: HttpUrl
 
 class Person(BaseModel):
-    id: int
+    id: int = Field(None)
     first_name: str
     last_name: str
     email: EmailStr
@@ -39,7 +39,7 @@ class Person(BaseModel):
 
     class Config:
             schema_extra={
-                  "example": { "id": 0,
+                  "example": {
                   "first_name": "Joe",
                   "last_name": "Soap",
                   "email": "test@test.com",
@@ -62,4 +62,18 @@ class Person(BaseModel):
                 }
             }
 
+
+class DisplayPerson(BaseModel):
+    id: int = Field(None)
+    first_name: str
+    last_name: str
+    email: EmailStr
+    mobile_number: str
+    date_of_birth: datetime.date
+    gender: Gender = Field(None)
+    marriage_date: datetime.date
+    marital_status: MaritalStatus = Field(None)
+    registered_date: datetime.date
+    class Config:
+        orm_mode = True
 

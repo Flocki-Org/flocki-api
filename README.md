@@ -22,7 +22,7 @@ pip3 install -r requirements.txt
 
 Then, to run the app locally, run the following: 
 ```
-uvicorn app.main:app --reload
+python main.py
 ```
 
 # Run with Docker
@@ -37,5 +37,8 @@ docker build . -t flocki-api
 After successful build of the image, run the following to expose the api locally on port 8000:
 
 ```
-docker run -d --name flocki-api -p 8000:8000 flocki-api
+docker-compose up -d
 ```
+
+Check that both the postgres and app containers are running. If they started up successfully you should be able to navigate to the
+docs page using the link http://localhost:8000/docs.
