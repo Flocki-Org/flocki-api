@@ -35,7 +35,7 @@ class Person(BaseModel):
     marriage_date: datetime.date
     marital_status: MaritalStatus = Field(None)
     registered_date: datetime.date
-    social_media_links: List[SocialMediaLink] = Field(None, title="A list of social media URLs")
+    social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
 
     class Config:
             schema_extra={
@@ -74,6 +74,7 @@ class DisplayPerson(BaseModel):
     marriage_date: datetime.date
     marital_status: MaritalStatus = Field(None)
     registered_date: datetime.date
+    social_media_links: List[SocialMediaLink] = Field(None, title="A list of social media URLs")
     class Config:
         orm_mode = True
 
