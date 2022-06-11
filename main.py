@@ -1,8 +1,8 @@
 import uvicorn
 from fastapi import FastAPI
-from app.database import engine, SessionLocal
-from app.models.database import models
-from app.routers import person
+from src.app.database import engine, SessionLocal
+from src.app.people.models.database import models
+from src.app.people.routers import person
 
 models.Base.metadata.create_all(engine)
 

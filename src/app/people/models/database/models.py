@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date, UniqueConstraint, ForeignKey, false
-from ...database import Base
+from src.app.database import Base
 from sqlalchemy.orm import relationship
 
 class Person(Base):

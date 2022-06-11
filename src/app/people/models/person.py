@@ -62,7 +62,6 @@ class Person(BaseModel):
                 }
             }
 
-
 class DisplayPerson(BaseModel):
     id: int = Field(None)
     first_name: str
