@@ -5,10 +5,13 @@ from typing import List
 from src.app.database import get_db, SessionLocal
 from src.app.people.models.database import models
 from...people.services.peopleFactory import createPersonFromPersonEntity, createPersonEntityFromPerson
+from ...users.models.user import User
+from ...users.routers.login import get_current_user
+
 router = APIRouter()
 
 @router.get('/people', response_model=List[DisplayPerson])
-def get_people(db: SessionLocal = Depends(get_db)):
+def get_people(db: SessionLocal = Depends(get_db), current_user: User = Depends(get_current_user)):
     people_response = []
     people = db.query(models.Person).order_by(models.Person.last_name).all()
     for person in people:
@@ -17,7 +20,7 @@ def get_people(db: SessionLocal = Depends(get_db)):
     return people_response
 
 @router.get('/person/{id}', response_model=DisplayPerson)
-def get_person(id: int, db: SessionLocal = Depends(get_db)):
+def get_person(id: int, db: SessionLocal = Depends(get_db), current_user: User = Depends(get_current_user)):
     person_entity = db.query(models.Person).filter(models.Person.id == id).first()
     if not person_entity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
@@ -27,7 +30,7 @@ def get_person(id: int, db: SessionLocal = Depends(get_db)):
     return person_response
 
 @router.put('/person/')
-def update_person(id:int, person: Person, db: SessionLocal = Depends(get_db)):
+def update_person(id:int, person: Person, db: SessionLocal = Depends(get_db), current_user: User = Depends(get_current_user)):
     personToUpdate = db.query(models.Person).filter(models.Person.id == id)
     if not personToUpdate.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
@@ -53,7 +56,7 @@ def update_person(id:int, person: Person, db: SessionLocal = Depends(get_db)):
     return get_person(person.id, db) #There probably is a more efficient way than to read this from the DB again.
 
 @router.post('/person', status_code = status.HTTP_201_CREATED)
-def add_person(person: Person, db: SessionLocal = Depends(get_db)):
+def add_person(person: Person, db: SessionLocal = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_person = createPersonEntityFromPerson(person)
 
     db.add(new_person)

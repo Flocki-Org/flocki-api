@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     flocki_api_db_port = 5432
     flocki_api_db_host = "localhost"
 
+    secret_key: str = "secret_key"
+    token_expiry_minutes: int = 20
+
     class Config:
         env_file = ".env"
 
