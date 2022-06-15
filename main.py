@@ -8,6 +8,7 @@ from src.app.people.routers import person
 from src.app.users.models.database.models import User
 from src.app.users.routers import user, login
 from src.app.users.services.userFactory import hash_pwd
+from src.app.config import settings
 
 models.Base.metadata.create_all(engine)
 
@@ -46,4 +47,4 @@ def index():
     return 'Hello this is the first endpoint of the flocki-api.'
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", reload=True, port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", reload=True, port=settings.flocki_app_port)
