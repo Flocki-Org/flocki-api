@@ -48,4 +48,5 @@ def index():
     return 'Hello this is the first endpoint of the flocki-api.'
 
 if __name__ == "__main__":
+    print(f"Listening on port {os.environ.get('PORT')}")
     uvicorn.run("main:app", host="0.0.0.0", reload=True, port=int(os.environ.get('PORT', settings.flocki_app_port)))
