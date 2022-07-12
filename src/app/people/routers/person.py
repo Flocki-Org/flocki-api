@@ -8,7 +8,7 @@ from...people.services.peopleFactory import createPersonFromPersonEntity, create
 from ...users.models.user import User
 from ...users.routers.login import get_current_user
 
-router = APIRouter()
+router = APIRouter(tags=['People'])
 
 @router.get('/people', response_model=List[DisplayPerson])
 def get_people(db: SessionLocal = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -40,7 +40,6 @@ def update_person(id:int, person: Person, db: SessionLocal = Depends(get_db), cu
     update_values = person.dict()
     smls = update_values.pop('social_media_links', person.dict())
     if smls is not None:
-        print("Got here")
         existing_social_media_links = db.query(models.SocialMediaLinks).filter(
             models.SocialMediaLinks.person_id == person.id).all()
         if existing_social_media_links:
@@ -50,6 +49,28 @@ def update_person(id:int, person: Person, db: SessionLocal = Depends(get_db), cu
 
         for sml in smls:
             db.add(models.SocialMediaLinks(person_id = person.id, type = sml['type'], url = sml['url']))
+
+    addresses = update_values.pop('addresses', person.dict())
+    if addresses is not None:
+        existing_addresses = db.query(models.Address).filter(
+            models.Address.person_id == person.id).all()
+        if existing_addresses:
+            for existing_address in existing_addresses:
+                db.query(models.Address).filter(
+                    models.Address.id == existing_address.id).delete(synchronize_session=False)
+
+        for address in addresses:
+            db.add(models.Address(person_id=person.id,
+                                  type=address['type'],
+                                  streetNumber=address['streetNumber'],
+                                  street=address['street'],
+                                  suburb=address['suburb'],
+                                  city=address['city'],
+                                  province=address['province'],
+                                  country=address['country'],
+                                  postalCode=address['postalCode'],
+                                  latitude=address['latitude'],
+                                  longitude=address['longitude']))
 
     personToUpdate.update(update_values)
     db.commit()

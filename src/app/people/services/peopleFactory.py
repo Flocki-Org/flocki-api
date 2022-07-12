@@ -1,4 +1,4 @@
-from ...people.models.person import Person, SocialMediaLink
+from ...people.models.person import Person, SocialMediaLink, Address
 from ...people.models.database import models
 
 def createPersonFromPersonEntity(person_entity):
@@ -18,6 +18,23 @@ def createPersonFromPersonEntity(person_entity):
         for sml in person_entity.social_media_links:
             sml_response = SocialMediaLink(type=sml.type, url=sml.url)
             person_response.social_media_links.append(sml_response)
+
+    if person_entity.addresses:
+        for address in person_entity.addresses:
+            address_response = Address(
+                id=address.id,
+                type=address.type,
+                streetNumber=address.streetNumber,
+                street=address.street,
+                suburb=address.suburb,
+                city=address.city,
+                province=address.province,
+                country=address.country,
+                postalCode=address.postalCode,
+                latitude=address.latitude,
+                longitude=address.longitude)
+            person_response.addresses.append(address_response)
+
     return person_response
 
 
@@ -37,4 +54,20 @@ def createPersonEntityFromPerson(person):
         for sml in person.social_media_links:
             new_sml = models.SocialMediaLinks(type=sml.type, url=sml.url)
             new_person.social_media_links.append(new_sml)
+
+    if person.addresses:
+        for address in person.addresses:
+            new_address = models.Address(
+                type=address.type,
+                streetNumber=address.streetNumber,
+                street=address.street,
+                suburb=address.suburb,
+                city=address.city,
+                province=address.province,
+                country=address.country,
+                postalCode=address.postalCode,
+                latitude=address.latitude,
+                longitude=address.longitude)
+            new_person.addresses.append(new_address)
+
     return new_person

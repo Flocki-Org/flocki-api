@@ -9,7 +9,7 @@ from sqlalchemy import func
 from ...users.services.TokenUtil import generate_token, decode_token
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-router = APIRouter()
+router = APIRouter(tags=['Login'])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl ="login")
 
 @router.post('/login', response_model=Token)

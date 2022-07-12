@@ -20,9 +20,27 @@ class SocialMediaType(str, Enum):
     instagram = 'instagram'
     tiktok = 'tiktok'
 
+class AddressType(str, Enum):
+    home = 'home'
+    business = 'business'
+    student_accommodation = 'student_accommodation'
+
 class SocialMediaLink(BaseModel):
     type: SocialMediaType
     url: HttpUrl
+
+class Address(BaseModel):
+    id: int = Field(None)
+    type: AddressType
+    streetNumber: str
+    street: str
+    suburb: str
+    city: str
+    province: str
+    country: str
+    postalCode: str = Field(None)
+    latitude: float = Field(None)
+    longitude: float = Field(None)
 
 class Person(BaseModel):
     id: int = Field(None)
@@ -36,6 +54,7 @@ class Person(BaseModel):
     marital_status: MaritalStatus = Field(None)
     registered_date: datetime.date
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
+    addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
 
     class Config:
             schema_extra={
@@ -58,7 +77,18 @@ class Person(BaseModel):
                       "type": "facebook",
                       "url": "https://www.facebook.com/"
                     }
-                  ]
+                  ],
+                  "addresses": [
+                    {
+                        "type": "home",
+                        "streetNumber": "99",
+                        "street": "3rd Avenue",
+                        "suburb": "Bryanston",
+                        "city": "Johannesburg",
+                        "province": "Gauteng",
+                        "country": "South Africa",
+                        "postalCode": "2191"
+                    }]
                 }
             }
 
@@ -74,6 +104,7 @@ class DisplayPerson(BaseModel):
     marital_status: MaritalStatus = Field(None)
     registered_date: datetime.date
     social_media_links: List[SocialMediaLink] = Field(None, title="A list of social media URLs")
+    addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
     class Config:
         orm_mode = True
 

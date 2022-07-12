@@ -7,7 +7,7 @@ from typing import List
 from src.app.database import get_db, SessionLocal
 from src.app.users.models.database import models
 from ...users.services.userFactory import createUserEntityFromUser, createUserFromUserEntity, hash_pwd
-router = APIRouter()
+router = APIRouter(tags=['Users'])
 
 @router.get('/users', response_model=List[DisplayUser])
 def get_users(db: SessionLocal = Depends(get_db), current_user: User = Depends(get_current_user)):
