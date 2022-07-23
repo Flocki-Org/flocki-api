@@ -1,3 +1,4 @@
+from ..models.database.models import PeopleAddress
 from ...people.models.person import Person, SocialMediaLink, Address
 from ...people.models.database import models
 
@@ -20,7 +21,8 @@ def createPersonFromPersonEntity(person_entity):
             person_response.social_media_links.append(sml_response)
 
     if person_entity.addresses:
-        for address in person_entity.addresses:
+        for people_address in person_entity.addresses:
+            address = people_address.address
             address_response = Address(
                 id=address.id,
                 type=address.type,
@@ -33,6 +35,7 @@ def createPersonFromPersonEntity(person_entity):
                 postalCode=address.postalCode,
                 latitude=address.latitude,
                 longitude=address.longitude)
+
             person_response.addresses.append(address_response)
 
     return person_response
@@ -52,10 +55,12 @@ def createPersonEntityFromPerson(person):
     )
     if person.social_media_links:
         for sml in person.social_media_links:
-            new_sml = models.SocialMediaLinks(type=sml.type, url=sml.url)
+            new_sml = models.SocialMediaLink(type=sml.type, url=sml.url)
             new_person.social_media_links.append(new_sml)
 
     if person.addresses:
+        #TODO consider querying DB if an address already exists with the given values. otherwise you will end up with
+        # multiple rows in the DB for the same address
         for address in person.addresses:
             new_address = models.Address(
                 type=address.type,
@@ -68,6 +73,11 @@ def createPersonEntityFromPerson(person):
                 postalCode=address.postalCode,
                 latitude=address.latitude,
                 longitude=address.longitude)
-            new_person.addresses.append(new_address)
+
+            pa = models.PeopleAddress(
+                address = new_address,
+                person = new_person
+            )
+            new_person.addresses.append(pa)
 
     return new_person

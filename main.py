@@ -5,7 +5,7 @@ from sqlalchemy import func
 
 from src.app.database import engine, SessionLocal
 from src.app.users.models.database import models
-from src.app.people.routers import person
+from src.app.people.routers import person, household
 from src.app.users.models.database.models import User
 from src.app.users.routers import user, login
 from src.app.users.services.userFactory import hash_pwd
@@ -18,6 +18,7 @@ app = FastAPI()
 app.include_router(person.router)
 app.include_router(user.router)
 app.include_router(login.router)
+app.include_router(household.router)
 
 def get_db():
     db = SessionLocal()

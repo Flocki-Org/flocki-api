@@ -35,42 +35,50 @@ def update_person(id:int, person: Person, db: SessionLocal = Depends(get_db), cu
     if not personToUpdate.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
     #For update requests the model is not expected to come in with an ID since it is passed in the URL.
-    person.id = personToUpdate.first().id
+    db_person = personToUpdate.first()
+    person.id = db_person.id
 
     update_values = person.dict()
     smls = update_values.pop('social_media_links', person.dict())
     if smls is not None:
-        existing_social_media_links = db.query(models.SocialMediaLinks).filter(
-            models.SocialMediaLinks.person_id == person.id).all()
+        existing_social_media_links = db.query(models.SocialMediaLink).filter(
+            models.SocialMediaLink.person_id == person.id).all()
         if existing_social_media_links:
             for existing_sml in existing_social_media_links:
-                db.query(models.SocialMediaLinks).filter(
-                    models.SocialMediaLinks.id == existing_sml.id).delete(synchronize_session=False)
+                db.query(models.SocialMediaLink).filter(
+                    models.SocialMediaLink.id == existing_sml.id).delete(synchronize_session=False)
 
         for sml in smls:
-            db.add(models.SocialMediaLinks(person_id = person.id, type = sml['type'], url = sml['url']))
+            db.add(models.SocialMediaLink(person_id = person.id, type = sml['type'], url = sml['url']))
 
     addresses = update_values.pop('addresses', person.dict())
     if addresses is not None:
-        existing_addresses = db.query(models.Address).filter(
-            models.Address.person_id == person.id).all()
-        if existing_addresses:
-            for existing_address in existing_addresses:
-                db.query(models.Address).filter(
-                    models.Address.id == existing_address.id).delete(synchronize_session=False)
+        existing_people_addresses = db.query(models.PeopleAddress).filter(
+            models.PeopleAddress.person_id == person.id).all()
+        if existing_people_addresses:
+            for existing_people_address in existing_people_addresses:
+                db.query(models.PeopleAddress).filter(
+                    models.PeopleAddress.id == existing_people_address.id).delete(synchronize_session=False)
 
+        # TODO consider querying DB if an address already exists with the given values. otherwise you will end up with
+        # multiple rows in the DB for the same address
         for address in addresses:
-            db.add(models.Address(person_id=person.id,
-                                  type=address['type'],
-                                  streetNumber=address['streetNumber'],
-                                  street=address['street'],
-                                  suburb=address['suburb'],
-                                  city=address['city'],
-                                  province=address['province'],
-                                  country=address['country'],
-                                  postalCode=address['postalCode'],
-                                  latitude=address['latitude'],
-                                  longitude=address['longitude']))
+            new_address = models.Address(
+                type=address['type'],
+                streetNumber=address['streetNumber'],
+                street=address['street'],
+                suburb=address['suburb'],
+                city=address['city'],
+                province=address['province'],
+                country=address['country'],
+                postalCode=address['postalCode'],
+                latitude=address['latitude'],
+                longitude=address['longitude'])
+
+            db.add(models.PeopleAddress(
+                address=new_address,
+                person=db_person
+            ))
 
     personToUpdate.update(update_values)
     db.commit()
