@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, UniqueConstraint, ForeignKey, false, DECIMAL
+from sqlalchemy import Column, Integer, String, Date, UniqueConstraint, ForeignKey, DECIMAL
 from src.app.database import Base
 from sqlalchemy.orm import relationship
 
@@ -17,7 +17,7 @@ class Person(Base):
     household_id = Column(Integer, ForeignKey('households.id'), nullable=True)
     social_media_links = relationship("SocialMediaLink", cascade="all, delete-orphan")
     addresses = relationship("PeopleAddress", back_populates="person", cascade="all, delete-orphan")
-    household = relationship("Household", backref="people", foreign_keys=[household_id])
+    household = relationship("Household", back_populates="people", foreign_keys=[household_id])
 
 class SocialMediaLink(Base):
     __tablename__ = 'social_media_links'
@@ -58,5 +58,6 @@ class Household(Base):
     id = Column(Integer, primary_key=True, index=True)
     leader_id = Column(Integer, ForeignKey('people.id'), nullable=False)
     address_id = Column(Integer, ForeignKey('addresses.id'), nullable=False)
-    address = relationship("Address")
-    leader = relationship("Person", foreign_keys=[leader_id])
+    address = relationship("Address", cascade=None)
+    leader = relationship("Person", cascade=None, foreign_keys=[leader_id])
+    people = relationship("Person", back_populates="household", primaryjoin="Household.id == Person.household_id")

@@ -1,21 +1,22 @@
 from fastapi import status, Depends, HTTPException
-from ...people.models.person import Person, DisplayPerson
+from ...people.models.people import Person, DisplayPerson
 from fastapi import APIRouter
 from typing import List
 from src.app.database import get_db, SessionLocal
 from src.app.people.models.database import models
-from...people.services.peopleFactory import createPersonFromPersonEntity, createPersonEntityFromPerson
+from ...people.services.peopleFactory import PeopleFactory
 from ...users.models.user import User
 from ...users.routers.login import get_current_user
 
 router = APIRouter(tags=['People'])
+peopleFactory = PeopleFactory()
 
 @router.get('/people', response_model=List[DisplayPerson])
 def get_people(db: SessionLocal = Depends(get_db), current_user: User = Depends(get_current_user)):
     people_response = []
     people = db.query(models.Person).order_by(models.Person.last_name).all()
     for person in people:
-        people_response.append(createPersonFromPersonEntity(person))
+        people_response.append(peopleFactory.createPersonFromPersonEntity(person_entity = person))
 
     return people_response
 
@@ -25,7 +26,7 @@ def get_person(id: int, db: SessionLocal = Depends(get_db), current_user: User =
     if not person_entity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
-    person_response = createPersonFromPersonEntity(person_entity)
+    person_response = peopleFactory.createPersonFromPersonEntity(person_entity)
 
     return person_response
 
@@ -79,6 +80,7 @@ def update_person(id:int, person: Person, db: SessionLocal = Depends(get_db), cu
                 address=new_address,
                 person=db_person
             ))
+    update_values.pop('household', person.dict())
 
     personToUpdate.update(update_values)
     db.commit()
@@ -86,7 +88,7 @@ def update_person(id:int, person: Person, db: SessionLocal = Depends(get_db), cu
 
 @router.post('/person', status_code = status.HTTP_201_CREATED)
 def add_person(person: Person, db: SessionLocal = Depends(get_db), current_user: User = Depends(get_current_user)):
-    new_person = createPersonEntityFromPerson(person)
+    new_person = peopleFactory.createPersonEntityFromPerson(person)
 
     db.add(new_person)
     db.commit()
