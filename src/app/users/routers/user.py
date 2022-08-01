@@ -38,7 +38,7 @@ def update_user(id:int, user: User, db: SessionLocal = Depends(get_db), current_
     update_values['id'] = id
     if 'password' in update_values:
         update_values['password'] = hash_pwd(update_values['password'])
-    userToUpdate.update(update_values)
+    userToUpdate.update_person(update_values)
     db.commit()
     return get_user(id, db) #There probably is a more efficient way than to read this from the DB again.
 

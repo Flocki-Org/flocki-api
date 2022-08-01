@@ -1,11 +1,13 @@
 from ...people.models.people import Person, SocialMediaLink
-from ...people.services.addressFactory import AddressFactory
+from ...people.factories.addressFactory import AddressFactory
 from ...people.models.household import Household
 from ...people.models.database import models
 
+
 class PeopleFactory:
     addressFactory = AddressFactory()
-    def createPersonFromPersonEntity(self, person_entity, include_household = True):
+
+    def createPersonFromPersonEntity(self, person_entity, include_household=True):
         person_response = Person(
             id=person_entity.id,
             first_name=person_entity.first_name,
@@ -23,7 +25,6 @@ class PeopleFactory:
                 sml_response = SocialMediaLink(type=sml.type, url=sml.url)
                 person_response.social_media_links.append(sml_response)
 
-
         if person_entity.addresses:
             for people_address in person_entity.addresses:
                 address = people_address.address
@@ -39,12 +40,11 @@ class PeopleFactory:
 
             person_response.household = Household(
                 id=person_entity.household.id,
-                leader = self.createPersonFromPersonEntity(person_entity.household.leader, False),
-                address = self.addressFactory.createAddressFromAddressEntity(person_entity.household.address),
+                leader=self.createPersonFromPersonEntity(person_entity.household.leader, False),
+                address=self.addressFactory.createAddressFromAddressEntity(person_entity.household.address),
                 people=people
             )
         return person_response
-
 
     def createPersonEntityFromPerson(self, person):
         new_person = models.Person(
@@ -64,7 +64,7 @@ class PeopleFactory:
                 new_person.social_media_links.append(new_sml)
 
         if person.addresses:
-            #TODO consider querying DB if an address already exists with the given values. otherwise you will end up with
+            # TODO consider querying DB if an address already exists with the given values. otherwise you will end up with
             # multiple rows in the DB for the same address
             for address in person.addresses:
                 new_address = models.Address(
@@ -80,8 +80,8 @@ class PeopleFactory:
                     longitude=address.longitude)
 
                 pa = models.PeopleAddress(
-                    address = new_address,
-                    person = new_person
+                    address=new_address,
+                    person=new_person
                 )
                 new_person.addresses.append(pa)
 

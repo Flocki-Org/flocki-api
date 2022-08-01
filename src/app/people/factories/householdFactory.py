@@ -1,7 +1,6 @@
 from typing import List
 
 from .peopleFactory import PeopleFactory
-from ...database import SessionLocal
 from ...people.models.household import Household, CreateHousehold
 from ...people.models.database import models
 from ...people.models.people import Address
@@ -44,7 +43,7 @@ class HouseholdFactory:
     def createHouseholdEntityFromHousehold(self, household: CreateHousehold, people_models: List[models.Person]):
         new_household = models.Household(
             leader_id=household.leader.id,
-            address_id=household.address_id,
+            address_id=household.address.id,
             people=people_models
         )
         return new_household
