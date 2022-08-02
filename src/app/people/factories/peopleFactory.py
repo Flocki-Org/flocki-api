@@ -1,3 +1,5 @@
+from fastapi import Depends
+
 from ...people.models.people import Person, SocialMediaLink
 from ...people.factories.addressFactory import AddressFactory
 from ...people.models.household import Household
@@ -5,7 +7,8 @@ from ...people.models.database import models
 
 
 class PeopleFactory:
-    addressFactory = AddressFactory()
+    def __init__(self, address_factory: AddressFactory = Depends(AddressFactory)):
+        self.address_factory = address_factory
 
     def createPersonFromPersonEntity(self, person_entity, include_household=True):
         person_response = Person(
@@ -28,7 +31,7 @@ class PeopleFactory:
         if person_entity.addresses:
             for people_address in person_entity.addresses:
                 address = people_address.address
-                address_response = self.addressFactory.createAddressFromAddressEntity(address)
+                address_response = self.address_factory.createAddressFromAddressEntity(address)
 
                 person_response.addresses.append(address_response)
 
@@ -41,7 +44,7 @@ class PeopleFactory:
             person_response.household = Household(
                 id=person_entity.household.id,
                 leader=self.createPersonFromPersonEntity(person_entity.household.leader, False),
-                address=self.addressFactory.createAddressFromAddressEntity(person_entity.household.address),
+                address=self.address_factory.createAddressFromAddressEntity(person_entity.household.address),
                 people=people
             )
         return person_response

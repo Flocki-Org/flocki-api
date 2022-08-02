@@ -1,17 +1,21 @@
 from typing import List
 
+from fastapi import Depends
+
 from .peopleFactory import PeopleFactory
 from ...people.models.household import Household, CreateHousehold
 from ...people.models.database import models
 from ...people.models.people import Address
 
 class HouseholdFactory:
-    peopleFactory = PeopleFactory()
+    def __init__(self, people_factory: PeopleFactory = Depends(PeopleFactory)):
+        self.people_factory = people_factory
+
     def createHouseholdFromHouseholdEntity(self, household_entity: models.Household):
 
         leader_response = None
         if household_entity.leader:
-            leader_response = self.peopleFactory.createPersonFromPersonEntity(household_entity.leader)
+            leader_response = self.people_factory.createPersonFromPersonEntity(household_entity.leader)
 
         address_response = Address(
             id=household_entity.address.id,
@@ -29,7 +33,7 @@ class HouseholdFactory:
         people = []
         if household_entity.people:
             for person in household_entity.people:
-                person_response = self.peopleFactory.createPersonFromPersonEntity(person, False)
+                person_response = self.people_factory.createPersonFromPersonEntity(person, False)
                 people.append(person_response)
 
         household_response = Household(

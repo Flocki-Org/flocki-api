@@ -43,5 +43,4 @@ def update_person(id: int, person: Person, people_service: PeopleService = Depen
 @router.post('/person', status_code=status.HTTP_201_CREATED, response_model=DisplayPerson)
 def add_person(person: Person, people_service: PeopleService = Depends(PeopleService),
                current_user: User = Depends(get_current_user)):
-    person_response = people_service.create_person(person)
-    return person_response
+    return people_service.create_person(person)

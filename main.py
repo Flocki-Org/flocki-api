@@ -1,15 +1,18 @@
 import uvicorn
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from sqlalchemy import func
 
 from src.app.database import engine, SessionLocal
+from src.app.users.daos.userDAO import UserDAO
 from src.app.users.models.database import models
 from src.app.people.routers import person, household
 from src.app.users.models.database.models import User
 from src.app.users.routers import user, login
-from src.app.users.services.userFactory import hash_pwd
+from src.app.users.factories.userFactory import UserFactory
 from src.app.config import settings
+from src.app.users.services.passwordUtil import PasswordUtil
+from src.app.users.services.userService import UserService
 
 models.Base.metadata.create_all(engine)
 
@@ -30,19 +33,18 @@ def get_db():
 # This sets up an initial user and is here only for now in the early stages of devs. Will move to migrations when ready.
 @app.on_event("startup")
 async def startup_event():
-    db = next(get_db())
-    user = db.query(models.User).filter(func.lower(models.User.email) == "admin@flocki.org").first()
-
-    if not user:
-        new_user = User(
+    user_DAO = UserDAO(db =  next(get_db()))
+    password_utils = PasswordUtil()
+    user_factory = UserFactory(password_utils=password_utils)
+    user_service = UserService(user_factory=user_factory, user_DAO=user_DAO, password_utils=password_utils)
+    if not user_service.get_user_by_name("admin@flocki.org"):
+        user_service.create_user(User(
             first_name="admin",
             last_name="admin",
             email="admin@flocki.org",
             mobile_number="+27000000000",
-            password=hash_pwd("f10ck1.0rg"))
-
-        db.add(new_user)
-        db.commit()
+            password=("f10ck1.0rg")))
+    print("Startup event")
 
 @app.get('/')
 def index():
