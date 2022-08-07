@@ -110,3 +110,9 @@ class PeopleService:
             self.peopleDAO.add_person_image(personToUpdate, image_entity)
             updated_person = self.peopleDAO.get_person_by_id(personToUpdate.id)
             return self.peopleFactory.createPersonFromPersonEntity(updated_person, False, True)
+
+    def get_profile_images_by_person_id(self, id):
+        person_entity = self.peopleDAO.get_person_by_id(id)
+        if person_entity is None:
+            raise NoPersonException("No person with that Id")
+        return self.peopleFactory.create_profile_image_list_from_entity_list(person_entity)

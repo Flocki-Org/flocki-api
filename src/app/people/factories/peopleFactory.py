@@ -1,5 +1,8 @@
+from typing import List
+
 from fastapi import Depends
 
+from ...media.models.media import DisplayImage
 from ...people.models.people import Person, SocialMediaLink
 from ...people.factories.addressFactory import AddressFactory
 from ...people.models.household import Household
@@ -55,6 +58,13 @@ class PeopleFactory:
                 person_response.profile_image = self.media_factory.createImageFromImageEntity(images[0].image)
 
         return person_response
+
+    def create_profile_image_list_from_entity_list(self, person_entity):
+        images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
+        profile_image_list: List[DisplayImage] = []
+        for image in images:
+            profile_image_list.append(self.media_factory.createImageFromImageEntity(image.image))
+        return profile_image_list
 
     def createPersonEntityFromPerson(self, person):
         new_person = models.Person(

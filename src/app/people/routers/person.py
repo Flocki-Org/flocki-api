@@ -1,6 +1,7 @@
 from fastapi import status, Depends, HTTPException, UploadFile
 
 from ..services.peopleService import PeopleService, NoPersonException
+from ...media.models.media import DisplayImage
 from ...people.models.people import Person, DisplayPerson, DisplayPersonProfileImage
 from fastapi import APIRouter
 from typing import List
@@ -48,6 +49,18 @@ def get_person_profile_image(id: int, people_service: PeopleService = Depends(Pe
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile image")
 
         return profile_image_response
+    except NoPersonException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+
+@router.get('/person/{id}/profile_images', response_model=List[DisplayImage])
+def get_person_profile_images(id: int, people_service: PeopleService = Depends(PeopleService),
+                current_user: User = Depends(get_current_user)):
+    try:
+        profile_image_responses = people_service.get_profile_images_by_person_id(id)
+        if profile_image_responses is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile images")
+
+        return profile_image_responses
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
