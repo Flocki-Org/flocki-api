@@ -6,6 +6,7 @@ from enum import Enum
 from typing import List, ForwardRef
 
 #from src.app.people.models.household import Household
+from src.app.media.models.media import Image, DisplayImage
 
 Household = ForwardRef('Household')
 
@@ -61,8 +62,6 @@ class AddressOpt(BaseModel):
     latitude: float = Field(None)
     longitude: float = Field(None)
 
-
-
 class Person(BaseModel):
     id: int = Field(None)
     first_name: str
@@ -78,6 +77,7 @@ class Person(BaseModel):
     addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
     household_id: int = Field(None)
     household: Household = Field(None, title="The household this person belongs to")
+    profile_image: Image = Field(None, title="The profile image of this person")
     class Config:
             schema_extra={
                   "example": {
@@ -170,6 +170,13 @@ class DisplayPerson(BaseModel):
     social_media_links: List[SocialMediaLink] = Field(None, title="A list of social media URLs")
     addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
     household: DisplayPersonHousehold = Field(None)
+    profile_image: Image = Field(None)
+    class Config:
+        orm_mode = True
+
+class DisplayPersonProfileImage(BaseModel):
+    id: int = Field(None)
+    profile_image: DisplayImage = Field(None)
     class Config:
         orm_mode = True
 

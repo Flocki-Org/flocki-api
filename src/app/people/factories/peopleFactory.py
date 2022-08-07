@@ -4,13 +4,14 @@ from ...people.models.people import Person, SocialMediaLink
 from ...people.factories.addressFactory import AddressFactory
 from ...people.models.household import Household
 from ...people.models.database import models
-
+from ...media.factories.mediaFactory import MediaFactory
 
 class PeopleFactory:
-    def __init__(self, address_factory: AddressFactory = Depends(AddressFactory)):
+    def __init__(self, address_factory: AddressFactory = Depends(AddressFactory), media_factory: MediaFactory = Depends(MediaFactory)):
         self.address_factory = address_factory
+        self.media_factory = media_factory
 
-    def createPersonFromPersonEntity(self, person_entity, include_household=True):
+    def createPersonFromPersonEntity(self, person_entity, include_household=True, include_profile_image=False):
         person_response = Person(
             id=person_entity.id,
             first_name=person_entity.first_name,
@@ -47,6 +48,12 @@ class PeopleFactory:
                 address=self.address_factory.createAddressFromAddressEntity(person_entity.household.address),
                 people=people
             )
+
+        if include_profile_image and person_entity.profile_images:
+            images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
+            if len(images) > 0 and images[0] is not None:
+                person_response.profile_image = self.media_factory.createImageFromImageEntity(images[0].image)
+
         return person_response
 
     def createPersonEntityFromPerson(self, person):

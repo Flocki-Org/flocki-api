@@ -1,9 +1,8 @@
 import uvicorn
 import os
-from fastapi import FastAPI, Depends
-from sqlalchemy import func
-
+from fastapi import FastAPI
 from src.app.database import engine, SessionLocal
+from src.app.media.routers import media
 from src.app.users.daos.userDAO import UserDAO
 from src.app.users.models.database import models
 from src.app.people.routers import person, household
@@ -22,6 +21,7 @@ app.include_router(person.router)
 app.include_router(user.router)
 app.include_router(login.router)
 app.include_router(household.router)
+app.include_router(media.router)
 
 def get_db():
     db = SessionLocal()

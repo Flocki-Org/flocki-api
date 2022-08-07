@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     flocki_app_port = 8000
     secret_key: str = "secret_key"
     token_expiry_minutes: int = 20
+    image_store: str = "local" # local or s3 (aws)
+    image_base_path: str = "./images"
 
     class Config:
         env_file = ".env"

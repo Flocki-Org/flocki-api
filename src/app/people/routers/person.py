@@ -1,7 +1,7 @@
-from fastapi import status, Depends, HTTPException
+from fastapi import status, Depends, HTTPException, UploadFile
 
 from ..services.peopleService import PeopleService, NoPersonException
-from ...people.models.people import Person, DisplayPerson
+from ...people.models.people import Person, DisplayPerson, DisplayPersonProfileImage
 from fastapi import APIRouter
 from typing import List
 from ...people.factories.peopleFactory import PeopleFactory
@@ -39,6 +39,28 @@ def update_person(id: int, person: Person, people_service: PeopleService = Depen
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
+@router.get('/person/{id}/profile_image', response_model=DisplayPerson)
+def get_person_profile_image(id: int, people_service: PeopleService = Depends(PeopleService),
+               current_user: User = Depends(get_current_user)):
+    try:
+        profile_image_response = people_service.get_profile_image_by_person_id(id)
+        if profile_image_response is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile image")
+
+        return profile_image_response
+    except NoPersonException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+
+@router.put('/person/profile_image', response_model=DisplayPersonProfileImage)
+def update_person_with_profile_image(id: int, file: UploadFile, people_service: PeopleService = Depends(PeopleService),
+                  current_user: User = Depends(get_current_user)):
+    try:
+        person_response = people_service.upload_profile_image(id, file)
+        if person_response is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+        return person_response
+    except NoPersonException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
 @router.post('/person', status_code=status.HTTP_201_CREATED, response_model=DisplayPerson)
 def add_person(person: Person, people_service: PeopleService = Depends(PeopleService),

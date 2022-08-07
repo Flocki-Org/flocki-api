@@ -1,6 +1,8 @@
 from fastapi import Depends
 from src.app.database import get_db, SessionLocal
 from src.app.people.models.database import models
+from src.app.people.models.database.models import PersonImage
+
 
 class PeopleDAO:
     def __init__(self, db: SessionLocal = Depends(get_db)):
@@ -33,3 +35,11 @@ class PeopleDAO:
         self.db.commit()
         self.db.refresh(new_person)
         return new_person
+
+    def add_person_image(self, personToUpdate, image_entity):
+        person_image = PersonImage(
+            person=personToUpdate,
+            image=image_entity
+        )
+        self.db.add(person_image)
+        self.db.commit()

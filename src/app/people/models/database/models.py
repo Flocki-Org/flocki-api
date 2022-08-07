@@ -18,6 +18,7 @@ class Person(Base):
     social_media_links = relationship("SocialMediaLink", cascade="all, delete-orphan")
     addresses = relationship("PeopleAddress", back_populates="person", cascade="all, delete-orphan")
     household = relationship("Household", back_populates="people", foreign_keys=[household_id])
+    profile_images = relationship("PersonImage", back_populates="person", cascade="all, delete-orphan")
 
 class SocialMediaLink(Base):
     __tablename__ = 'social_media_links'
@@ -61,3 +62,12 @@ class Household(Base):
     address = relationship("Address", cascade=None)
     leader = relationship("Person", cascade=None, foreign_keys=[leader_id])
     people = relationship("Person", back_populates="household", primaryjoin="Household.id == Person.household_id")
+
+class PersonImage(Base):
+    __tablename__ = 'people_images'
+    id = Column(Integer, primary_key=True, index=True)
+    person_id = Column(Integer, ForeignKey('people.id'), nullable=False)
+    image_id = Column(Integer, ForeignKey('images.id'), nullable=False)
+    person = relationship("Person", back_populates="profile_images")
+    image = relationship("Image")
+    __table_args__ = (UniqueConstraint('person_id', 'image_id', name='peopleimages_person_image_uc'),)
