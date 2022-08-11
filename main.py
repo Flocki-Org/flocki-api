@@ -1,6 +1,7 @@
 import uvicorn
 import os
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from src.app.database import engine, SessionLocal
 from src.app.media.routers import media
 from src.app.users.daos.userDAO import UserDAO
@@ -15,6 +16,10 @@ from src.app.users.services.userService import UserService
 
 models.Base.metadata.create_all(engine)
 
+origins = [
+    settings.cors_origin,
+]
+
 people = {}
 app = FastAPI()
 app.include_router(person.router)
@@ -22,6 +27,14 @@ app.include_router(user.router)
 app.include_router(login.router)
 app.include_router(household.router)
 app.include_router(media.router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db():
     db = SessionLocal()

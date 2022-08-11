@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     image_store: str = "local" # local or s3 (aws)
     image_base_path: str = "./images"
 
+    cors_origin: str = "http://localhost:3000"
+
     class Config:
         env_file = ".env"
 
