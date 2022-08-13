@@ -2,7 +2,7 @@ from fastapi import status, Depends, HTTPException, UploadFile
 
 from ..services.peopleService import PeopleService, NoPersonException
 from ...media.models.media import DisplayImage
-from ...people.models.people import Person, DisplayPerson, DisplayPersonProfileImage
+from ...people.models.people import Person, DisplayPerson, DisplayPersonProfileImage, UpdatePerson
 from fastapi import APIRouter
 from typing import List
 from ...people.factories.peopleFactory import PeopleFactory
@@ -30,7 +30,7 @@ def get_person(id: int, people_service: PeopleService = Depends(PeopleService),
 
 
 @router.put('/person/', response_model=DisplayPerson)
-def update_person(id: int, person: Person, people_service: PeopleService = Depends(PeopleService),
+def update_person(id: int, person: UpdatePerson, people_service: PeopleService = Depends(PeopleService),
                   current_user: User = Depends(get_current_user)):
     try:
         person_response = people_service.update_person(id, person)

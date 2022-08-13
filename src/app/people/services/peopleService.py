@@ -7,22 +7,24 @@ from src.app.media.services.mediaService import MediaService
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
-from src.app.people.models.people import Person
+from src.app.people.models.people import Person, UpdatePerson
 import uuid
 from mimetypes import guess_extension
+
 
 class NoPersonException(Exception):
     pass
 
+
 class PeopleService:
-    def __init__(self, peopleDAO: PeopleDAO = Depends(PeopleDAO), adressDAO: AddressDAO = Depends(AddressDAO),
+    def __init__(self, peopleDAO: PeopleDAO = Depends(PeopleDAO), addressDAO: AddressDAO = Depends(AddressDAO),
                  media_DAO: MediaDAO = Depends(MediaDAO),
                  media_service: MediaService = Depends(MediaService),
                  people_factory: PeopleFactory = Depends(PeopleFactory),
                  media_factory: MediaFactory = Depends(MediaFactory)):
         self.peopleDAO = peopleDAO
         self.peopleFactory = people_factory
-        self.adressDAO = adressDAO
+        self.addressDAO = addressDAO
         self.media_factory = media_factory
         self.media_DAO = media_DAO
         self.media_service = media_service
@@ -31,7 +33,7 @@ class PeopleService:
         people_response = []
         people = self.peopleDAO.get_all()
         for person in people:
-            people_response.append(self.peopleFactory.createPersonFromPersonEntity(person_entity=person))
+            people_response.append(self.peopleFactory.createPersonFromPersonEntity(person_entity=person, include_profile_image=True, include_household=True))
         return people_response
 
     def get_by_id(self, id):
@@ -55,7 +57,7 @@ class PeopleService:
             return NotImplementedError("S3 not implemented")
         return
 
-    def update_person(self, id: int, person: Person):
+    def update_person(self, id: int, person: UpdatePerson):
         personToUpdate = self.peopleDAO.get_person_by_id(id)
         if personToUpdate is None:
             raise NoPersonException(
@@ -76,21 +78,22 @@ class PeopleService:
 
         addresses = update_values.pop('addresses', person.dict())
         if addresses is not None:
-            existing_people_addresses = self.adressDAO.get_existing_addresses_for_person(person.id)
+            existing_people_addresses = self.addressDAO.get_existing_addresses_for_person(person.id)
             if existing_people_addresses is not None:
                 for existing_people_address in existing_people_addresses:
-                    self.adressDAO.delete_address(existing_people_address.id)
+                    self.addressDAO.delete_address(existing_people_address.id)
 
             # TODO consider querying DB if an address already exists with the given values. otherwise you will end up with
             # multiple rows in the DB for the same address
             for address in addresses:
-                self.adressDAO.create_address(address, personToUpdate)
+                self.addressDAO.create_address(address, personToUpdate)
 
-        update_values.pop('household', person.dict())
+        profile_image_id = update_values.pop('profile_image_id', person.dict())
+        if profile_image_id is not None:
+            image_entity = self.media_DAO.get_image_by_id(profile_image_id)
 
-        self.peopleDAO.update_person(personToUpdate.id, update_values)
-        # self.db.commit()
-        return self.get_by_id(person.id)
+        self.peopleDAO.update_person(personToUpdate.id, update_values, image_entity)
+        return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(id), True, True)
 
     def create_person(self, person):
         new_person = self.peopleFactory.createPersonEntityFromPerson(person)
@@ -103,6 +106,8 @@ class PeopleService:
             raise NoPersonException(
                 "No person with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
         if file is not None:
+            if file.content_type == 'image/jpeg':
+                file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
             filename = str(personToUpdate.id) + '_' + str(uuid.uuid4()) + guess_extension(
                 file.content_type, strict=False).strip()
             description = f"Profile image for user: {personToUpdate.first_name}  {personToUpdate.last_name}  with ID: {personToUpdate.id}"

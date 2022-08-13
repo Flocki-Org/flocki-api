@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, UniqueConstraint, ForeignKey, DECIMAL
+from sqlalchemy import Column, Integer, String, Date, UniqueConstraint, ForeignKey, DECIMAL, DateTime
 from src.app.database import Base
 from sqlalchemy.orm import relationship
 
@@ -68,6 +68,7 @@ class PersonImage(Base):
     id = Column(Integer, primary_key=True, index=True)
     person_id = Column(Integer, ForeignKey('people.id'), nullable=False)
     image_id = Column(Integer, ForeignKey('images.id'), nullable=False)
+    created = Column(DateTime, nullable=False)
     person = relationship("Person", back_populates="profile_images")
     image = relationship("Image")
-    __table_args__ = (UniqueConstraint('person_id', 'image_id', name='peopleimages_person_image_uc'),)
+    #__table_args__ = (UniqueConstraint('person_id', 'image_id', name='peopleimages_person_image_uc'),)

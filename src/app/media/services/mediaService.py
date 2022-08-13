@@ -11,8 +11,10 @@ import os.path
 from src.app.media.factories.mediaFactory import MediaFactory
 from src.app.media.models.media import Image
 
+
 class UnsupportedImageStoreException(Exception):
     pass
+
 
 class NoImageException(Exception):
     def __init__(self, message):
@@ -22,6 +24,7 @@ class NoImageException(Exception):
 
     def get_message(self):
         return self.message
+
 
 class MediaService:
     def __init__(self, media_DAO: MediaDAO = Depends(MediaDAO), media_factory: MediaFactory = Depends(MediaFactory)):
@@ -46,7 +49,6 @@ class MediaService:
             os.makedirs(os.path.dirname(settings.image_base_path), exist_ok=True)
             if file.content_type == 'image/jpeg':
                 file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
-
 
             if not settings.image_base_path.endswith('/'):
                 settings.image_base_path += '/'

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import Depends
 from src.app.database import get_db, SessionLocal
 from src.app.people.models.database import models
@@ -14,8 +16,15 @@ class PeopleDAO:
     def get_person_by_id(self, id: int):
         return self.db.query(models.Person).filter(models.Person.id == id).first()
 
-    def update_person(self, person_id, update_values):
+    def update_person(self, person_id, update_values, image_entity=None):
         personToUpdate = self.db.query(models.Person).filter(models.Person.id == person_id)
+        if image_entity is not None:
+            person_image = PersonImage(
+                person=personToUpdate.first(),
+                image=image_entity,
+                created=datetime.now(),
+            )
+            self.db.add(person_image)
         personToUpdate.update(update_values)
         self.db.commit()
 
@@ -39,7 +48,8 @@ class PeopleDAO:
     def add_person_image(self, personToUpdate, image_entity):
         person_image = PersonImage(
             person=personToUpdate,
-            image=image_entity
+            image=image_entity,
+            created=datetime.now(),
         )
         self.db.add(person_image)
         self.db.commit()
