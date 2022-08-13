@@ -16,10 +16,6 @@ from src.app.users.services.userService import UserService
 
 models.Base.metadata.create_all(engine)
 
-origins = [
-    settings.cors_origins,
-]
-
 people = {}
 app = FastAPI()
 app.include_router(person.router)
