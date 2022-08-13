@@ -35,39 +35,39 @@ class MediaService:
         image = self.media_DAO.get_image_by_id(id)
         if image is None:
             raise NoImageException("No image with that ID")
-        if settings.image_store == 'local':
+        if settings.flocki_image_store == 'local':
             if not os.path.isfile(image.address):
                 raise NoImageException(f"No image the filename stored for the provided ID: {id}")
             return FileResponse(image.address)
-        elif settings.image_store == 's3':
+        elif settings.flocki_image_store == 's3':
             return NotImplementedError("S3 not implemented")
         else:
             raise NotImplementedError("Image store not implemented")
 
     def upload_image(self, file, filename, description=None):
-        if settings.image_store == 'local':
-            os.makedirs(os.path.dirname(settings.image_base_path), exist_ok=True)
+        if settings.flocki_image_store == 'local':
+            os.makedirs(os.path.dirname(settings.flocki_image_base_path), exist_ok=True)
             if file.content_type == 'image/jpeg':
                 file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
 
-            if not settings.image_base_path.endswith('/'):
-                settings.image_base_path += '/'
+            if not settings.flocki_image_base_path.endswith('/'):
+                settings.flocki_image_base_path += '/'
 
-            file_path = settings.image_base_path + filename
+            file_path = settings.flocki_image_base_path + filename
             with open(file_path, 'wb') as f:
                 f.write(file.file.read())
             image = Image(
-                store=settings.image_store,
+                store=settings.flocki_image_store,
                 address=file_path,
                 created=datetime.now(),
                 filename=filename,
                 description=description,
                 content_type=file.content_type
             )
-        elif settings.image_store == 's3':
+        elif settings.flocki_image_store == 's3':
             raise NotImplementedError("S3 not implemented")
         else:
-            raise UnsupportedImageStoreException("Unsupported image store: " + settings.image_store)
+            raise UnsupportedImageStoreException("Unsupported image store: " + settings.flocki_image_store)
 
         image_entity = self.media_factory.createImageEntityFromImage(image)
         image_entity = self.media_DAO.add_image(image_entity)

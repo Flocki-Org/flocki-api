@@ -10,10 +10,10 @@ class TokenUtil:
 
     def generate_token(self, data: dict):
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(minutes = settings.token_expiry_minutes)
+        expire = datetime.utcnow() + timedelta(minutes = settings.flocki_token_expiry_minutes)
         to_encode.update({"exp":expire})
-        encoded_jwt = jwt.encode(to_encode, settings.secret_key, ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, settings.flocki_secret_key, ALGORITHM)
         return encoded_jwt
 
     def decode_token(self, token: str):
-        return jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        return jwt.decode(token, settings.flocki_secret_key, algorithms=[ALGORITHM])

@@ -9,10 +9,10 @@ class Settings(BaseSettings):
     flocki_api_db_host = "localhost"
 
     flocki_app_port = 8000
-    secret_key: str = "secret_key"
-    token_expiry_minutes: int = 20
-    image_store: str = "local" # local or s3 (aws)
-    image_base_path: str = "./images"
+    flocki_secret_key: str = "secret_key"
+    flocki_token_expiry_minutes: int = 20
+    flocki_image_store: str = "local" # local or s3 (aws)
+    flocki_image_base_path: str = "./images"
 
     flocki_cors_origins: Set[str] = set()
     flocki_cors_origins.add("http://localhost:3000")
