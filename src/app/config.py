@@ -1,4 +1,5 @@
 from pydantic import BaseSettings
+from typing import Set
 
 class Settings(BaseSettings):
     flocki_api_db_user_name: str = "postgres"
@@ -13,7 +14,8 @@ class Settings(BaseSettings):
     image_store: str = "local" # local or s3 (aws)
     image_base_path: str = "./images"
 
-    cors_origin: str = "http://localhost:3000"
+    flocki_cors_origins: Set[str] = set()
+    flocki_cors_origins.add("http://localhost:3000")
 
     class Config:
         env_file = ".env"

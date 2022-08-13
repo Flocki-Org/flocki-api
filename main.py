@@ -17,7 +17,7 @@ from src.app.users.services.userService import UserService
 models.Base.metadata.create_all(engine)
 
 origins = [
-    settings.cors_origin,
+    settings.cors_origins,
 ]
 
 people = {}
@@ -30,7 +30,7 @@ app.include_router(media.router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
