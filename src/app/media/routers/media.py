@@ -33,7 +33,7 @@ def upload_image(file: UploadFile, media_service: MediaService = Depends(MediaSe
     try:
         filename = file.filename + '_' + str(uuid.uuid4()) + guess_extension(
             file.content_type, strict=False).strip()
-        return media_service.upload_image(file, filename)
+        return media_service.create_image(file, filename)
     except:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong")
 

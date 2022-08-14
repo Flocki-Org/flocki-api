@@ -60,15 +60,25 @@ class Household(Base):
     leader_id = Column(Integer, ForeignKey('people.id'), nullable=False)
     address_id = Column(Integer, ForeignKey('addresses.id'), nullable=False)
     address = relationship("Address", cascade=None)
+    household_images = relationship("HouseholdImage", back_populates="household", cascade="all, delete-orphan")
     leader = relationship("Person", cascade=None, foreign_keys=[leader_id])
     people = relationship("Person", back_populates="household", primaryjoin="Household.id == Person.household_id")
 
 class PersonImage(Base):
     __tablename__ = 'people_images'
     id = Column(Integer, primary_key=True, index=True)
+    created = Column(DateTime, nullable=False)
     person_id = Column(Integer, ForeignKey('people.id'), nullable=False)
     image_id = Column(Integer, ForeignKey('images.id'), nullable=False)
-    created = Column(DateTime, nullable=False)
     person = relationship("Person", back_populates="profile_images")
     image = relationship("Image")
     #__table_args__ = (UniqueConstraint('person_id', 'image_id', name='peopleimages_person_image_uc'),)
+
+class HouseholdImage(Base):
+    __tablename__ = 'household_images'
+    id = Column(Integer, primary_key=True, index=True)
+    created = Column(DateTime, nullable=False)
+    household_id = Column(Integer, ForeignKey('households.id'), nullable=False)
+    image_id = Column(Integer, ForeignKey('images.id'), nullable=False)
+    household = relationship("Household", back_populates="household_images")
+    image = relationship("Image")
