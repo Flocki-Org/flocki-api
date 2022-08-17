@@ -1,20 +1,20 @@
 from fastapi import status, Depends, HTTPException, UploadFile
 
-from ..models.household import DisplayHousehold, CreateHousehold, Household, DisplayHouseholdImage
+from ..models.household import CreateHousehold, ViewHousehold
 from fastapi import APIRouter
 from typing import List
 from ..services.householdService import HouseholdService, NoHouseholdException
-from ...media.models.media import DisplayImage
+from ...media.models.media import ViewImage
 from ...users.models.user import User
 from ...users.routers.login import get_current_user
 
 router = APIRouter(tags=['Household'])
 
-@router.get('/households', response_model=List[DisplayHousehold])
+@router.get('/households', response_model=List[ViewHousehold])
 def get_households(household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):
     return household_service.get_all_households()
 
-@router.get('/household/{id}', response_model=DisplayHousehold)
+@router.get('/household/{id}', response_model=ViewHousehold)
 def get_household(id: int, household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):
     try:
         return household_service.get_household_by_id(id)
@@ -22,7 +22,7 @@ def get_household(id: int, household_service: HouseholdService = Depends(Househo
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household with that id does not exist")
 
 #adds a household to the DB
-@router.post('/household', status_code = status.HTTP_201_CREATED, response_model=DisplayHousehold)
+@router.post('/household', status_code = status.HTTP_201_CREATED, response_model=ViewHousehold)
 def add_household(household: CreateHousehold, household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):
     #add household entity to database
     return household_service.add_household(household)
@@ -39,7 +39,7 @@ def get_household_image(id: int, household_service: HouseholdService = Depends(H
     except NoHouseholdException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household with that id does not exist")
 
-@router.get('/household/{id}/profile_images', response_model=List[DisplayImage])
+@router.get('/household/{id}/profile_images', response_model=List[ViewImage])
 def get_household_images(id: int, household_service: HouseholdService = Depends(HouseholdService),
                 current_user: User = Depends(get_current_user)):
     try:
@@ -52,7 +52,7 @@ def get_household_images(id: int, household_service: HouseholdService = Depends(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household with that id does not exist")
 
 
-@router.put('/household/household_image', response_model=DisplayHouseholdImage)
+@router.put('/household/household_image', response_model=ViewImage)
 def update_household_with_image(id: int, file: UploadFile, household_service: HouseholdService = Depends(HouseholdService),
                   current_user: User = Depends(get_current_user)):
     try:

@@ -3,7 +3,7 @@ from mimetypes import guess_extension
 
 from fastapi import status, Depends, HTTPException, UploadFile
 from ..services.mediaService import MediaService, NoImageException
-from ..models.media import DisplayImage
+from ..models.media import ViewImage
 from fastapi import APIRouter
 from ...people.factories.peopleFactory import PeopleFactory
 from ...users.models.user import User
@@ -13,7 +13,7 @@ router = APIRouter(tags=['Media'])
 peopleFactory = PeopleFactory()
 
 
-@router.get('/media/image/{id}', response_model=DisplayImage)
+@router.get('/media/image/{id}', response_model=ViewImage)
 def get_image_by_id(id: int, media_service: MediaService = Depends(MediaService),
                     current_user: User = Depends(get_current_user)):
     try:
@@ -27,7 +27,7 @@ def get_image_by_id(id: int, media_service: MediaService = Depends(MediaService)
     except:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong")
 
-@router.post('/media/image', response_model=DisplayImage)
+@router.post('/media/image', response_model=ViewImage)
 def upload_image(file: UploadFile, media_service: MediaService = Depends(MediaService),
                     current_user: User = Depends(get_current_user)):
     try:

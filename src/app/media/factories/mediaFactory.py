@@ -1,5 +1,5 @@
 from ...media.models.database import models
-from ...media.models.media import Image
+from ...media.models.media import CreateImage
 
 class MediaFactory:
     def createImageEntityFromImage(self, image):
@@ -14,7 +14,7 @@ class MediaFactory:
         return media_entity
 
     def createImageFromImageEntity(self, image_entity):
-        return Image(
+        return CreateImage(
             id=image_entity.id,
             store=image_entity.store,
             address=image_entity.address,

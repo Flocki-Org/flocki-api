@@ -9,7 +9,7 @@ from src.app.media.daos.mediaDAO import MediaDAO
 import os.path
 
 from src.app.media.factories.mediaFactory import MediaFactory
-from src.app.media.models.media import Image
+from src.app.media.models.media import CreateImage
 
 
 class UnsupportedImageStoreException(Exception):
@@ -56,7 +56,7 @@ class MediaService:
             file_path = settings.flocki_image_base_path + filename
             with open(file_path, 'wb') as f:
                 f.write(file.file.read())
-            image = Image(
+            image = CreateImage(
                 store=settings.flocki_image_store,
                 address=file_path,
                 created=datetime.now(),

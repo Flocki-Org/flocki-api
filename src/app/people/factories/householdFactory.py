@@ -4,8 +4,8 @@ from fastapi import Depends
 
 from .peopleFactory import PeopleFactory
 from ...media.factories.mediaFactory import MediaFactory
-from ...media.models.media import DisplayImage
-from ...people.models.household import Household, CreateHousehold
+from ...media.models.media import ViewImage
+from ...people.models.household import ViewHousehold, CreateHousehold
 from ...people.models.database import models
 from ...people.models.people import CreateAddress
 
@@ -39,7 +39,7 @@ class HouseholdFactory:
                 person_response = self.people_factory.createPersonFromPersonEntity(person, False)
                 people.append(person_response)
 
-        household_response = Household(
+        household_response = ViewHousehold(
             id=household_entity.id,
             leader=leader_response,
             address=address_response,
@@ -54,16 +54,19 @@ class HouseholdFactory:
         return household_response
 
     def createHouseholdEntityFromHousehold(self, household: CreateHousehold, people_models: List[models.Person]):
+        if household.leader is None and people_models is not None and len(people_models) > 0:
+            household.leader = people_models[0].id
+
         new_household = models.Household(
-            leader_id=household.leader.id,
-            address_id=household.address.id,
+            leader_id=household.leader,
+            address_id=household.address,
             people=people_models
         )
         return new_household
 
     def create_household_image_list_from_entity_list(self, household_entity: models.Household):
         images = sorted(household_entity.household_images, key=lambda x: x.id, reverse=True)
-        household_image_list: List[DisplayImage] = []
+        household_image_list: List[ViewImage] = []
         for image in images:
             household_image_list.append(self.media_factory.createImageFromImageEntity(image.image))
         return household_image_list

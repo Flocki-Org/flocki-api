@@ -6,6 +6,10 @@ class AddressDAO:
     def __init__(self, db: SessionLocal = Depends(get_db)):
         self.db = db
 
+    def get_address_by_id(self, address_id):
+        return self.db.query(models.Address).filter(
+            models.Address.id== address_id).first()
+
     def get_existing_addresses_for_person(self, person_id):
         return self.db.query(models.PeopleAddress).filter(
             models.PeopleAddress.person_id == person_id).all()

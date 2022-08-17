@@ -100,7 +100,11 @@ class PeopleService:
     def create_person(self, person: CreatePerson):
         if person.profile_image_id is not None:
             image_entity = self.media_DAO.get_image_by_id(person.profile_image_id)
-        new_person = self.peopleFactory.createPersonEntityFromPerson(person)
+        address_entities = []
+        for address_id in person.addresses:
+            address_entities.append(self.addressDAO.get_address_by_id(address_id))
+        new_person = self.peopleFactory.createPersonEntityFromPerson(person, address_entities)
+
         created_person = self.peopleDAO.create_person(new_person, image_entity)
         return self.get_by_id(created_person.id)
 
@@ -117,8 +121,7 @@ class PeopleService:
             description = f"Profile image for user: {personToUpdate.first_name}  {personToUpdate.last_name}  with ID: {personToUpdate.id}"
             image_entity = self.media_service.upload_image(file, filename, description)
             self.peopleDAO.add_person_image(personToUpdate, image_entity)
-            updated_person = self.peopleDAO.get_person_by_id(personToUpdate.id)
-            return self.peopleFactory.createPersonFromPersonEntity(updated_person, False, True)
+            return self.media_factory.createImageFromImageEntity(image_entity)
 
     def get_profile_images_by_person_id(self, id):
         person_entity = self.peopleDAO.get_person_by_id(id)

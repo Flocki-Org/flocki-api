@@ -2,10 +2,10 @@ from typing import List
 
 from fastapi import Depends
 
-from ...media.models.media import DisplayImage
+from ...media.models.media import ViewImage
 from ...people.models.people import CreatePerson, SocialMediaLink, FullViewPerson
 from ...people.factories.addressFactory import AddressFactory
-from ...people.models.household import Household
+from ...people.models.household import ViewHousehold
 from ...people.models.database import models
 from ...media.factories.mediaFactory import MediaFactory
 
@@ -45,7 +45,7 @@ class PeopleFactory:
                 person = self.createPersonFromPersonEntity(household_person, False)
                 people.append(person)
 
-            person_response.household = Household(
+            person_response.household = ViewHousehold(
                 id=person_entity.household.id,
                 leader=self.createPersonFromPersonEntity(person_entity.household.leader, False),
                 address=self.address_factory.createAddressFromAddressEntity(person_entity.household.address),
@@ -61,12 +61,12 @@ class PeopleFactory:
 
     def create_profile_image_list_from_entity_list(self, person_entity):
         person_images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
-        profile_image_list: List[DisplayImage] = []
+        profile_image_list: List[ViewImage] = []
         for person_image in person_images:
             profile_image_list.append(self.media_factory.createImageFromImageEntity(person_image.image))
         return profile_image_list
 
-    def createPersonEntityFromPerson(self, person):
+    def createPersonEntityFromPerson(self, person, address_entities=None):
         new_person = models.Person(
             first_name=person.first_name,
             last_name=person.last_name,
@@ -84,24 +84,12 @@ class PeopleFactory:
                 new_sml = models.SocialMediaLink(type=sml.type, url=sml.url)
                 new_person.social_media_links.append(new_sml)
 
-        if person.addresses:
+        if address_entities is not None:
             # TODO consider querying DB if an address already exists with the given values. otherwise you will end up with
             # multiple rows in the DB for the same address
-            for address in person.addresses:
-                new_address = models.Address(
-                    type=address.type,
-                    streetNumber=address.streetNumber,
-                    street=address.street,
-                    suburb=address.suburb,
-                    city=address.city,
-                    province=address.province,
-                    country=address.country,
-                    postalCode=address.postalCode,
-                    latitude=address.latitude,
-                    longitude=address.longitude)
-
+            for address_entity in address_entities:
                 pa = models.PeopleAddress(
-                    address=new_address,
+                    address=address_entity,
                     person=new_person
                 )
                 new_person.addresses.append(pa)
