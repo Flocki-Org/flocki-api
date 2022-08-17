@@ -3,7 +3,7 @@ from typing import List
 from fastapi import Depends
 
 from ...media.models.media import DisplayImage
-from ...people.models.people import Person, SocialMediaLink
+from ...people.models.people import CreatePerson, SocialMediaLink, FullViewPerson
 from ...people.factories.addressFactory import AddressFactory
 from ...people.models.household import Household
 from ...people.models.database import models
@@ -15,7 +15,7 @@ class PeopleFactory:
         self.media_factory = media_factory
 
     def createPersonFromPersonEntity(self, person_entity, include_household=True, include_profile_image=False):
-        person_response = Person(
+        person_response = FullViewPerson(
             id=person_entity.id,
             first_name=person_entity.first_name,
             last_name=person_entity.last_name,
@@ -60,10 +60,10 @@ class PeopleFactory:
         return person_response
 
     def create_profile_image_list_from_entity_list(self, person_entity):
-        images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
+        person_images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
         profile_image_list: List[DisplayImage] = []
-        for image in images:
-            profile_image_list.append(self.media_factory.createImageFromImageEntity(image.image))
+        for person_image in person_images:
+            profile_image_list.append(self.media_factory.createImageFromImageEntity(person_image.image))
         return profile_image_list
 
     def createPersonEntityFromPerson(self, person):
@@ -77,6 +77,7 @@ class PeopleFactory:
             marriage_date=person.marriage_date,
             marital_status=person.marital_status,
             registered_date=person.registered_date,
+            household_id=person.household_id
         )
         if person.social_media_links:
             for sml in person.social_media_links:

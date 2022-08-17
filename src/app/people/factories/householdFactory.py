@@ -7,7 +7,7 @@ from ...media.factories.mediaFactory import MediaFactory
 from ...media.models.media import DisplayImage
 from ...people.models.household import Household, CreateHousehold
 from ...people.models.database import models
-from ...people.models.people import Address
+from ...people.models.people import CreateAddress
 
 class HouseholdFactory:
     def __init__(self, people_factory: PeopleFactory = Depends(PeopleFactory), media_factory: MediaFactory = Depends(MediaFactory)):
@@ -20,7 +20,7 @@ class HouseholdFactory:
         if household_entity.leader:
             leader_response = self.people_factory.createPersonFromPersonEntity(household_entity.leader)
 
-        address_response = Address(
+        address_response = CreateAddress(
             id=household_entity.address.id,
             type=household_entity.address.type,
             streetNumber=household_entity.address.streetNumber,

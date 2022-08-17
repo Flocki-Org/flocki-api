@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 import datetime
-from .people import SocialMediaLink, Gender, MaritalStatus, PersonOpt, Person, AddressOpt, Address
+from .people import PersonOpt, AddressOpt, CreateAddress, BasicViewPerson
 
 from typing import List
 
@@ -9,13 +9,13 @@ from ...media.models.media import DisplayImage, Image
 
 class Household(BaseModel):
     id: int = Field(None)
-    leader: Person = Field(title="The designated leader of the household")
-    address: Address = Field(title="An addresses")
+    leader: BasicViewPerson = Field(title="The designated leader of the household")
+    address: AddressOpt = Field(title="An addresses")
     household_image: Image = Field(None, title="The image of this household")
-    people: List[Person]
+    people: List[BasicViewPerson] = Field([], title="A list of people belonging to the household")
 
 
-Household.update_forward_refs()
+#Household.update_forward_refs()
 
 
 class CreateHousehold(BaseModel):
@@ -24,6 +24,7 @@ class CreateHousehold(BaseModel):
     address: AddressOpt = Field("An address")
     people: List[PersonOpt] = Field(title="A list of the people to be added to the household")
     household_image: DisplayImage = Field(None, title="The image of this household")
+
     class Config:
             schema_extra={
                   "example": {
@@ -37,6 +38,16 @@ class CreateHousehold(BaseModel):
                     }
                 }
 
+class DisplayHousehold(BaseModel):
+    id: int = Field(None)
+    leader: BasicViewPerson
+    address: CreateAddress = Field(title="The household address")
+    people: List[BasicViewPerson] = Field([], title="A list of people belonging to the household")
+    household_image: DisplayImage = Field(None)
+
+    class Config:
+        orm_mode = True
+
 
 class DisplayHouseholdImage(BaseModel):
     id: int = Field(None)
@@ -46,33 +57,6 @@ class DisplayHouseholdImage(BaseModel):
         orm_mode = True
 
 
-class DisplayHouseholdPerson(BaseModel):
-    id: int = Field(None)
-    first_name: str = Field(None)
-    last_name: str = Field(None)
-    email: EmailStr = Field(None)
-    mobile_number: str = Field(None)
-    date_of_birth: datetime.date = Field(None)
-    gender: Gender = Field(None)
-    marriage_date: datetime.date = Field(None)
-    marital_status: MaritalStatus = Field(None)
-    registered_date: datetime.date = Field(None)
-    social_media_links: List[SocialMediaLink] = Field(None, title="A list of social media URLs")
-    addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
-
-    class Config:
-        orm_mode = True
-
-
-class DisplayHousehold(BaseModel):
-    id: int = Field(None)
-    leader: DisplayHouseholdPerson
-    address: Address = Field(title="The household address")
-    people: List[DisplayHouseholdPerson] = Field([], title="A list of people belonging to the household")
-    household_image: DisplayImage = Field(None)
-
-    class Config:
-        orm_mode = True
 
 
 

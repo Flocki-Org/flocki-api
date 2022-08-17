@@ -1,5 +1,5 @@
 from ...people.models.database import models
-from ...people.models.people import Address
+from ...people.models.people import CreateAddress
 
 class AddressFactory:
     #create and Address Entity From and Address Model
@@ -19,7 +19,7 @@ class AddressFactory:
         return address_entity
 
     def createAddressFromAddressEntity(self, address_entity):
-        return Address(
+        return CreateAddress(
             id=address_entity.id,
             type=address_entity.type,
             streetNumber=address_entity.streetNumber,

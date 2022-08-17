@@ -7,7 +7,7 @@ from src.app.media.services.mediaService import MediaService
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
-from src.app.people.models.people import Person, UpdatePerson
+from src.app.people.models.people import CreatePerson, UpdatePerson
 import uuid
 from mimetypes import guess_extension
 
@@ -89,6 +89,7 @@ class PeopleService:
             for address in addresses:
                 self.addressDAO.create_address(address, personToUpdate)
 
+        image_entity = None
         profile_image_id = update_values.pop('profile_image_id', person.dict())
         if profile_image_id is not None:
             image_entity = self.media_DAO.get_image_by_id(profile_image_id)
@@ -96,9 +97,11 @@ class PeopleService:
         self.peopleDAO.update_person(personToUpdate.id, update_values, image_entity)
         return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(id), True, True)
 
-    def create_person(self, person):
+    def create_person(self, person: CreatePerson):
+        if person.profile_image_id is not None:
+            image_entity = self.media_DAO.get_image_by_id(person.profile_image_id)
         new_person = self.peopleFactory.createPersonEntityFromPerson(person)
-        created_person = self.peopleDAO.create_person(new_person)
+        created_person = self.peopleDAO.create_person(new_person, image_entity)
         return self.get_by_id(created_person.id)
 
     def upload_profile_image(self, id, file: UploadFile):

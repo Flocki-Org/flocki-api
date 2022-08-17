@@ -9,7 +9,7 @@ from typing import List, ForwardRef
 from src.app.media.models.media import Image, DisplayImage
 
 Household = ForwardRef('Household')
-DisplayPerson = ForwardRef('DisplayPerson')
+FullViewPerson = ForwardRef('FullViewPerson')
 
 class Gender(str, Enum):
     male = 'male'
@@ -42,7 +42,7 @@ class SocialMediaLink(BaseModel):
     url: HttpUrl
 
 
-class Address(BaseModel):
+class CreateAddress(BaseModel):
     id: int = Field(None)
     type: AddressType
     streetNumber: str
@@ -56,8 +56,8 @@ class Address(BaseModel):
     longitude: float = Field(None)
 
 
-class AddressOpt(BaseModel):
-    id: int = Field(None)
+class UpdateAddress(BaseModel):
+    id: int
     type: AddressType = Field(None)
     streetNumber: str = Field(None)
     street: str = Field(None)
@@ -70,7 +70,22 @@ class AddressOpt(BaseModel):
     longitude: float = Field(None)
 
 
-class Person(BaseModel):
+# This class is used when creating an entity that has an address previously created. Only the ID needs to be sent.
+class AddressOpt(BaseModel):
+    id: int
+    type: AddressType = Field(None)
+    streetNumber: str = Field(None)
+    street: str = Field(None)
+    suburb: str = Field(None)
+    city: str = Field(None)
+    province: str = Field(None)
+    country: str = Field(None)
+    postalCode: str = Field(None)
+    latitude: float = Field(None)
+    longitude: float = Field(None)
+
+
+class CreatePerson(BaseModel):
     id: int = Field(None)
     first_name: str
     last_name: str
@@ -82,10 +97,9 @@ class Person(BaseModel):
     marital_status: MaritalStatus = Field(None)
     registered_date: datetime.date
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
-    addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
-    household_id: int = Field(None)
-    household: Household = Field(None, title="The household this person belongs to")
-    profile_image: Image = Field(None, title="The profile image of this person")
+    addresses: List[CreateAddress] = Field([], title="A list of addresses (normally just one home address)")
+    household_id: int = Field(None, title="The id of the household this person belongs to")
+    profile_image_id: int = Field(None, title="The profile image of this person")
 
     class Config:
         schema_extra = {
@@ -100,6 +114,7 @@ class Person(BaseModel):
                 "marital_status": "single",
                 "registered_date": "2022-06-02",
                 "household_id": 1,
+                "profile_image_id": 1,
                 "social_media_links": [
                     {
                         "type": "linkedin",
@@ -126,18 +141,18 @@ class Person(BaseModel):
 
 
 class UpdatePerson(BaseModel):
-    id: int = Field(None)
-    first_name: str
-    last_name: str
-    email: EmailStr
-    mobile_number: str
-    date_of_birth: datetime.date
+    id: int
+    first_name: str = Field(None)
+    last_name: str = Field(None)
+    email: EmailStr = Field(None)
+    mobile_number: str = Field(None)
+    date_of_birth: datetime.date = Field(None)
     gender: Gender = Field(None)
-    marriage_date: datetime.date
+    marriage_date: datetime.date = Field(None)
     marital_status: MaritalStatus = Field(None)
-    registered_date: datetime.date
+    registered_date: datetime.date = Field(None)
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
-    addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
+    addresses: List[CreateAddress] = Field([], title="A list of addresses (normally just one home address)")
     household_id: int = Field(None)
     profile_image_id: int = Field(None)
 
@@ -180,10 +195,40 @@ class UpdatePerson(BaseModel):
         }
 
 
+# Can be used when person has previously been created. e.g. when creating a household.
 class PersonOpt(BaseModel):
     id: int = Field(None)
+
+    class Config:
+        orm_mode = True
+
+
+# Can be used when person has previously been created. e.g. when creating a household.
+class BasicViewPerson(BaseModel):
+    id: int = Field(None)
     first_name: str = Field(None)
     last_name: str = Field(None)
+
+
+# class DisplayPersonHousehold(BaseModel):
+#     id: int = Field(None)
+#     leader: BasicViewPerson
+#     address: CreateAddress = Field(title="The household address")
+#     people: List[BasicViewPerson] = Field([], title="A list of people belonging to the household")
+#
+#     class Config:
+#         orm_mode = True
+
+
+class ProfileImageViewPerson(BasicViewPerson):
+    profile_image: DisplayImage = Field(None)
+
+    class Config:
+        orm_mode = True
+
+
+
+class FullViewPerson(BasicViewPerson):
     email: EmailStr = Field(None)
     mobile_number: str = Field(None)
     date_of_birth: datetime.date = Field(None)
@@ -191,75 +236,13 @@ class PersonOpt(BaseModel):
     marriage_date: datetime.date = Field(None)
     marital_status: MaritalStatus = Field(None)
     registered_date: datetime.date = Field(None)
-    social_media_links: List[SocialMediaLink] = Field(None, title="A list of social media URLs")
-    addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
-
-    class Config:
-        orm_mode = True
-
-
-class DisplayHouseholdPerson(BaseModel):
-    id: int = Field(None)
-    first_name: str = Field(None)
-    last_name: str = Field(None)
-    email: EmailStr = Field(None)
-    mobile_number: str = Field(None)
-    date_of_birth: datetime.date = Field(None)
-    gender: Gender = Field(None)
-    marriage_date: datetime.date = Field(None)
-    marital_status: MaritalStatus = Field(None)
-    registered_date: datetime.date = Field(None)
-    social_media_links: List[SocialMediaLink] = Field(None, title="A list of social media URLs")
-    addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
-
-    class Config:
-        orm_mode = True
-
-
-class DisplayPersonHousehold(BaseModel):
-    id: int = Field(None)
-    leader: DisplayHouseholdPerson
-    address: Address = Field(title="The household address")
-    people: List[DisplayHouseholdPerson] = Field([], title="A list of people belonging to the household")
-
-    class Config:
-        orm_mode = True
-
-
-class DisplayPersonProfileImage(BaseModel):
-    id: int = Field(None)
+    social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
+    addresses: List[CreateAddress] = Field([], title="A list of addresses (normally just one home address)")
+    household: Household = Field(None)
     profile_image: DisplayImage = Field(None)
 
     class Config:
         orm_mode = True
-
-
-class DisplayPerson(BaseModel):
-    id: int = Field(None)
-    first_name: str
-    last_name: str
-    email: EmailStr
-    mobile_number: str
-    date_of_birth: datetime.date
-    gender: Gender = Field(None)
-    marriage_date: datetime.date
-    marital_status: MaritalStatus = Field(None)
-    registered_date: datetime.date
-    social_media_links: List[SocialMediaLink] = Field(None, title="A list of social media URLs")
-    addresses: List[Address] = Field([], title="A list of addresses (normally just one home address)")
-    household: DisplayPersonHousehold = Field(None)
-    profile_image: DisplayImage = Field(None)
-
-    class Config:
-        orm_mode = True
-
-
-class UpdatePersonProfileImage(BaseModel):
-    id: int = Field(None)
-    class Config:
-        orm_mode = True
-
 
 from src.app.people.models.household import Household
-
-Person.update_forward_refs()
+FullViewPerson.update_forward_refs(household=Household)

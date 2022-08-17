@@ -39,10 +39,22 @@ class PeopleDAO:
     def create_social_media_link(self, person_id, type: str, url: str):
         self.db.add(models.SocialMediaLink(person_id=person_id, type=type, url=url))
 
-    def create_person(self, new_person):
+    def create_person(self, new_person, image_entity=None):
+
         self.db.add(new_person)
         self.db.commit()
         self.db.refresh(new_person)
+
+        if image_entity is not None:
+            person_image = PersonImage(
+                person=new_person,
+                image=image_entity,
+                created=datetime.now(),
+            )
+            self.db.add(person_image)
+            self.db.commit()
+            self.db.refresh(new_person)
+
         return new_person
 
     def add_person_image(self, personToUpdate, image_entity):
