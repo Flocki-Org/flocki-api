@@ -6,7 +6,7 @@ from src.app.database import engine, SessionLocal
 from src.app.media.routers import media
 from src.app.users.daos.userDAO import UserDAO
 from src.app.users.models.database import models
-from src.app.people.routers import person, household
+from src.app.people.routers import person, household, address
 from src.app.users.models.database.models import User
 from src.app.users.routers import user, login
 from src.app.users.factories.userFactory import UserFactory
@@ -23,6 +23,7 @@ app.include_router(user.router)
 app.include_router(login.router)
 app.include_router(household.router)
 app.include_router(media.router)
+app.include_router(address.router)
 
 app.add_middleware(
     CORSMiddleware,

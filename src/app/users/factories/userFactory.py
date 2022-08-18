@@ -10,7 +10,7 @@ class UserFactory:
         self.password_utils = password_utils
         pass
 
-    def createUserFromUserEntity(self, user_entity):
+    def create_user_from_user_entity(self, user_entity):
         user_response = User(
             id=user_entity.id,
             first_name=user_entity.first_name,
@@ -21,7 +21,7 @@ class UserFactory:
         )
         return user_response
 
-    def createUserEntityFromUser(self, user):
+    def create_user_entity_from_user(self, user):
         password_hashed = self.password_utils.hash_pwd(user.password)
         new_user = models.User(
             first_name=user.first_name,

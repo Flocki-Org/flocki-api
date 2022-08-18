@@ -17,21 +17,21 @@ class UserService:
     def get_all_users(self):
         user_entities = self.user_DAO.get_all_users()
         for user_entity in user_entities:
-            yield self.user_factory.createUserFromUserEntity(user_entity)
+            yield self.user_factory.create_user_from_user_entity(user_entity)
 
     def get_user_by_id(self, id):
         user_entity = self.user_DAO.get_user_by_id(id)
         if user_entity is None:
             raise NoUserException("User with that id does not exist")
-        return self.user_factory.createUserFromUserEntity(user_entity)
+        return self.user_factory.create_user_from_user_entity(user_entity)
 
     def get_user_by_name(self, name):
         return self.user_DAO.get_user_by_name(name)
 
     def create_user(self, new_user):
-        new_user_entity = self.user_factory.createUserEntityFromUser(new_user)
+        new_user_entity = self.user_factory.create_user_entity_from_user(new_user)
         response_new_user_entity = self.user_DAO.create_user(new_user_entity)
-        return self.user_factory.createUserFromUserEntity(response_new_user_entity)
+        return self.user_factory.create_user_from_user_entity(response_new_user_entity)
 
     def update_user(self, user_id, update_user):
         userToUpdate = self.user_DAO.get_user_by_id(user_id)

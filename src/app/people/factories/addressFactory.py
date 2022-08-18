@@ -1,9 +1,10 @@
 from ...people.models.database import models
-from ...people.models.people import CreateAddress
+from ...people.models.people import CreateAddress, ViewAddress
+
 
 class AddressFactory:
     #create and Address Entity From and Address Model
-    def createAddressEntityFromAddress(self, address):
+    def create_address_entity_from_address(self, address):
         address_entity = models.Address(
             type=address.type,
             streetNumber=address.streetNumber,
@@ -18,8 +19,8 @@ class AddressFactory:
 
         return address_entity
 
-    def createAddressFromAddressEntity(self, address_entity):
-        return CreateAddress(
+    def create_address_from_address_entity(self, address_entity):
+        return ViewAddress(
             id=address_entity.id,
             type=address_entity.type,
             streetNumber=address_entity.streetNumber,

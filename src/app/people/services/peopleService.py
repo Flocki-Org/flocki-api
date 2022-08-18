@@ -58,6 +58,7 @@ class PeopleService:
             return NotImplementedError("S3 not implemented")
         return
 
+    #TODO fis this code for new address int array on person
     def update_person(self, id: int, person: UpdatePerson):
         personToUpdate = self.peopleDAO.get_person_by_id(id)
         if personToUpdate is None:
@@ -86,8 +87,9 @@ class PeopleService:
 
             # TODO consider querying DB if an address already exists with the given values. otherwise you will end up with
             # multiple rows in the DB for the same address
-            for address in addresses:
-                self.addressDAO.create_address(address, personToUpdate)
+            for address_id in addresses:
+                address = self.addressDAO.get_address_by_id(address_id)
+                self.addressDAO.create_address_linked_to_person(address, personToUpdate)
 
         image_entity = None
         profile_image_id = update_values.pop('profile_image_id', person.dict())

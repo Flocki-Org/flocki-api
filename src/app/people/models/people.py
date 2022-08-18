@@ -43,7 +43,6 @@ class SocialMediaLink(BaseModel):
 
 
 class CreateAddress(BaseModel):
-    id: int = Field(None)
     type: AddressType
     streetNumber: str
     street: str
@@ -55,6 +54,19 @@ class CreateAddress(BaseModel):
     latitude: float = Field(None)
     longitude: float = Field(None)
 
+    class Config:
+        schema_extra = {
+            "example": {
+              "type": "home",
+              "streetNumber": "21",
+              "street": "Allan",
+              "suburb": "Noordwyk",
+              "city": "Midrand",
+              "province": "Johannesburg",
+              "country": "South Africa",
+              "postalCode": "1685"
+            }
+        }
 
 class UpdateAddress(BaseModel):
     id: int

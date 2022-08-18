@@ -35,7 +35,7 @@ class PeopleFactory:
         if person_entity.addresses:
             for people_address in person_entity.addresses:
                 address = people_address.address
-                address_response = self.address_factory.createAddressFromAddressEntity(address)
+                address_response = self.address_factory.create_address_from_address_entity(address)
 
                 person_response.addresses.append(address_response)
 
@@ -48,7 +48,7 @@ class PeopleFactory:
             person_response.household = ViewHousehold(
                 id=person_entity.household.id,
                 leader=self.createPersonFromPersonEntity(person_entity.household.leader, False),
-                address=self.address_factory.createAddressFromAddressEntity(person_entity.household.address),
+                address=self.address_factory.create_address_from_address_entity(person_entity.household.address),
                 people=people
             )
 

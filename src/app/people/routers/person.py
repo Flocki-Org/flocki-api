@@ -5,12 +5,10 @@ from ...media.models.media import ViewImage
 from ...people.models.people import CreatePerson, FullViewPerson, ProfileImageViewPerson, UpdatePerson
 from fastapi import APIRouter
 from typing import List
-from ...people.factories.peopleFactory import PeopleFactory
 from ...users.models.user import User
 from ...users.routers.login import get_current_user
 
 router = APIRouter(tags=['People'])
-peopleFactory = PeopleFactory()
 
 
 @router.get('/people', response_model=List[FullViewPerson])
