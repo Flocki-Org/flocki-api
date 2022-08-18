@@ -194,13 +194,6 @@ class BasicViewPerson(BaseModel):
     last_name: str = Field(None)
 
 
-class ProfileImageViewPerson(BasicViewPerson):
-    profile_image: ViewImage = Field(None)
-
-    class Config:
-        orm_mode = True
-
-
 class FullViewPerson(BasicViewPerson):
     email: EmailStr = Field(None)
     mobile_number: str = Field(None)

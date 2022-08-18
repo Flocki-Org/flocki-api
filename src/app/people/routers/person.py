@@ -2,7 +2,7 @@ from fastapi import status, Depends, HTTPException, UploadFile
 
 from ..services.peopleService import PeopleService, NoPersonException
 from ...media.models.media import ViewImage
-from ...people.models.people import CreatePerson, FullViewPerson, ProfileImageViewPerson, UpdatePerson
+from ...people.models.people import CreatePerson, FullViewPerson, UpdatePerson
 from fastapi import APIRouter
 from typing import List
 from ...users.models.user import User
