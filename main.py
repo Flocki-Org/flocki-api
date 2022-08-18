@@ -24,7 +24,6 @@ app.include_router(login.router)
 app.include_router(household.router)
 app.include_router(media.router)
 app.include_router(address.router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.flocki_cors_origins,
