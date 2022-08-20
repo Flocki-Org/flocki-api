@@ -17,7 +17,7 @@ def get_people(people_service: PeopleService = Depends(PeopleService), current_u
     return people_response
 
 
-@router.get('/person/{id}', response_model=FullViewPerson)
+@router.get('/people/{id}', response_model=FullViewPerson)
 def get_person(id: int, people_service: PeopleService = Depends(PeopleService),
                current_user: User = Depends(get_current_user)):
     person_response = people_service.get_by_id(id)
@@ -27,7 +27,7 @@ def get_person(id: int, people_service: PeopleService = Depends(PeopleService),
     return person_response
 
 
-@router.put('/person/', response_model=FullViewPerson)
+@router.put('/people/', response_model=FullViewPerson)
 def update_person(id: int, person: UpdatePerson, people_service: PeopleService = Depends(PeopleService),
                   current_user: User = Depends(get_current_user)):
     try:
@@ -38,7 +38,7 @@ def update_person(id: int, person: UpdatePerson, people_service: PeopleService =
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
-@router.get('/person/{id}/profile_image')
+@router.get('/people/{id}/profile_image')
 def get_person_profile_image(id: int, people_service: PeopleService = Depends(PeopleService),
                current_user: User = Depends(get_current_user)):
     try:
@@ -51,7 +51,7 @@ def get_person_profile_image(id: int, people_service: PeopleService = Depends(Pe
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
-@router.get('/person/{id}/profile_images', response_model=List[ViewImage])
+@router.get('/people/{id}/profile_images', response_model=List[ViewImage])
 def get_person_profile_images(id: int, people_service: PeopleService = Depends(PeopleService),
                 current_user: User = Depends(get_current_user)):
     try:
@@ -63,7 +63,7 @@ def get_person_profile_images(id: int, people_service: PeopleService = Depends(P
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
-@router.put('/person/profile_image', response_model=ViewImage)
+@router.put('/people/profile_image', response_model=ViewImage)
 def update_person_with_profile_image(id: int, file: UploadFile, people_service: PeopleService = Depends(PeopleService),
                   current_user: User = Depends(get_current_user)):
     try:
@@ -74,7 +74,7 @@ def update_person_with_profile_image(id: int, file: UploadFile, people_service: 
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
-@router.post('/person', status_code=status.HTTP_201_CREATED, response_model=FullViewPerson)
+@router.post('/people', status_code=status.HTTP_201_CREATED, response_model=FullViewPerson)
 def add_person(person: CreatePerson, people_service: PeopleService = Depends(PeopleService),
                current_user: User = Depends(get_current_user)):
     return people_service.create_person(person)

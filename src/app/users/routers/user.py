@@ -12,7 +12,7 @@ router = APIRouter(tags=['Users'])
 def get_users(user_service: UserService = Depends(UserService), current_user: User = Depends(get_current_user)):
     return user_service.get_all_users()
 
-@router.get('/user/{id}', response_model=DisplayUser)
+@router.get('/users/{id}', response_model=DisplayUser)
 def get_user(id: int, user_service: UserService = Depends(UserService), current_user: User = Depends(get_current_user)):
     try:
         return user_service.get_user_by_id(id)
@@ -21,14 +21,14 @@ def get_user(id: int, user_service: UserService = Depends(UserService), current_
     except NoUserException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.detail)
 
-@router.put('/user/')
+@router.put('/users/')
 def update_user(id:int, user: User, user_service: UserService = Depends(UserService), current_user: User = Depends(get_current_user)):
     try:
         return user_service.update_user(id, user)
     except NoUserException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.detail)
 
-@router.post('/user', status_code = status.HTTP_201_CREATED, response_model=DisplayUser)
+@router.post('/users', status_code = status.HTTP_201_CREATED, response_model=DisplayUser)
 def add_user(user: User, user_service: UserService = Depends(UserService), current_user: User = Depends(get_current_user)):
     return user_service.create_user(user)
 

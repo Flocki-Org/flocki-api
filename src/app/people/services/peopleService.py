@@ -100,6 +100,7 @@ class PeopleService:
         return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(id), True, True)
 
     def create_person(self, person: CreatePerson):
+        image_entity = None
         if person.profile_image_id is not None:
             image_entity = self.media_DAO.get_image_by_id(person.profile_image_id)
         address_entities = []

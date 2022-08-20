@@ -18,6 +18,9 @@ from src.app.people.models.household import CreateHousehold
 class NoHouseholdException(Exception):
     pass
 
+class LeaderMustBeMemberOfHouseholdException(Exception):
+    pass
+
 class HouseholdService:
     def __init__(self, household_DAO: HouseholdDAO = Depends(HouseholdDAO), household_factory: HouseholdFactory = Depends(HouseholdFactory),
                  peopleDAO: PeopleDAO = Depends(PeopleDAO), people_factory: PeopleFactory = Depends(PeopleFactory),
@@ -45,6 +48,7 @@ class HouseholdService:
         return self.household_factory.createHouseholdFromHouseholdEntity(household_entity)
 
     def add_household(self, household: CreateHousehold):
+
         people_models = []
         for person_id in household.people:
             person_entity = self.people_DAO.get_person_by_id(person_id)

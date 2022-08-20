@@ -15,7 +15,7 @@ def get_addresses(address_service: AddressService = Depends(AddressService), cur
     return addresses_response
 
 
-@router.get('/address/{id}', response_model=ViewAddress)
+@router.get('/addresses/{id}', response_model=ViewAddress)
 def get_address(id: int, address_service: AddressService = Depends(AddressService),
                current_user: User = Depends(get_current_user)):
     try:
@@ -27,7 +27,7 @@ def get_address(id: int, address_service: AddressService = Depends(AddressServic
     except NoAddressException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address with that id does not exist")
 
-@router.put('/address/', response_model=ViewAddress)
+@router.put('/addresses/', response_model=ViewAddress)
 def update_address(id: int, update_address: UpdateAddress, address_service: AddressService = Depends(AddressService),
                   current_user: User = Depends(get_current_user)):
     try:
@@ -39,7 +39,7 @@ def update_address(id: int, update_address: UpdateAddress, address_service: Addr
     except NoAddressException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address with that id does not exist")
 
-@router.post('/address', status_code=status.HTTP_201_CREATED, response_model=ViewAddress)
+@router.post('/addresses', status_code=status.HTTP_201_CREATED, response_model=ViewAddress)
 def add_address(address: CreateAddress, response: Response, address_service: AddressService = Depends(AddressService),
                current_user: User = Depends(get_current_user)):
     try:
