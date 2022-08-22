@@ -13,9 +13,7 @@ from src.app.people.daos.householdDAO import HouseholdDAO
 
 from src.app.people.factories.householdFactory import HouseholdFactory
 from src.app.people.factories.peopleFactory import PeopleFactory
-from src.app.people.models.database.models import Person
 from src.app.people.models.household import CreateHousehold
-from src.app.people.models.people import Gender
 from src.app.people.services.peopleService import NoPersonException
 
 
