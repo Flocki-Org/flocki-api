@@ -55,11 +55,11 @@ class HouseholdFactory:
         return household_response
 
     def createHouseholdEntityFromHousehold(self, household: CreateHousehold, people_models: List[models.Person]):
-        if household.leader is None and people_models is not None and len(people_models) > 0:
-            household.leader = people_models[0].id
+        if household.leader_id is None and people_models is not None and len(people_models) > 0:
+            household.leader_id = people_models[0].id
 
         new_household = models.Household(
-            leader_id=household.leader,
+            leader_id=household.leader_id,
             address_id=household.address,
             people=people_models
         )

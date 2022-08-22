@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field, HttpUrl
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator
 import datetime
 from enum import Enum
 from typing import List, ForwardRef, Optional
@@ -111,6 +111,12 @@ class CreatePerson(BaseModel):
     addresses: List[int] = Field([], title="A list of address IDs (normally just one home address)")
     household_id: int = Field(None, title="The id of the household this person belongs to")
     profile_image_id: int = Field(None, title="The profile image of this person")
+
+    @validator('date_of_birth','registered_date','marriage_date')
+    def validate_date_in_past(cls, v):
+        if v > datetime.date.today():
+            raise ValueError("Date must be in the past")
+        return v
 
     class Config:
         schema_extra = {
