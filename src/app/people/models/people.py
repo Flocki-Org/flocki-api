@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, EmailStr, Field, HttpUrl
 import datetime
 from enum import Enum
-from typing import List, ForwardRef
+from typing import List, ForwardRef, Optional
 
 # from src.app.people.models.household import Household
 from src.app.media.models.media import CreateImage, ViewImage
@@ -102,11 +102,11 @@ class CreatePerson(BaseModel):
     last_name: str
     email: EmailStr
     mobile_number: str
-    date_of_birth: datetime.date
+    date_of_birth: datetime.date = Field(None)
     gender: Gender = Field(None)
-    marriage_date: datetime.date
+    marriage_date: datetime.date = Field(None)
     marital_status: MaritalStatus = Field(None)
-    registered_date: datetime.date
+    registered_date: datetime.date = Field(None)
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[int] = Field([], title="A list of address IDs (normally just one home address)")
     household_id: int = Field(None, title="The id of the household this person belongs to")
