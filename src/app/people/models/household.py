@@ -11,13 +11,13 @@ class CreateHousehold(BaseModel):
     address: int = Field("An address")
     people: List[int] = Field(title="A list of IDs of the people to be added to the household")
     household_image: int = Field(None, title="The ID of the image of this household")
-    leader: int = Field(None,
-                        title="The ID of the leader of the household. If not specified, the leader will be the first person in the household")
+    leader_id: int = Field(None,
+                           title="The ID of the leader of the household. If not specified, the leader will be the first person in the household")
     @root_validator
     def validate_leader(cls, values):
-        if values['leader'] is None:
+        if values['leader_id'] is None:
             raise ValueError("Leader must have an id")
-        if values['leader'] not in values['people']:
+        if values['leader_id'] not in values['people']:
             raise ValueError("Leader must be a member of the household")
         return values
 

@@ -1,5 +1,6 @@
 import uuid
 from mimetypes import guess_extension
+from typing import List
 
 from fastapi import Depends
 from starlette.responses import FileResponse
@@ -12,7 +13,10 @@ from src.app.people.daos.householdDAO import HouseholdDAO
 
 from src.app.people.factories.householdFactory import HouseholdFactory
 from src.app.people.factories.peopleFactory import PeopleFactory
+from src.app.people.models.database.models import Person
 from src.app.people.models.household import CreateHousehold
+from src.app.people.models.people import Gender
+from src.app.people.services.peopleService import NoPersonException
 
 
 class NoHouseholdException(Exception):
@@ -49,17 +53,25 @@ class HouseholdService:
 
     def add_household(self, household: CreateHousehold):
 
-        people_models = []
+        people_entities = []
+        invalid_people_ids = []
         for person_id in household.people:
             person_entity = self.people_DAO.get_person_by_id(person_id)
             if not person_entity:
-                raise Exception(f"Person does not exist with ID: {person_id}")
-            people_models.append(person_entity)
+                invalid_people_ids.append(person_id)
+            people_entities.append(person_entity)
+
+        if invalid_people_ids is not None and len(invalid_people_ids) > 0:
+            raise NoPersonException(f"No people with the following IDs: {invalid_people_ids}")
+
+        leader_entity = self.people_DAO.get_person_by_id(household.leader_id)
+        if not leader_entity:
+            raise Exception(f"invalid leader ID provided. Person with that id: {household.leader_id} does not exist")
+
 
         image_entity = self.media_DAO.get_image_by_id(household.household_image)
-        new_household = self.household_factory.createHouseholdEntityFromHousehold(household, people_models)
+        new_household = self.household_factory.createHouseholdEntityFromHousehold(household, people_entities)
         return self.household_factory.createHouseholdFromHouseholdEntity(self.household_DAO.add_household(new_household, image_entity), True)
-
 
     def get_household_images_by_household_id(self, id):
         household_entity = self.household_DAO.get_household_by_id(id)

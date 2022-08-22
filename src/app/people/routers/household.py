@@ -4,6 +4,7 @@ from ..models.household import CreateHousehold, ViewHousehold
 from fastapi import APIRouter
 from typing import List
 from ..services.householdService import HouseholdService, NoHouseholdException
+from ..services.peopleService import NoPersonException
 from ...media.models.media import ViewImage
 from ...users.models.user import User
 from ...users.routers.login import get_current_user
@@ -25,7 +26,10 @@ def get_household(id: int, household_service: HouseholdService = Depends(Househo
 @router.post('/households', status_code = status.HTTP_201_CREATED, response_model=ViewHousehold)
 def add_household(household: CreateHousehold, household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):
     #add household entity to database
-    return household_service.add_household(household)
+    try:
+        return household_service.add_household(household)
+    except NoPersonException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args[0])
 
 @router.get('/households/{id}/household_image')
 def get_household_image(id: int, household_service: HouseholdService = Depends(HouseholdService),
