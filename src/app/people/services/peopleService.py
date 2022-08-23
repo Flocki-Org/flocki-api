@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import Depends, UploadFile
 from fastapi.responses import FileResponse
 
@@ -107,6 +109,9 @@ class PeopleService:
         for address_id in person.addresses:
             address_entities.append(self.addressDAO.get_address_by_id(address_id))
         new_person = self.peopleFactory.createPersonEntityFromPerson(person, address_entities)
+
+        if new_person.registered_date is None:
+            new_person.registered_date = datetime.now()
 
         created_person = self.peopleDAO.create_person(new_person, image_entity)
         return self.get_by_id(created_person.id)
