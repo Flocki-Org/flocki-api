@@ -166,7 +166,8 @@ class PeopleService:
             new_person.registered_date = datetime.now()
 
         created_person = self.peopleDAO.create_person(new_person, image_entity)
-        self.add_person_to_households(created_person, person.household_ids)
+        if person.household_ids is not None:
+            self.add_person_to_households(created_person, person.household_ids)
         return self.get_by_id(created_person.id)
 
     def validate_household_remove_person(self, new_household_ids, personToUpdate):
@@ -179,11 +180,12 @@ class PeopleService:
                 f"You cannot remove a leader [id='{personToUpdate.id}'] from a household [id='{household_entity.id}']. You must first assign a new leader to the household.")
 
     def validate_households(self, person):
-        for household_id in person.household_ids:
-            household_entity: models.Household = self.household_DAO.get_household_by_id(household_id)
-            if household_entity is None:
-                # TODO if this happens at this stage the person would have already have been created.
-                raise NoHouseholdExceptionForPersonCreation(f"No household with that Id: {household_id}")
+        if person.household_ids is not None:
+            for household_id in person.household_ids:
+                household_entity: models.Household = self.household_DAO.get_household_by_id(household_id)
+                if household_entity is None:
+                    # TODO if this happens at this stage the person would have already have been created.
+                    raise NoHouseholdExceptionForPersonCreation(f"No household with that Id: {household_id}")
 
 
     def upload_profile_image(self, id, file: UploadFile):
