@@ -24,7 +24,7 @@ class CreateHousehold(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "leader": 1,
+                "leader_id": 1,
                 "address": 1,
                 "household_image": 1,
                 "people": [1, 4, 5]

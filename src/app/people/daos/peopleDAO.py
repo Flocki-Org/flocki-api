@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from fastapi import Depends
 from src.app.database import get_db, SessionLocal
@@ -39,6 +40,7 @@ class PeopleDAO:
     def create_social_media_link(self, person_id, type: str, url: str):
         self.db.add(models.SocialMediaLink(person_id=person_id, type=type, url=url))
 
+    # TODO figure out what to do with household_entities
     def create_person(self, new_person, image_entity=None):
 
         self.db.add(new_person)

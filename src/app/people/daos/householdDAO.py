@@ -34,3 +34,11 @@ class HouseholdDAO:
         self.db.add(household_image)
         self.db.commit()
 
+    def add_person_to_household(self, household_entity, person):
+        household_entity.people.append(person)
+        self.db.commit()
+
+    def remove_person_from_household(self, household_entity, person):
+        household_entity.people.remove(person)
+        self.db.commit()
+

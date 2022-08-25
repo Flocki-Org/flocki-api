@@ -14,7 +14,7 @@ class PeopleFactory:
         self.address_factory = address_factory
         self.media_factory = media_factory
 
-    def createPersonFromPersonEntity(self, person_entity, include_household=True, include_profile_image=False):
+    def createPersonFromPersonEntity(self, person_entity, include_households=True, include_profile_image=False):
         person_response = FullViewPerson(
             id=person_entity.id,
             first_name=person_entity.first_name,
@@ -39,18 +39,12 @@ class PeopleFactory:
 
                 person_response.addresses.append(address_response)
 
-        if include_household and person_entity.household:
-            people = []
-            for household_person in person_entity.household.people:
-                person = self.createPersonFromPersonEntity(household_person, False)
-                people.append(person)
+        if include_households and person_entity.households:
+            person_response.households = []
+            for household in person_entity.households:
+                household_response = self.create_household_view(household)
+                person_response.households.append(household_response)
 
-            person_response.household = ViewHousehold(
-                id=person_entity.household.id,
-                leader=self.createPersonFromPersonEntity(person_entity.household.leader, False),
-                address=self.address_factory.create_address_from_address_entity(person_entity.household.address),
-                people=people
-            )
 
         if include_profile_image and person_entity.profile_images:
             images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
@@ -58,6 +52,20 @@ class PeopleFactory:
                 person_response.profile_image = self.media_factory.createImageFromImageEntity(images[0].image)
 
         return person_response
+
+    def create_household_view(self, household):
+        people = []
+        for household_person in household.people:
+            person = self.createPersonFromPersonEntity(household_person, False)
+            people.append(person)
+
+        view_household = ViewHousehold(
+            id=household.id,
+            leader=self.createPersonFromPersonEntity(household.leader, False),
+            address=self.address_factory.create_address_from_address_entity(household.address),
+            people=people
+        )
+        return view_household
 
     def create_profile_image_list_from_entity_list(self, person_entity):
         person_images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
@@ -77,7 +85,6 @@ class PeopleFactory:
             marriage_date=person.marriage_date,
             marital_status=person.marital_status,
             registered_date=person.registered_date,
-            household_id=person.household_id
         )
         if person.social_media_links:
             for sml in person.social_media_links:

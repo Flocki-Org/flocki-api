@@ -1,6 +1,15 @@
-from sqlalchemy import Column, Integer, String, Date, UniqueConstraint, ForeignKey, DECIMAL, DateTime
+from datetime import datetime
+
+from sqlalchemy import Column, Integer, String, Date, UniqueConstraint, ForeignKey, DECIMAL, DateTime, Table, TIMESTAMP
 from src.app.database import Base
 from sqlalchemy.orm import relationship
+
+HouseholdPerson = Table('household_people', Base.metadata,
+                        Column('id', Integer, primary_key=True),
+                        Column('created', TIMESTAMP, default=datetime.utcnow, nullable=False),
+                        Column('household_id', Integer, ForeignKey('households.id'), nullable=False),
+                        Column('person_id', Integer, ForeignKey('people.id'), nullable=False))
+
 
 class Person(Base):
     __tablename__ = 'people'
@@ -14,11 +23,11 @@ class Person(Base):
     marriage_date = Column(Date)
     marital_status = Column(String)
     registered_date = Column(Date)
-    household_id = Column(Integer, ForeignKey('households.id'), nullable=True)
     social_media_links = relationship("SocialMediaLink", cascade="all, delete-orphan")
     addresses = relationship("PeopleAddress", back_populates="person", cascade="all, delete-orphan")
-    household = relationship("Household", back_populates="people", foreign_keys=[household_id])
+    households = relationship("Household", secondary=HouseholdPerson, viewonly=True)  # , cascade="all, delete-orphan")
     profile_images = relationship("PersonImage", back_populates="person", cascade="all, delete-orphan")
+
 
 class SocialMediaLink(Base):
     __tablename__ = 'social_media_links'
@@ -28,6 +37,7 @@ class SocialMediaLink(Base):
     url = Column(String)
     _table_args__ = (UniqueConstraint('person_id', 'type', name='socialmedialinks_person_type_uc'),)
 
+
 class PeopleAddress(Base):
     __tablename__ = 'people_addresses'
     id = Column(Integer, primary_key=True, index=True)
@@ -36,6 +46,7 @@ class PeopleAddress(Base):
     person = relationship("Person", back_populates="addresses")
     address = relationship("Address")
     _table_args__ = (UniqueConstraint('person_id', 'address_id', name='peopleaddresses_person_address_uc'))
+
 
 class Address(Base):
     __tablename__ = 'addresses'
@@ -52,7 +63,9 @@ class Address(Base):
     postalCode = Column(String)
     latitude = Column(DECIMAL(10, 8))
     longitude = Column(DECIMAL(11, 8))
-    _table_args__ = (UniqueConstraint('person_id', 'type', name='addresses_person_type_uc'), UniqueConstraint('household_id', name='addresses_household_uc'))
+    _table_args__ = (UniqueConstraint('person_id', 'type', name='addresses_person_type_uc'),
+                     UniqueConstraint('household_id', name='addresses_household_uc'))
+
 
 class Household(Base):
     __tablename__ = 'households'
@@ -62,7 +75,8 @@ class Household(Base):
     address = relationship("Address", cascade=None)
     household_images = relationship("HouseholdImage", back_populates="household", cascade="all, delete-orphan")
     leader = relationship("Person", cascade=None, foreign_keys=[leader_id])
-    people = relationship("Person", back_populates="household", primaryjoin="Household.id == Person.household_id")
+    people = relationship(Person, secondary=HouseholdPerson)  # , primaryjoin="Household.id == HouseholdPerson.household_id")
+
 
 class PersonImage(Base):
     __tablename__ = 'people_images'
@@ -72,7 +86,8 @@ class PersonImage(Base):
     image_id = Column(Integer, ForeignKey('images.id'), nullable=False)
     person = relationship("Person", back_populates="profile_images")
     image = relationship("Image")
-    #__table_args__ = (UniqueConstraint('person_id', 'image_id', name='peopleimages_person_image_uc'),)
+    # __table_args__ = (UniqueConstraint('person_id', 'image_id', name='peopleimages_person_image_uc'),)
+
 
 class HouseholdImage(Base):
     __tablename__ = 'household_images'

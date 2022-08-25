@@ -1,6 +1,5 @@
 import uuid
 from mimetypes import guess_extension
-from typing import List
 
 from fastapi import Depends
 from starlette.responses import FileResponse
@@ -20,8 +19,10 @@ from src.app.people.services.peopleService import NoPersonException
 class NoHouseholdException(Exception):
     pass
 
+
 class LeaderMustBeMemberOfHouseholdException(Exception):
     pass
+
 
 class HouseholdService:
     def __init__(self, household_DAO: HouseholdDAO = Depends(HouseholdDAO), household_factory: HouseholdFactory = Depends(HouseholdFactory),
@@ -109,4 +110,6 @@ class HouseholdService:
         elif household_with_image.household_image.store is not None and household_with_image.household_image.store == 's3':
             return NotImplementedError("S3 not implemented")
         return
+
+
 

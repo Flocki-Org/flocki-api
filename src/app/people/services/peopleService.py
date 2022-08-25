@@ -5,16 +5,28 @@ from fastapi.responses import FileResponse
 
 from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.factories.mediaFactory import MediaFactory
+from src.app.media.models.database import models
 from src.app.media.services.mediaService import MediaService
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.people import CreatePerson, UpdatePerson
+
 import uuid
 from mimetypes import guess_extension
 
+from src.app.people.daos.householdDAO import HouseholdDAO
+
 
 class NoPersonException(Exception):
+    pass
+
+
+class NoHouseholdExceptionForPersonCreation(Exception):
+    pass
+
+
+class UnableToRemoveLeaderFromHouseholdException(Exception):
     pass
 
 
@@ -23,19 +35,24 @@ class PeopleService:
                  media_DAO: MediaDAO = Depends(MediaDAO),
                  media_service: MediaService = Depends(MediaService),
                  people_factory: PeopleFactory = Depends(PeopleFactory),
-                 media_factory: MediaFactory = Depends(MediaFactory)):
+                 media_factory: MediaFactory = Depends(MediaFactory),
+                 household_DAO: HouseholdDAO = Depends(HouseholdDAO)
+                 ):
         self.peopleDAO = peopleDAO
         self.peopleFactory = people_factory
         self.addressDAO = addressDAO
         self.media_factory = media_factory
         self.media_DAO = media_DAO
         self.media_service = media_service
+        self.household_DAO = household_DAO
 
     def get_all(self):
         people_response = []
         people = self.peopleDAO.get_all()
         for person in people:
-            people_response.append(self.peopleFactory.createPersonFromPersonEntity(person_entity=person, include_profile_image=True, include_household=True))
+            people_response.append(
+                self.peopleFactory.createPersonFromPersonEntity(person_entity=person, include_profile_image=True,
+                                                                include_households=True))
         return people_response
 
     def get_by_id(self, id):
@@ -44,7 +61,7 @@ class PeopleService:
             return None
         return self.peopleFactory.createPersonFromPersonEntity(person_entity)
 
-    #TODO refactor this code a bit so that the local vs s3 logic can be centralized
+    # TODO refactor this code a bit so that the local vs s3 logic can be centralized
     def get_profile_image_by_person_id(self, id):
         person_entity = self.peopleDAO.get_person_by_id(id)
         if person_entity is None:
@@ -60,7 +77,7 @@ class PeopleService:
             return NotImplementedError("S3 not implemented")
         return
 
-    #TODO fis this code for new address int array on person
+    # TODO fis this code for new address int array on person
     def update_person(self, id: int, person: UpdatePerson):
         personToUpdate = self.peopleDAO.get_person_by_id(id)
         if personToUpdate is None:
@@ -69,7 +86,13 @@ class PeopleService:
         # For update requests the model is not expected to come in with an ID since it is passed in the URL.
         person.id = personToUpdate.id
 
+        # validate that households are correct.
+        self.validate_households(person)
+
         update_values = person.dict()
+        household_ids = update_values.pop('household_ids', person.dict())
+        self.validate_household_remove_person(household_ids, personToUpdate)
+
         smls = update_values.pop('social_media_links', person.dict())
         if smls is not None:
             existing_social_media_links = self.peopleDAO.get_existing_social_media_links(person.id)
@@ -98,10 +121,39 @@ class PeopleService:
         if profile_image_id is not None:
             image_entity = self.media_DAO.get_image_by_id(profile_image_id)
 
+
         self.peopleDAO.update_person(personToUpdate.id, update_values, image_entity)
+        if household_ids is not None:
+            self.update_households_for_person(household_ids, personToUpdate)
+
         return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(id), True, True)
 
+    def update_households_for_person(self, new_household_ids, personToUpdate):
+        existing_household_ids = self.get_existing_household_ids(personToUpdate)
+        household_ids_to_add = self.get_household_ids_to_add(existing_household_ids, new_household_ids)
+        household_ids_to_remove = self.get_households_to_remove(existing_household_ids, new_household_ids)
+
+        if household_ids_to_add:
+            for household_id in household_ids_to_add:
+                self.household_DAO.add_person_to_household(self.household_DAO.get_household_by_id(household_id), personToUpdate)
+        if household_ids_to_remove:
+            for household_id in household_ids_to_remove:
+                self.household_DAO.remove_person_from_household(self.household_DAO.get_household_by_id(household_id), personToUpdate)
+
+    def get_households_to_remove(self, existing_household_ids, new_household_ids):
+        return [household_id for household_id in existing_household_ids if
+                household_id not in new_household_ids]
+
+    def get_household_ids_to_add(self, existing_household_ids, new_household_ids):
+        return [household_id for household_id in new_household_ids if
+                household_id not in existing_household_ids]
+
+    def get_existing_household_ids(self, personToUpdate):
+        return [household.id for household in personToUpdate.households]
+
     def create_person(self, person: CreatePerson):
+        self.validate_households(person)
+
         image_entity = None
         if person.profile_image_id is not None:
             image_entity = self.media_DAO.get_image_by_id(person.profile_image_id)
@@ -114,7 +166,25 @@ class PeopleService:
             new_person.registered_date = datetime.now()
 
         created_person = self.peopleDAO.create_person(new_person, image_entity)
+        self.add_person_to_households(created_person, person.household_ids)
         return self.get_by_id(created_person.id)
+
+    def validate_household_remove_person(self, new_household_ids, personToUpdate):
+        existing_household_ids = self.get_existing_household_ids(personToUpdate)
+        household_ids_to_remove = self.get_households_to_remove(existing_household_ids, new_household_ids)
+        for(household_id) in household_ids_to_remove:
+            household_entity = self.household_DAO.get_household_by_id(household_id)
+            if household_entity.leader.id == personToUpdate.id:
+                raise UnableToRemoveLeaderFromHouseholdException(
+                f"You cannot remove a leader [id='{personToUpdate.id}'] from a household [id='{household_entity.id}']. You must first assign a new leader to the household.")
+
+    def validate_households(self, person):
+        for household_id in person.household_ids:
+            household_entity: models.Household = self.household_DAO.get_household_by_id(household_id)
+            if household_entity is None:
+                # TODO if this happens at this stage the person would have already have been created.
+                raise NoHouseholdExceptionForPersonCreation(f"No household with that Id: {household_id}")
+
 
     def upload_profile_image(self, id, file: UploadFile):
         personToUpdate = self.peopleDAO.get_person_by_id(id)
@@ -136,3 +206,17 @@ class PeopleService:
         if person_entity is None:
             raise NoPersonException("No person with that Id")
         return self.peopleFactory.create_profile_image_list_from_entity_list(person_entity)
+
+    # I would have prefered adding this method to the household service, and make each service only dependent on it's own DAO,
+    # but I couldn't get it to work due to circular dependencies.
+    def add_person_to_households(self, person, household_entity_ids):
+        # household_entity_ids should have been validated by now.
+        for household_id in household_entity_ids:
+            household_entity = self.household_DAO.get_household_by_id(household_id)
+            self.household_DAO.add_person_to_household(household_entity, person)
+
+    def remove_person_from_households(self, person, household_entity_ids):
+        # household_entity_ids should have been validated by now.
+        for household_id in household_entity_ids:
+            household_entity = self.household_DAO.get_household_by_id(household_id)
+            self.household_DAO.remove_person_from_household(household_entity, person)

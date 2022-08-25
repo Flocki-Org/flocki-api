@@ -1,6 +1,8 @@
 from fastapi import status, Depends, HTTPException, UploadFile
 
-from ..services.peopleService import PeopleService, NoPersonException
+from ..services.householdService import NoHouseholdException
+from ..services.peopleService import PeopleService, NoPersonException, NoHouseholdExceptionForPersonCreation, \
+    UnableToRemoveLeaderFromHouseholdException
 from ...media.models.media import ViewImage
 from ...people.models.people import CreatePerson, FullViewPerson, UpdatePerson
 from fastapi import APIRouter
@@ -37,6 +39,10 @@ def update_person(id: int, person: UpdatePerson, people_service: PeopleService =
         return person_response
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+    except NoHouseholdExceptionForPersonCreation as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
+    except UnableToRemoveLeaderFromHouseholdException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args[0])
 
 @router.get('/people/{id}/profile_image')
 def get_person_profile_image(id: int, people_service: PeopleService = Depends(PeopleService),
@@ -63,6 +69,7 @@ def get_person_profile_images(id: int, people_service: PeopleService = Depends(P
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
+
 @router.put('/people/profile_image', response_model=ViewImage)
 def update_person_with_profile_image(id: int, file: UploadFile, people_service: PeopleService = Depends(PeopleService),
                   current_user: User = Depends(get_current_user)):
@@ -73,8 +80,14 @@ def update_person_with_profile_image(id: int, file: UploadFile, people_service: 
         return person_response
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+    except NoHouseholdExceptionForPersonCreation as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
+
 
 @router.post('/people', status_code=status.HTTP_201_CREATED, response_model=FullViewPerson)
 def add_person(person: CreatePerson, people_service: PeopleService = Depends(PeopleService),
                current_user: User = Depends(get_current_user)):
-    return people_service.create_person(person)
+    try:
+        return people_service.create_person(person)
+    except NoHouseholdExceptionForPersonCreation as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])

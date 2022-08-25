@@ -109,7 +109,7 @@ class CreatePerson(BaseModel):
     registered_date: datetime.date = Field(None)
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[int] = Field([], title="A list of address IDs (normally just one home address)")
-    household_id: int = Field(None, title="The id of the household this person belongs to")
+    household_ids: List[int] = Field(None, title="The list pf ids of the households this person belongs to")
     profile_image_id: int = Field(None, title="The profile image of this person")
 
     @validator('date_of_birth','registered_date','marriage_date')
@@ -161,7 +161,7 @@ class UpdatePerson(BaseModel):
     registered_date: datetime.date = Field(None)
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[int] = Field([], title="A list of address IDs (normally just one home address)")
-    household_id: int = Field(None)
+    household_ids: List[int] = Field(None, title="The list of ids of the households this person belongs to")
     profile_image_id: int = Field(None)
 
     class Config:
@@ -176,7 +176,7 @@ class UpdatePerson(BaseModel):
                 "marriage_date": "1981-01-01",
                 "marital_status": "single",
                 "registered_date": "2022-06-02",
-                "household_id": 1,
+                "household_ids": [1],
                 "profile_image_id": 1,
                 "social_media_links": [
                     {
@@ -193,7 +193,6 @@ class UpdatePerson(BaseModel):
         }
 
 
-# Can be used when person has previously been created. e.g. when creating a household.
 class BasicViewPerson(BaseModel):
     id: int = Field(None)
     first_name: str = Field(None)
@@ -210,11 +209,12 @@ class FullViewPerson(BasicViewPerson):
     registered_date: datetime.date = Field(None)
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[ViewAddress] = Field([], title="A list of addresses (normally just one home address)")
-    household: ViewHousehold = Field(None)
+    households: List[ViewHousehold] = Field(None)
     profile_image: ViewImage = Field(None)
 
     class Config:
         orm_mode = True
+
 
 from src.app.people.models.household import ViewHousehold
 FullViewPerson.update_forward_refs(household=ViewHousehold)

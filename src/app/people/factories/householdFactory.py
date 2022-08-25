@@ -61,8 +61,10 @@ class HouseholdFactory:
         new_household = models.Household(
             leader_id=household.leader_id,
             address_id=household.address,
-            people=people_models
         )
+        for person in people_models:
+            new_household.people.append(person)
+
         return new_household
 
     def create_household_image_list_from_entity_list(self, household_entity: models.Household):
