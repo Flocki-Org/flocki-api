@@ -1,6 +1,6 @@
 from fastapi import status, Depends, HTTPException, UploadFile
 
-from ..models.household import CreateHousehold, ViewHousehold
+from ..models.household import CreateHousehold, ViewHousehold, UpdateHousehold
 from fastapi import APIRouter
 from typing import List
 from ..services.householdService import HouseholdService, NoHouseholdException
@@ -30,6 +30,15 @@ def add_household(household: CreateHousehold, household_service: HouseholdServic
         return household_service.add_household(household)
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args[0])
+
+@router.put('/households/{id}', response_model=UpdateHousehold)
+def update_household(id: int, household: UpdateHousehold, household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):
+    try:
+        return household_service.update_household(id, household)
+    except NoHouseholdException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household with that id does not exist")
+    except NoPersonException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
 @router.get('/households/{id}/household_image')
 def get_household_image(id: int, household_service: HouseholdService = Depends(HouseholdService),

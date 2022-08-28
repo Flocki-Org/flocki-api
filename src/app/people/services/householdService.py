@@ -6,13 +6,14 @@ from starlette.responses import FileResponse
 
 from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.factories.mediaFactory import MediaFactory
-from src.app.media.services.mediaService import MediaService
+from src.app.media.services.mediaService import MediaService, NoImageException
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.daos.householdDAO import HouseholdDAO
 
 from src.app.people.factories.householdFactory import HouseholdFactory
 from src.app.people.factories.peopleFactory import PeopleFactory
-from src.app.people.models.household import CreateHousehold
+from src.app.people.models.household import CreateHousehold, UpdateHousehold
+from src.app.people.services.householdUtils import HouseholdUtils
 from src.app.people.services.peopleService import NoPersonException
 
 
@@ -111,5 +112,38 @@ class HouseholdService:
             return NotImplementedError("S3 not implemented")
         return
 
+    def update_household(self, id, household: UpdateHousehold):
+        household_entity = self.household_DAO.get_household_by_id(id)
+        if household_entity is None:
+            raise NoHouseholdException(
+                "No household with that Id")
+        people_entities = []
+        for person_id in household.people:
+            person_entity = self.people_DAO.get_person_by_id(person_id)
+            if not person_entity:
+                raise NoPersonException(f"No person with the following ID: {person_id}")
+            people_entities.append(person_entity)
 
+        leader_entity = self.people_DAO.get_person_by_id(household.leader_id)
+        if not leader_entity:
+            raise Exception(f"invalid leader ID provided. Person with that id: {household.leader_id} does not exist")
 
+        if household.household_image is not None:
+            image_entity = self.media_DAO.get_image_by_id(household.household_image)
+            if not image_entity:
+                raise NoImageException(f"No image with the following ID: {household.household_image}")
+
+        existing_people_ids = HouseholdUtils.get_existing_people_ids(household_entity)
+        people_ids_to_add = HouseholdUtils.get_people_ids_to_add(existing_people_ids, household.people)
+        people_ids_to_remove = HouseholdUtils.get_people_ids_to_add(existing_people_ids, household.people)
+
+        if people_ids_to_add is not None and len(people_ids_to_add) > 0:
+            for person_id in people_ids_to_add:
+                self.household_DAO.add_person_to_household(household_entity, self.people_DAO.get_person_by_id(person_id))
+
+        if people_ids_to_remove is not None and len(people_ids_to_remove) > 0:
+            for person_id in people_ids_to_remove:
+                self.household_DAO.remove_person_from_household(household_entity, self.people_DAO.get_person_by_id(person_id))
+
+        update_household = self.household_factory.createHouseholdEntityFromHousehold(household, people_entities)
+        self.household_DAO.update_household(household_entity, update_household)

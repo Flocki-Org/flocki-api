@@ -16,6 +16,7 @@ import uuid
 from mimetypes import guess_extension
 
 from src.app.people.daos.householdDAO import HouseholdDAO
+from src.app.people.services.householdUtils import HouseholdUtils
 
 
 class NoPersonException(Exception):
@@ -79,19 +80,19 @@ class PeopleService:
 
     # TODO fis this code for new address int array on person
     def update_person(self, id: int, person: UpdatePerson):
-        personToUpdate = self.peopleDAO.get_person_by_id(id)
-        if personToUpdate is None:
+        person_entity = self.peopleDAO.get_person_by_id(id)
+        if person_entity is None:
             raise NoPersonException(
                 "No person with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
         # For update requests the model is not expected to come in with an ID since it is passed in the URL.
-        person.id = personToUpdate.id
+        person.id = person_entity.id
 
         # validate that households are correct.
         self.validate_households(person)
 
         update_values = person.dict()
         household_ids = update_values.pop('household_ids', person.dict())
-        self.validate_household_remove_person(household_ids, personToUpdate)
+        self.validate_household_remove_person(household_ids, person_entity)
 
         smls = update_values.pop('social_media_links', person.dict())
         if smls is not None:
@@ -114,7 +115,7 @@ class PeopleService:
             # multiple rows in the DB for the same address
             for address_id in addresses:
                 address = self.addressDAO.get_address_by_id(address_id)
-                self.addressDAO.create_address_linked_to_person(address, personToUpdate)
+                self.addressDAO.create_address_linked_to_person(address, person_entity)
 
         image_entity = None
         profile_image_id = update_values.pop('profile_image_id', person.dict())
@@ -122,16 +123,16 @@ class PeopleService:
             image_entity = self.media_DAO.get_image_by_id(profile_image_id)
 
 
-        self.peopleDAO.update_person(personToUpdate.id, update_values, image_entity)
+        self.peopleDAO.update_person(person_entity.id, update_values, image_entity)
         if household_ids is not None:
-            self.update_households_for_person(household_ids, personToUpdate)
+            self.update_households_for_person(household_ids, person_entity)
 
         return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(id), True, True)
 
     def update_households_for_person(self, new_household_ids, personToUpdate):
-        existing_household_ids = self.get_existing_household_ids(personToUpdate)
-        household_ids_to_add = self.get_household_ids_to_add(existing_household_ids, new_household_ids)
-        household_ids_to_remove = self.get_households_to_remove(existing_household_ids, new_household_ids)
+        existing_household_ids = HouseholdUtils.get_existing_household_ids(personToUpdate)
+        household_ids_to_add = HouseholdUtils.get_household_ids_to_add(existing_household_ids, new_household_ids)
+        household_ids_to_remove = HouseholdUtils.get_household_ids_to_remove(existing_household_ids, new_household_ids)
 
         if household_ids_to_add:
             for household_id in household_ids_to_add:
@@ -140,16 +141,16 @@ class PeopleService:
             for household_id in household_ids_to_remove:
                 self.household_DAO.remove_person_from_household(self.household_DAO.get_household_by_id(household_id), personToUpdate)
 
-    def get_households_to_remove(self, existing_household_ids, new_household_ids):
-        return [household_id for household_id in existing_household_ids if
-                household_id not in new_household_ids]
-
-    def get_household_ids_to_add(self, existing_household_ids, new_household_ids):
-        return [household_id for household_id in new_household_ids if
-                household_id not in existing_household_ids]
-
-    def get_existing_household_ids(self, personToUpdate):
-        return [household.id for household in personToUpdate.households]
+    # def get_households_to_remove(self, existing_household_ids, new_household_ids):
+    #     return [household_id for household_id in existing_household_ids if
+    #             household_id not in new_household_ids]
+    #
+    # def get_household_ids_to_add(self, existing_household_ids, new_household_ids):
+    #     return [household_id for household_id in new_household_ids if
+    #             household_id not in existing_household_ids]
+    #
+    # def get_existing_household_ids(self, personToUpdate):
+    #     return [household.id for household in personToUpdate.households]
 
     def create_person(self, person: CreatePerson):
         self.validate_households(person)

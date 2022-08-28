@@ -11,8 +11,8 @@ class CreateHousehold(BaseModel):
     address: int = Field("An address")
     people: List[int] = Field(title="A list of IDs of the people to be added to the household")
     household_image: int = Field(None, title="The ID of the image of this household")
-    leader_id: int = Field(None,
-                           title="The ID of the leader of the household. If not specified, the leader will be the first person in the household")
+    leader_id: int = Field(title="The ID of the leader of the household. If not specified, the leader will be the first person in the household")
+
     @root_validator
     def validate_leader(cls, values):
         if values['leader_id'] is None:
@@ -31,6 +31,32 @@ class CreateHousehold(BaseModel):
             }
         }
 
+
+class UpdateHousehold(BaseModel):
+    id: int
+    address: int = Field("An address")
+    people: List[int] = Field(title="A list of IDs of the people to be added to the household")
+    household_image: int = Field(None, title="The ID of the image of this household")
+    leader_id: int = Field(
+        title="The ID of the leader of the household. If not specified, the leader will be the first person in the household")
+
+    @root_validator
+    def validate_leader(cls, values):
+        if values['leader_id'] is None:
+            raise ValueError("Leader must have an id")
+        if values['leader_id'] not in values['people']:
+            raise ValueError("Leader must be a member of the household")
+        return values
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "leader_id": 1,
+                "address": 1,
+                "household_image": 1,
+                "people": [1, 4, 5]
+            }
+        }
 
 class ViewHousehold(BaseModel):
     id: int = Field(None)
