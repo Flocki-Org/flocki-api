@@ -43,9 +43,14 @@ class HouseholdDAO:
         household_entity.people.remove(person)
         self.db.commit()
 
-    def update_household(self, household_entity: models.Household, update_household: UpdateHousehold):
-        #TODO fix.
-        #household_entity.leader_id = update_household.leader_id
-        #household_entity.address_id = update_household.address_id
-        #self.db.commit()
-        pass
+    def update_household(self, household_entity: models.Household, update_household: UpdateHousehold, image_entity=None):
+        if image_entity is not None:
+            household_image = HouseholdImage(
+                household=household_entity,
+                image=image_entity,
+                created=datetime.now(),
+            )
+            self.db.add(household_image)
+        household_entity.leader_id = update_household.leader_id
+        household_entity.address_id = update_household.address_id
+        self.db.commit()

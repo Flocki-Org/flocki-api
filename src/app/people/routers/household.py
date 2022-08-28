@@ -31,7 +31,7 @@ def add_household(household: CreateHousehold, household_service: HouseholdServic
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args[0])
 
-@router.put('/households/{id}', response_model=UpdateHousehold)
+@router.put('/households/{id}', response_model=ViewHousehold)
 def update_household(id: int, household: UpdateHousehold, household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):
     try:
         return household_service.update_household(id, household)

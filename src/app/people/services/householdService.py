@@ -7,12 +7,14 @@ from starlette.responses import FileResponse
 from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.factories.mediaFactory import MediaFactory
 from src.app.media.services.mediaService import MediaService, NoImageException
+from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.daos.householdDAO import HouseholdDAO
 
 from src.app.people.factories.householdFactory import HouseholdFactory
 from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.household import CreateHousehold, UpdateHousehold
+from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.householdUtils import HouseholdUtils
 from src.app.people.services.peopleService import NoPersonException
 
@@ -29,7 +31,7 @@ class HouseholdService:
     def __init__(self, household_DAO: HouseholdDAO = Depends(HouseholdDAO), household_factory: HouseholdFactory = Depends(HouseholdFactory),
                  peopleDAO: PeopleDAO = Depends(PeopleDAO), people_factory: PeopleFactory = Depends(PeopleFactory),
                  media_service: MediaService = Depends(MediaService), media_DAO: MediaDAO = Depends(MediaDAO),
-                 media_factory: MediaFactory = Depends(MediaFactory)):
+                 media_factory: MediaFactory = Depends(MediaFactory), address_DAO: AddressDAO = Depends(AddressDAO)):
         self.people_DAO = peopleDAO
         self.people_factory = people_factory
         self.household_factory = household_factory
@@ -37,6 +39,7 @@ class HouseholdService:
         self.media_service = media_service
         self.media_DAO = media_DAO
         self.media_factory = media_factory
+        self.address_DAO = address_DAO
 
     def get_all_households(self):
         households_response = []
@@ -49,7 +52,7 @@ class HouseholdService:
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
             raise NoHouseholdException(f"Household does not exist with ID: {id}")
-        return self.household_factory.createHouseholdFromHouseholdEntity(household_entity)
+        return self.household_factory.createHouseholdFromHouseholdEntity(household_entity, include_household_image=True)
 
     def add_household(self, household: CreateHousehold):
 
@@ -117,8 +120,15 @@ class HouseholdService:
         if household_entity is None:
             raise NoHouseholdException(
                 "No household with that Id")
+
+        address_entity = self.address_DAO.get_address_by_id(household.address_id)
+        if address_entity is None:
+            raise NoAddressException("No address with that Id")
+
+        update_values = household.dict()
+        update_people_ids = update_values.pop('people_ids', household.dict())
         people_entities = []
-        for person_id in household.people:
+        for person_id in update_people_ids:
             person_entity = self.people_DAO.get_person_by_id(person_id)
             if not person_entity:
                 raise NoPersonException(f"No person with the following ID: {person_id}")
@@ -128,14 +138,17 @@ class HouseholdService:
         if not leader_entity:
             raise Exception(f"invalid leader ID provided. Person with that id: {household.leader_id} does not exist")
 
-        if household.household_image is not None:
-            image_entity = self.media_DAO.get_image_by_id(household.household_image)
+        image_entity = None
+        if household.household_image_id is not None:
+            image_entity = self.media_DAO.get_image_by_id(household.household_image_id)
             if not image_entity:
-                raise NoImageException(f"No image with the following ID: {household.household_image}")
+                raise NoImageException(f"No image with the following ID: {household.household_image_id}")
+
+        self.household_DAO.update_household(household_entity, household, image_entity)
 
         existing_people_ids = HouseholdUtils.get_existing_people_ids(household_entity)
-        people_ids_to_add = HouseholdUtils.get_people_ids_to_add(existing_people_ids, household.people)
-        people_ids_to_remove = HouseholdUtils.get_people_ids_to_add(existing_people_ids, household.people)
+        people_ids_to_add = HouseholdUtils.get_people_ids_to_add(existing_people_ids, update_people_ids)
+        people_ids_to_remove = HouseholdUtils.get_people_ids_to_remove(existing_people_ids, update_people_ids)
 
         if people_ids_to_add is not None and len(people_ids_to_add) > 0:
             for person_id in people_ids_to_add:
@@ -145,5 +158,4 @@ class HouseholdService:
             for person_id in people_ids_to_remove:
                 self.household_DAO.remove_person_from_household(household_entity, self.people_DAO.get_person_by_id(person_id))
 
-        update_household = self.household_factory.createHouseholdEntityFromHousehold(household, people_entities)
-        self.household_DAO.update_household(household_entity, update_household)
+        return self.get_household_by_id(id)
