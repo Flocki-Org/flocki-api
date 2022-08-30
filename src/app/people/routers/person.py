@@ -1,9 +1,11 @@
 from fastapi import status, Depends, HTTPException, UploadFile
 
+from ..services.addressService import NoAddressException
 from ..services.householdService import NoHouseholdException
 from ..services.peopleService import PeopleService, NoPersonException, NoHouseholdExceptionForPersonCreation, \
     UnableToRemoveLeaderFromHouseholdException
 from ...media.models.media import ViewImage
+from ...media.services.mediaService import NoImageException
 from ...people.models.people import CreatePerson, FullViewPerson, UpdatePerson
 from fastapi import APIRouter
 from typing import List
@@ -39,10 +41,10 @@ def update_person(id: int, person: UpdatePerson, people_service: PeopleService =
         return person_response
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
-    except NoHouseholdExceptionForPersonCreation as e:
+    except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException, NoImageException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
-    except UnableToRemoveLeaderFromHouseholdException as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args[0])
+
+
 
 @router.get('/people/{id}/profile_image')
 def get_person_profile_image(id: int, people_service: PeopleService = Depends(PeopleService),
@@ -89,5 +91,6 @@ def add_person(person: CreatePerson, people_service: PeopleService = Depends(Peo
                current_user: User = Depends(get_current_user)):
     try:
         return people_service.create_person(person)
-    except NoHouseholdExceptionForPersonCreation as e:
+    except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException,
+                NoImageException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])

@@ -3,7 +3,7 @@ from typing import List
 from fastapi import Depends
 
 from ...media.models.media import ViewImage
-from ...people.models.people import CreatePerson, SocialMediaLink, FullViewPerson
+from ...people.models.people import CreatePerson, SocialMediaLink, FullViewPerson, BasicViewPerson
 from ...people.factories.addressFactory import AddressFactory
 from ...people.models.household import ViewHousehold
 from ...people.models.database import models
@@ -13,6 +13,14 @@ class PeopleFactory:
     def __init__(self, address_factory: AddressFactory = Depends(AddressFactory), media_factory: MediaFactory = Depends(MediaFactory)):
         self.address_factory = address_factory
         self.media_factory = media_factory
+
+
+    def create_basic_person_view_from_person_entity(self, person_entity):
+        person_response = BasicViewPerson(
+            id=person_entity.id,
+            first_name=person_entity.first_name,
+            last_name=person_entity.last_name)
+        return person_response
 
     def createPersonFromPersonEntity(self, person_entity, include_households=True, include_profile_image=False):
         person_response = FullViewPerson(
@@ -56,12 +64,12 @@ class PeopleFactory:
     def create_household_view(self, household):
         people = []
         for household_person in household.people:
-            person = self.createPersonFromPersonEntity(household_person, False)
+            person = self.create_basic_person_view_from_person_entity(household_person)
             people.append(person)
 
         view_household = ViewHousehold(
             id=household.id,
-            leader=self.createPersonFromPersonEntity(household.leader, False),
+            leader=self.create_basic_person_view_from_person_entity(household.leader),
             address=self.address_factory.create_address_from_address_entity(household.address),
             people=people
         )

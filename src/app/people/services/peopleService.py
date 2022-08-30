@@ -5,8 +5,7 @@ from fastapi.responses import FileResponse
 
 from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.factories.mediaFactory import MediaFactory
-from src.app.media.models.database import models
-from src.app.media.services.mediaService import MediaService
+from src.app.media.services.mediaService import MediaService, NoImageException
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
@@ -16,6 +15,7 @@ import uuid
 from mimetypes import guess_extension
 
 from src.app.people.daos.householdDAO import HouseholdDAO
+from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.householdUtils import HouseholdUtils
 
 
@@ -86,14 +86,19 @@ class PeopleService:
                 "No person with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
         # For update requests the model is not expected to come in with an ID since it is passed in the URL.
         person.id = person_entity.id
+        update_values = person.dict()
 
         # validate that households are correct.
-        self.validate_households(person)
-
-        update_values = person.dict()
         household_ids = update_values.pop('household_ids', person.dict())
+        self.validate_households(household_ids)
+        # validate potential removal of persons
         self.validate_household_remove_person(household_ids, person_entity)
+        # validate address ids
+        self.validate_addresses(person.addresses)
+        # validate image id
+        self.validate_image_id(person.profile_image_id)
 
+        # start updating record
         smls = update_values.pop('social_media_links', person.dict())
         if smls is not None:
             existing_social_media_links = self.peopleDAO.get_existing_social_media_links(person.id)
@@ -127,7 +132,19 @@ class PeopleService:
         if household_ids is not None:
             self.update_households_for_person(household_ids, person_entity)
 
-        return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(id), True, True)
+        return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(id), include_households=True, include_profile_image=True)
+
+    def validate_image_id(self, profile_image_id):
+        if profile_image_id is not None:
+            image_entity = self.media_DAO.get_image_by_id(profile_image_id)
+            if image_entity is None:
+                raise NoImageException(f"Image with id: {profile_image_id} does not exist")
+
+    def validate_addresses(self, addresses):
+        for address_id in addresses:
+            address = self.addressDAO.get_address_by_id(address_id)
+            if address is None:
+                raise NoAddressException(f"Address with id: {address_id} does not exist")
 
     def update_households_for_person(self, new_household_ids, personToUpdate):
         existing_household_ids = HouseholdUtils.get_existing_household_ids(personToUpdate)
@@ -153,7 +170,11 @@ class PeopleService:
     #     return [household.id for household in personToUpdate.households]
 
     def create_person(self, person: CreatePerson):
-        self.validate_households(person)
+        self.validate_households(person.household_ids)
+        # validate address ids
+        self.validate_addresses(person.addresses)
+        # validate image id
+        self.validate_image_id(person.profile_image_id)
 
         image_entity = None
         if person.profile_image_id is not None:
@@ -169,21 +190,21 @@ class PeopleService:
         created_person = self.peopleDAO.create_person(new_person, image_entity)
         if person.household_ids is not None:
             self.add_person_to_households(created_person, person.household_ids)
-        return self.get_by_id(created_person.id)
+        return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(created_person.id), include_households=True, include_profile_image=True)
 
     def validate_household_remove_person(self, new_household_ids, personToUpdate):
-        existing_household_ids = self.get_existing_household_ids(personToUpdate)
-        household_ids_to_remove = self.get_households_to_remove(existing_household_ids, new_household_ids)
+        existing_household_ids = HouseholdUtils.get_existing_household_ids(personToUpdate)
+        household_ids_to_remove = HouseholdUtils.get_household_ids_to_remove(existing_household_ids, new_household_ids)
         for(household_id) in household_ids_to_remove:
             household_entity = self.household_DAO.get_household_by_id(household_id)
             if household_entity.leader.id == personToUpdate.id:
                 raise UnableToRemoveLeaderFromHouseholdException(
                 f"You cannot remove a leader [id='{personToUpdate.id}'] from a household [id='{household_entity.id}']. You must first assign a new leader to the household.")
 
-    def validate_households(self, person):
-        if person.household_ids is not None:
-            for household_id in person.household_ids:
-                household_entity: models.Household = self.household_DAO.get_household_by_id(household_id)
+    def validate_households(self, household_ids):
+        if household_ids is not None:
+            for household_id in household_ids:
+                household_entity = self.household_DAO.get_household_by_id(household_id)
                 if household_entity is None:
                     # TODO if this happens at this stage the person would have already have been created.
                     raise NoHouseholdExceptionForPersonCreation(f"No household with that Id: {household_id}")

@@ -130,7 +130,7 @@ class CreatePerson(BaseModel):
                 "marriage_date": "1981-01-01",
                 "marital_status": "single",
                 "registered_date": "2022-06-02",
-                "household_id": 1,
+                "household_ids": [1],
                 "profile_image_id": 1,
                 "social_media_links": [
                     {
