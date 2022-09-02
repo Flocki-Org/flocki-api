@@ -31,7 +31,8 @@ class HouseholdService:
     def __init__(self, household_DAO: HouseholdDAO = Depends(HouseholdDAO), household_factory: HouseholdFactory = Depends(HouseholdFactory),
                  peopleDAO: PeopleDAO = Depends(PeopleDAO), people_factory: PeopleFactory = Depends(PeopleFactory),
                  media_service: MediaService = Depends(MediaService), media_DAO: MediaDAO = Depends(MediaDAO),
-                 media_factory: MediaFactory = Depends(MediaFactory), address_DAO: AddressDAO = Depends(AddressDAO)):
+                 media_factory: MediaFactory = Depends(MediaFactory), address_DAO: AddressDAO = Depends(AddressDAO),
+                 household_utils: HouseholdUtils = Depends(HouseholdUtils)):
         self.people_DAO = peopleDAO
         self.people_factory = people_factory
         self.household_factory = household_factory
@@ -40,6 +41,7 @@ class HouseholdService:
         self.media_DAO = media_DAO
         self.media_factory = media_factory
         self.address_DAO = address_DAO
+        self.household_utils = household_utils
 
     def get_all_households(self):
         households_response = []
@@ -146,9 +148,9 @@ class HouseholdService:
 
         self.household_DAO.update_household(household_entity, household, image_entity)
 
-        existing_people_ids = HouseholdUtils.get_existing_people_ids(household_entity)
-        people_ids_to_add = HouseholdUtils.get_people_ids_to_add(existing_people_ids, update_people_ids)
-        people_ids_to_remove = HouseholdUtils.get_people_ids_to_remove(existing_people_ids, update_people_ids)
+        existing_people_ids = self.household_utils.get_existing_people_ids(household_entity)
+        people_ids_to_add = self.household_utils.get_people_ids_to_add(existing_people_ids, update_people_ids)
+        people_ids_to_remove = self.household_utils.get_people_ids_to_remove(existing_people_ids, update_people_ids)
 
         if people_ids_to_add is not None and len(people_ids_to_add) > 0:
             for person_id in people_ids_to_add:

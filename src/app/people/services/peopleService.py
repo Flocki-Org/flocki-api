@@ -37,8 +37,8 @@ class PeopleService:
                  media_service: MediaService = Depends(MediaService),
                  people_factory: PeopleFactory = Depends(PeopleFactory),
                  media_factory: MediaFactory = Depends(MediaFactory),
-                 household_DAO: HouseholdDAO = Depends(HouseholdDAO)
-                 ):
+                 household_DAO: HouseholdDAO = Depends(HouseholdDAO),
+                 household_utils: HouseholdUtils = Depends(HouseholdUtils)):
         self.peopleDAO = peopleDAO
         self.peopleFactory = people_factory
         self.addressDAO = addressDAO
@@ -46,6 +46,7 @@ class PeopleService:
         self.media_DAO = media_DAO
         self.media_service = media_service
         self.household_DAO = household_DAO
+        self.household_utils = household_utils
 
     def get_all(self):
         people_response = []
@@ -147,9 +148,9 @@ class PeopleService:
                 raise NoAddressException(f"Address with id: {address_id} does not exist")
 
     def update_households_for_person(self, new_household_ids, personToUpdate):
-        existing_household_ids = HouseholdUtils.get_existing_household_ids(personToUpdate)
-        household_ids_to_add = HouseholdUtils.get_household_ids_to_add(existing_household_ids, new_household_ids)
-        household_ids_to_remove = HouseholdUtils.get_household_ids_to_remove(existing_household_ids, new_household_ids)
+        existing_household_ids = self.household_utils.get_existing_household_ids(personToUpdate)
+        household_ids_to_add = self.household_utils.get_household_ids_to_add(existing_household_ids, new_household_ids)
+        household_ids_to_remove = self.household_utils.get_household_ids_to_remove(existing_household_ids, new_household_ids)
 
         if household_ids_to_add:
             for household_id in household_ids_to_add:
@@ -193,8 +194,8 @@ class PeopleService:
         return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(created_person.id), include_households=True, include_profile_image=True)
 
     def validate_household_remove_person(self, new_household_ids, personToUpdate):
-        existing_household_ids = HouseholdUtils.get_existing_household_ids(personToUpdate)
-        household_ids_to_remove = HouseholdUtils.get_household_ids_to_remove(existing_household_ids, new_household_ids)
+        existing_household_ids = self.household_utils.get_existing_household_ids(personToUpdate)
+        household_ids_to_remove = self.household_utils.get_household_ids_to_remove(existing_household_ids, new_household_ids)
         for(household_id) in household_ids_to_remove:
             household_entity = self.household_DAO.get_household_by_id(household_id)
             if household_entity.leader.id == personToUpdate.id:
