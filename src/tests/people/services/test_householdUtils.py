@@ -119,3 +119,18 @@ def test_get_people_ids_to_add_add_some():
     existing_people_ids = [1, 2, 3]
     new_people_ids = [1, 2, 5, 7]
     assert household_utils.get_people_ids_to_add(existing_people_ids, new_people_ids) == [5, 7]
+
+def test_get_existing_people_ids():
+    household_utils = HouseholdUtils()
+
+    # Create a household with 3 people. This is to avoid having to use sqlalchemy models for this utils test.
+    new_household = type("", (), dict(
+        id=1,
+        people= [
+                type("",(), dict(id=1)),
+                type("",(), dict(id=2)),
+                type("",(), dict(id=3))
+            ]
+        )
+    )
+    assert household_utils.get_existing_people_ids(new_household) == [1, 2, 3]
