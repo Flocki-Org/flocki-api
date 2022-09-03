@@ -1,5 +1,4 @@
 from src.app.people.services.householdUtils import HouseholdUtils
-from src.app.people.models.database import models
 
 def test_get_household_ids_to_remove_remove_one():
     household_utils = HouseholdUtils()
