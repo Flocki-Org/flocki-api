@@ -4,12 +4,14 @@ from time import strptime
 from main import app
 from src.app.database import get_db, SessionLocal
 from src.app.people.daos.peopleDAO import PeopleDAO
+from src.app.media.models.database import models as media_models
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
 # test_database.py
 from src.app.people.models.database import models
+from src.app.people.models.database.models import Person
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_db.db"
 engine = create_engine(
@@ -121,3 +123,57 @@ def test_update_person():
     assert updated_person.marriage_date == datetime(2020, 1, 1).date()
     assert updated_person.registered_date == datetime(2022, 1, 1, 0, 0).date()
     assert updated_person.date_of_birth == datetime(1984, 1, 1, 0, 0).date()
+
+
+def test_update_person_including_image():
+    # test update person
+    # update_person(self, person_id, update_values, image_entity=None):
+    existing_person = models.Person(
+        first_name="Test Name",
+        last_name="Last Name",
+        email="test@test.com",
+        mobile_number = "0721231234",
+        #date_of_birth = "1984-10-01",
+        gender = "male",
+        #marriage_date = "2015-10-01",
+        marital_status = "single",
+        #egistered_date = "2020-01-01"
+    )
+    print("got here")
+    db.add(existing_person)
+    db.commit()
+    db.refresh(existing_person)
+
+    image_entity = media_models.Image(
+        description="test_image.jpg",
+        address="test_image.jpg",
+        created=datetime(2020, 1, 1, 0 ,0),
+        store="local"
+    )
+    db.add(image_entity)
+    db.commit()
+    db.refresh(image_entity)
+
+    peopleDAO.update_person(existing_person.id, {
+        "first_name": "Test Name Updated",
+        "last_name": "Last Name Updated",
+        "email": "test_updated@test.com",
+        "mobile_number": "0721231235",
+        "gender": "female",
+        "marital_status": "married",
+        "marriage_date":  datetime(2020, 1, 1, 0 ,0),
+        "registered_date": datetime(2022, 1, 1, 10, 10, 10),
+        "date_of_birth": datetime(1984, 1, 1, 10, 10, 10),
+
+    }, image_entity)
+    updated_person: Person = db.query(models.Person).filter(models.Person.id == existing_person.id).first()
+    assert updated_person.first_name == "Test Name Updated"
+    assert updated_person.last_name == "Last Name Updated"
+    assert updated_person.email == "test_updated@test.com"
+    assert updated_person.mobile_number == "0721231235"
+    assert updated_person.gender == "female"
+    assert updated_person.marital_status == "married"
+    assert updated_person.marriage_date == datetime(2020, 1, 1).date()
+    assert updated_person.registered_date == datetime(2022, 1, 1, 0, 0).date()
+    assert updated_person.date_of_birth == datetime(1984, 1, 1, 0, 0).date()
+    assert updated_person.profile_images[0].id == image_entity.id
