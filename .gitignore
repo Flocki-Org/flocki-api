@@ -130,3 +130,6 @@ dmypy.json
 
 /.idea
 images/
+
+test_db.db
+test_db.db-journal

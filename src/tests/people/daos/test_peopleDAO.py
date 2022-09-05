@@ -1,3 +1,6 @@
+from datetime import datetime
+from time import strptime
+
 from main import app
 from src.app.database import get_db, SessionLocal
 from src.app.people.daos.peopleDAO import PeopleDAO
@@ -36,9 +39,9 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 db = next(override_get_db())
+peopleDAO = PeopleDAO(db)
 
 def test_get_all():
-    peopleDAO = PeopleDAO(db)
     new_person_1 = models.Person(
         first_name="Test Name"
     )
@@ -56,7 +59,6 @@ def test_get_all():
 
 def test_get_person_by_id_person_found():
     # test get_person_by_id
-    peopleDAO = PeopleDAO(db)
     new_person_1 = models.Person(
         first_name="Test Name"
     )
@@ -70,7 +72,6 @@ def test_get_person_by_id_person_found():
 
 def test_get_person_by_id_person_not_found():
     # test get_person_by_id
-    peopleDAO = PeopleDAO(db)
     new_person_1 = models.Person(
         first_name="Test Name"
     )
@@ -79,3 +80,44 @@ def test_get_person_by_id_person_not_found():
     db.refresh(new_person_1)
     person = peopleDAO.get_person_by_id(-1)
     assert person is None
+
+def test_update_person():
+    # test update person
+    # update_person(self, person_id, update_values, image_entity=None):
+    existing_person = models.Person(
+        first_name="Test Name",
+        last_name="Last Name",
+        email="test@test.com",
+        mobile_number = "0721231234",
+        #date_of_birth = "1984-10-01",
+        gender = "male",
+        #marriage_date = "2015-10-01",
+        marital_status = "single",
+        #egistered_date = "2020-01-01"
+    )
+    print("got here")
+    db.add(existing_person)
+    db.commit()
+    db.refresh(existing_person)
+    peopleDAO.update_person(existing_person.id, {
+        "first_name": "Test Name Updated",
+        "last_name": "Last Name Updated",
+        "email": "test_updated@test.com",
+        "mobile_number": "0721231235",
+        "gender": "female",
+        "marital_status": "married",
+        "marriage_date":  datetime(2020, 1, 1, 0 ,0),
+        "registered_date": datetime(2022, 1, 1, 10, 10, 10),
+        "date_of_birth": datetime(1984, 1, 1, 10, 10, 10),
+
+    }, None)
+    updated_person = db.query(models.Person).filter(models.Person.id == existing_person.id).first()
+    assert updated_person.first_name == "Test Name Updated"
+    assert updated_person.last_name == "Last Name Updated"
+    assert updated_person.email == "test_updated@test.com"
+    assert updated_person.mobile_number == "0721231235"
+    assert updated_person.gender == "female"
+    assert updated_person.marital_status == "married"
+    assert updated_person.marriage_date == datetime(2020, 1, 1).date()
+    assert updated_person.registered_date == datetime(2022, 1, 1, 0, 0).date()
+    assert updated_person.date_of_birth == datetime(1984, 1, 1, 0, 0).date()
