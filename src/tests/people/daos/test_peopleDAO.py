@@ -314,3 +314,25 @@ def test_person_create_with_image():
     assert created_person.profile_images[0] is not None
     assert created_person.profile_images[0].image.address == "test_image.jpg"
 
+
+def test_add_person_image():
+    # test get_existing_social_media_links
+    new_person_1 = models.Person(
+        first_name="Test Name"
+    )
+    db.add(new_person_1)
+    db.commit()
+    db.refresh(new_person_1)
+
+    new_image_entity = media_models.Image(
+        description="test_image.jpg",
+        address="test_image.jpg",
+        created=datetime(2020, 1, 1, 0, 0),
+        store="local"
+    )
+
+    peopleDAO.add_person_image(new_person_1, new_image_entity)
+
+    person = db.query(models.Person).filter(models.Person.id == new_person_1.id).first()
+    assert person.profile_images[0] is not None
+    assert person.profile_images[0].image.address == "test_image.jpg"
