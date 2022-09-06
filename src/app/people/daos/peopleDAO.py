@@ -41,6 +41,7 @@ class PeopleDAO:
         self.db.add(models.SocialMediaLink(person_id=person_id, type=type, url=url))
 
     # TODO figure out what to do with household_entities
+    # TODO create person should be responsible for creating social media links as well as household entities so rollback can happen in one method
     def create_person(self, new_person, image_entity=None):
 
         self.db.add(new_person)
