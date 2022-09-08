@@ -15,7 +15,7 @@ class CreateHousehold(BaseModel):
 
     @root_validator
     def validate_leader(cls, values):
-        if values['leader_id'] is None:
+        if 'leader_id' not in values:
             raise ValueError("Leader must have an id")
         if values['leader_id'] not in values['people_ids']:
             raise ValueError("Leader must be a member of the household")
