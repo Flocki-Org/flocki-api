@@ -19,7 +19,7 @@ class HouseholdFactory:
 
         leader_response = None
         if household_entity.leader:
-            leader_response = self.people_factory.createPersonFromPersonEntity(household_entity.leader)
+            leader_response = self.people_factory.create_person_from_person_entity(household_entity.leader)
 
         address_response = ViewAddress(
             id=household_entity.address.id,
@@ -37,7 +37,7 @@ class HouseholdFactory:
         people = []
         if household_entity.people:
             for person in household_entity.people:
-                person_response = self.people_factory.createPersonFromPersonEntity(person, False)
+                person_response = self.people_factory.create_person_from_person_entity(person, False)
                 people.append(person_response)
 
         household_response = ViewHousehold(

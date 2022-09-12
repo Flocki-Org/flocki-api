@@ -53,22 +53,22 @@ class PeopleService:
         people = self.peopleDAO.get_all()
         for person in people:
             people_response.append(
-                self.peopleFactory.createPersonFromPersonEntity(person_entity=person, include_profile_image=True,
-                                                                include_households=True))
+                self.peopleFactory.create_person_from_person_entity(person_entity=person, include_profile_image=True,
+                                                                    include_households=True))
         return people_response
 
     def get_by_id(self, id):
         person_entity = self.peopleDAO.get_person_by_id(id)
         if person_entity is None:
             return None
-        return self.peopleFactory.createPersonFromPersonEntity(person_entity)
+        return self.peopleFactory.create_person_from_person_entity(person_entity)
 
     # TODO refactor this code a bit so that the local vs s3 logic can be centralized
     def get_profile_image_by_person_id(self, id):
         person_entity = self.peopleDAO.get_person_by_id(id)
         if person_entity is None:
             raise NoPersonException("No person with that Id")
-        person_with_profile_image = self.peopleFactory.createPersonFromPersonEntity(person_entity, False, True)
+        person_with_profile_image = self.peopleFactory.create_person_from_person_entity(person_entity, False, True)
         if person_with_profile_image is None:
             return None
         elif person_with_profile_image.profile_image is None:
@@ -133,7 +133,7 @@ class PeopleService:
         if household_ids is not None:
             self.update_households_for_person(household_ids, person_entity)
 
-        return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(id), include_households=True, include_profile_image=True)
+        return self.peopleFactory.create_person_from_person_entity(self.peopleDAO.get_person_by_id(id), include_households=True, include_profile_image=True)
 
     def validate_image_id(self, profile_image_id):
         if profile_image_id is not None:
@@ -191,7 +191,7 @@ class PeopleService:
         created_person = self.peopleDAO.create_person(new_person, image_entity)
         if person.household_ids is not None:
             self.add_person_to_households(created_person, person.household_ids)
-        return self.peopleFactory.createPersonFromPersonEntity(self.peopleDAO.get_person_by_id(created_person.id), include_households=True, include_profile_image=True)
+        return self.peopleFactory.create_person_from_person_entity(self.peopleDAO.get_person_by_id(created_person.id), include_households=True, include_profile_image=True)
 
     def validate_household_remove_person(self, new_household_ids, personToUpdate):
         existing_household_ids = self.household_utils.get_existing_household_ids(personToUpdate)

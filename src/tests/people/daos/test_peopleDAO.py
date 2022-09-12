@@ -1,5 +1,4 @@
 from datetime import datetime
-from time import strptime
 
 from main import app
 from src.app.database import get_db, SessionLocal
@@ -139,7 +138,6 @@ def test_update_person_including_image():
         marital_status = "single",
         #egistered_date = "2020-01-01"
     )
-    print("got here")
     db.add(existing_person)
     db.commit()
     db.refresh(existing_person)

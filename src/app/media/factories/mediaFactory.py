@@ -1,5 +1,6 @@
 from ...media.models.database import models
-from ...media.models.media import CreateImage
+from ...media.models.media import CreateImage, ViewImage
+
 
 class MediaFactory:
     def createImageEntityFromImage(self, image):
@@ -22,4 +23,11 @@ class MediaFactory:
             filename=image_entity.filename,
             description=image_entity.description,
             content_type=image_entity.content_type,
+            tags=image_entity.tags)
+
+    def createViewImageFromImageEntity(self, image_entity):
+        return ViewImage(
+            id=image_entity.id,
+            created=image_entity.created,
+            description=image_entity.description,
             tags=image_entity.tags)
