@@ -334,3 +334,4 @@ def test_add_person_image():
     person = db.query(models.Person).filter(models.Person.id == new_person_1.id).first()
     assert person.profile_images[0] is not None
     assert person.profile_images[0].image.address == "test_image.jpg"
+

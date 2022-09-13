@@ -3,7 +3,7 @@ from ...media.models.media import CreateImage, ViewImage
 
 
 class MediaFactory:
-    def createImageEntityFromImage(self, image):
+    def create_image_entity_from_image(self, image):
         media_entity = models.Image(
                 store=image.store,
                 address=image.address,
@@ -14,7 +14,7 @@ class MediaFactory:
                 tags=image.tags)
         return media_entity
 
-    def createImageFromImageEntity(self, image_entity):
+    def create_image_from_image_entity(self, image_entity):
         return CreateImage(
             id=image_entity.id,
             store=image_entity.store,
@@ -25,7 +25,7 @@ class MediaFactory:
             content_type=image_entity.content_type,
             tags=image_entity.tags)
 
-    def createViewImageFromImageEntity(self, image_entity):
+    def create_view_image_from_image_entity(self, image_entity):
         return ViewImage(
             id=image_entity.id,
             created=image_entity.created,

@@ -50,7 +50,7 @@ class HouseholdFactory:
         if include_household_image and household_entity.household_images:
             images = sorted(household_entity.household_images, key=lambda x: x.id, reverse=True)
             if len(images) > 0 and images[0] is not None:
-                household_response.household_image = self.media_factory.createImageFromImageEntity(images[0].image)
+                household_response.household_image = self.media_factory.create_image_from_image_entity(images[0].image)
 
         return household_response
 
@@ -71,6 +71,6 @@ class HouseholdFactory:
         images = sorted(household_entity.household_images, key=lambda x: x.id, reverse=True)
         household_image_list: List[ViewImage] = []
         for image in images:
-            household_image_list.append(self.media_factory.createImageFromImageEntity(image.image))
+            household_image_list.append(self.media_factory.create_image_from_image_entity(image.image))
         return household_image_list
 

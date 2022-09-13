@@ -1,10 +1,11 @@
 
 from datetime import datetime
 from unittest import mock
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, call
 
 from src.app.media.factories.mediaFactory import MediaFactory
 from src.app.media.models.media import CreateImage, ViewImage
+from src.app.people.factories.addressFactory import AddressFactory
 from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.database import models
 from src.app.people.models.people import SocialMediaLink
@@ -30,10 +31,11 @@ def test_create_basic_person_view_from_person_entity():
     assert person_view.first_name == "Test Name"
     assert person_view.last_name == "Last Name"
 
-@mock.patch.object(MediaFactory, 'createViewImageFromImageEntity')
-def test_create_person_from_person_entity(mock_createViewImageFromImageEntity):
-    media_factory = MediaFactory()
-    pfactory = PeopleFactory(media_factory=media_factory)
+
+@mock.patch.object(AddressFactory, 'create_address_from_address_entity')
+def test_create_person_from_person_entity(mock_create_address_from_address_entity):
+    address_factory = AddressFactory()
+    pfactory = PeopleFactory(address_factory=address_factory)
 
     person_entity = models.Person(
         id=1,
@@ -73,11 +75,24 @@ def test_create_person_from_person_entity(mock_createViewImageFromImageEntity):
         created=datetime(2022, 1, 1, 0, 0),
         store="local"
     )
-    personImageEntity_1 = models.PersonImage(id=1, person_id=person_entity.id, image=image_entity_1)
-    personImageEntity_2 = models.PersonImage(id=2, person_id=person_entity.id, image=image_entity_2)
-    person_entity.profile_images = [personImageEntity_1, personImageEntity_2]
+    person_image_entity_1 = models.PersonImage(id=1, person_id=person_entity.id, image=image_entity_1)
+    person_image_entity_2 = models.PersonImage(id=2, person_id=person_entity.id, image=image_entity_2)
+    person_entity.profile_images = [person_image_entity_1, person_image_entity_2]
 
-    full_person_view = pfactory.create_person_from_person_entity(person_entity, include_households=False, include_profile_image=True)
+    home_address = models.Address(
+        id=1,
+        type="home",
+    )
+
+    business_address = models.Address(
+        id=2,
+        type="business",
+    )
+    people_address_home = models.PeopleAddress(id=1, person_id=person_entity.id, address=home_address)
+    people_address_business = models.PeopleAddress(id=2, person_id=person_entity.id, address=business_address)
+    person_entity.addresses = [people_address_home, people_address_business]
+
+    full_person_view = pfactory.create_person_from_person_entity(person_entity, include_households=False, include_profile_image=False)
 
     assert full_person_view.id == 1
     assert full_person_view.first_name == person_entity.first_name
@@ -87,7 +102,66 @@ def test_create_person_from_person_entity(mock_createViewImageFromImageEntity):
     assert full_person_view.gender == "male"
     assert full_person_view.marital_status == "single"
 
+    mock_create_address_from_address_entity.assert_has_calls([call(home_address), call(business_address)], any_order=True)
+    address_factory.create_address_from_address_entity.assert_has_calls([call(home_address), call(business_address)], any_order=True)
+
+@mock.patch.object(MediaFactory, 'create_view_image_from_image_entity')
+def test_create_person_from_person_entity_with_image(mock_createViewImageFromImageEntity):
+    media_factory = MediaFactory()
+    pfactory = PeopleFactory(media_factory=media_factory)
+
+    person_entity = models.Person(
+        id=1,
+    )
+
+    image_entity_1 = media_models.Image(
+        id=1,
+        description="test_image.jpg",
+        address="test_image.jpg",
+        created=datetime(2020, 1, 1, 0, 0),
+        store="local"
+    )
+
+    image_entity_2 = media_models.Image(
+        id=2,
+        description="test_image.jpg",
+        address="test_image.jpg",
+        created=datetime(2022, 1, 1, 0, 0),
+        store="local"
+    )
+    person_image_entity_1 = models.PersonImage(id=1, person_id=person_entity.id, image=image_entity_1)
+    person_image_entity_2 = models.PersonImage(id=2, person_id=person_entity.id, image=image_entity_2)
+    person_entity.profile_images = [person_image_entity_1, person_image_entity_2]
+
+    full_person_view = pfactory.create_person_from_person_entity(person_entity, include_households=False, include_profile_image=True)
+
+    assert full_person_view.id == 1
+
     mock_createViewImageFromImageEntity.assert_called_with(image_entity_2)
-    media_factory.createViewImageFromImageEntity.assert_called_with(image_entity_2)
-    #assert full_person_view.profile_image.id == image_entity_1.description
-    #assert full_person_view.profile_image.description == image_entity_1.description
+    media_factory.create_view_image_from_image_entity.assert_called_with(image_entity_2)
+
+
+@mock.patch('src.app.people.factories.peopleFactory.PeopleFactory.create_household_view')
+def test_create_person_from_person_entity_with_households(mock_create_household_view):
+    address_factory = AddressFactory()
+    pfactory = PeopleFactory(address_factory=address_factory)
+
+    person_entity = models.Person(
+        id=1,
+    )
+
+    household_1 = models.Household(
+        id=1,
+    )
+    household_2 = models.Household(
+        id=2,
+    )
+
+    person_entity.households = [household_1, household_2]
+
+    full_person_view = pfactory.create_person_from_person_entity(person_entity, include_households=True, include_profile_image=False)
+
+    assert full_person_view.id == 1
+
+    mock_create_household_view.assert_has_calls([call(household_1), call(household_2)], any_order=True)
+

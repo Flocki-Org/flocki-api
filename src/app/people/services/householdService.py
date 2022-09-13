@@ -99,7 +99,7 @@ class HouseholdService:
             description = f"Profile image for household with ID: {household_entity.id}"
             image_entity = self.media_service.upload_image(file, filename, description)
             self.household_DAO.add_household_image(household_entity, image_entity)
-            return self.media_factory.createImageFromImageEntity(image_entity)
+            return self.media_factory.create_image_from_image_entity(image_entity)
 
     def get_household_image_by_household_id(self, id):
         household_entity = self.household_DAO.get_household_by_id(id)

@@ -224,7 +224,7 @@ class PeopleService:
             description = f"Profile image for user: {personToUpdate.first_name}  {personToUpdate.last_name}  with ID: {personToUpdate.id}"
             image_entity = self.media_service.upload_image(file, filename, description)
             self.peopleDAO.add_person_image(personToUpdate, image_entity)
-            return self.media_factory.createImageFromImageEntity(image_entity)
+            return self.media_factory.create_image_from_image_entity(image_entity)
 
     def get_profile_images_by_person_id(self, id):
         person_entity = self.peopleDAO.get_person_by_id(id)
@@ -245,3 +245,5 @@ class PeopleService:
         for household_id in household_entity_ids:
             household_entity = self.household_DAO.get_household_by_id(household_id)
             self.household_DAO.remove_person_from_household(household_entity, person)
+
+

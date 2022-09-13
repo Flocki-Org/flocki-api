@@ -57,7 +57,7 @@ class PeopleFactory:
         if include_profile_image and person_entity.profile_images:
             images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
             if len(images) > 0 and images[0] is not None:
-                person_response.profile_image = self.media_factory.createViewImageFromImageEntity(images[0].image)
+                person_response.profile_image = self.media_factory.create_view_image_from_image_entity(images[0].image)
 
         return person_response
 
@@ -79,7 +79,7 @@ class PeopleFactory:
         person_images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
         profile_image_list: List[ViewImage] = []
         for person_image in person_images:
-            profile_image_list.append(self.media_factory.createImageFromImageEntity(person_image.image))
+            profile_image_list.append(self.media_factory.create_image_from_image_entity(person_image.image))
         return profile_image_list
 
     def createPersonEntityFromPerson(self, person, address_entities=None) -> models.Person:

@@ -68,3 +68,4 @@ class PeopleDAO:
         )
         self.db.add(person_image)
         self.db.commit()
+

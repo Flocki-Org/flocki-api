@@ -69,11 +69,11 @@ class MediaService:
         else:
             raise UnsupportedImageStoreException("Unsupported image store: " + settings.flocki_image_store)
 
-        image_entity = self.media_factory.createImageEntityFromImage(image)
+        image_entity = self.media_factory.create_image_entity_from_image(image)
         image_entity = self.media_DAO.add_image(image_entity)
         return image_entity
 
     # create image is intended to be called by the media router as it returns the image model, not the entity. Upload
     # image returns the entity and is to be called by another service (e.g. peopleService)
     def create_image(self, file, filename, description=None):
-        return self.media_factory.createImageFromImageEntity(self.upload_image(file, filename, description))
+        return self.media_factory.create_image_from_image_entity(self.upload_image(file, filename, description))
