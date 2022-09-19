@@ -59,6 +59,9 @@ class UpdateHousehold(BaseModel):
         }
 
 class ViewHousehold(BaseModel):
+    def __eq__(self, other):
+        return self.id == other.id
+
     id: int = Field(None)
     leader: BasicViewPerson = Field(title="The designated leader of the household")
     address: ViewAddress = Field(title="An addresses")

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from main import app
+#from main import app
 from src.app.database import get_db, SessionLocal
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.media.models.database import models as media_models
@@ -38,7 +38,6 @@ def override_get_db():
 
 
 
-app.dependency_overrides[get_db] = override_get_db
 db = next(override_get_db())
 peopleDAO = PeopleDAO(db)
 
