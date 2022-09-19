@@ -220,3 +220,42 @@ def test_create_household_view(mock_create_basic_person_view_from_person_entity,
     mock_create_basic_person_view_from_person_entity.assert_has_calls(
         [call(leader_entity), call(leader_entity), call(person_entity_2)], any_order=True)
     mock_create_address_from_address_entity.assert_called_with(address_entity)
+
+@mock.patch.object(MediaFactory, 'create_image_from_image_entity')
+def test_create_profile_image_list_from_entity_list(mock_create_image_from_image_entity):
+    media_factory = MediaFactory()
+    pfactory = PeopleFactory(media_factory=media_factory)
+
+    person_entity = models.Person(
+        id=1,
+    )
+
+    personImage_1 = models.PersonImage(
+        id=1,
+        person_id=1,
+        image=media_models.Image(
+            id=1,
+            description="test_image.jpg",
+            address="test_image.jpg",
+            created=datetime(2020, 1, 1, 0, 0),
+            store="local"
+        )
+    )
+
+    personImage_2 = models.PersonImage(
+        id=2,
+        person_id=1,
+        image=media_models.Image(
+            id=2,
+            description="test_image_2.jpg",
+            address="test_image_2.jpg",
+            created=datetime(2020, 1, 1, 0, 0),
+            store="local"
+        )
+    )
+
+    person_entity.profile_images = [personImage_1, personImage_2]
+
+    profile_image_list = pfactory.create_profile_image_list_from_entity_list(person_entity)
+
+    mock_create_image_from_image_entity.assert_has_calls([call(personImage_1.image), call(personImage_2.image)], any_order=True)
