@@ -183,7 +183,7 @@ class PeopleService:
         address_entities = []
         for address_id in person.addresses:
             address_entities.append(self.addressDAO.get_address_by_id(address_id))
-        new_person = self.peopleFactory.createPersonEntityFromPerson(person, address_entities)
+        new_person = self.peopleFactory.create_person_entity_from_create_person(person, address_entities)
 
         if new_person.registered_date is None:
             new_person.registered_date = datetime.now()

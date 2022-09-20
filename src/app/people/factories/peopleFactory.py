@@ -82,7 +82,7 @@ class PeopleFactory:
             profile_image_list.append(self.media_factory.create_image_from_image_entity(person_image.image))
         return profile_image_list
 
-    def createPersonEntityFromPerson(self, person, address_entities=None) -> models.Person:
+    def create_person_entity_from_create_person(self, person: CreatePerson, address_entities=None) -> models.Person:
         new_person = models.Person(
             first_name=person.first_name,
             last_name=person.last_name,

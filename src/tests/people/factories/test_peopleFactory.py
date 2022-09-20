@@ -3,12 +3,12 @@ from unittest import mock
 from unittest.mock import MagicMock, Mock, call
 
 from src.app.media.factories.mediaFactory import MediaFactory
-from src.app.media.models.media import CreateImage, ViewImage
 from src.app.people.factories.addressFactory import AddressFactory
 from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.database import models
 from src.app.people.models.household import ViewHousehold
-from src.app.people.models.people import SocialMediaLink, BasicViewPerson, ViewAddress
+from src.app.people.models.people import SocialMediaLink, BasicViewPerson, ViewAddress, CreatePerson, Gender, \
+    MaritalStatus
 from src.app.media.models.database import models as media_models
 
 # Mock.patch("src.app.media.factories.mediaFactory.MediaFactory")
@@ -47,12 +47,12 @@ def test_create_person_from_person_entity(mock_create_address_from_address_entit
         gender="male",
         marital_status="single",
     )
-    sml_fb: SocialMediaLink = models.SocialMediaLink(
+    sml_fb: models.SocialMediaLink = models.SocialMediaLink(
         person_id=person_entity.id,
         type="facebook",
         url="https://www.facebook.com/test")
 
-    sml_twitter: SocialMediaLink = models.SocialMediaLink(
+    sml_twitter: models.SocialMediaLink = models.SocialMediaLink(
         person_id=person_entity.id,
         type="twitter",
         url="https://www.twitter.com/test")
@@ -259,3 +259,74 @@ def test_create_profile_image_list_from_entity_list(mock_create_image_from_image
     profile_image_list = pfactory.create_profile_image_list_from_entity_list(person_entity)
 
     mock_create_image_from_image_entity.assert_has_calls([call(personImage_1.image), call(personImage_2.image)], any_order=True)
+
+def test_create_person_entity_from_create_person():
+    person = CreatePerson(
+        first_name="test",
+        last_name="test",
+        email="test@test.com",
+        mobile_number="0721234567",
+        date_of_birth=datetime(1980, 1, 1, 0, 0).date(),
+        gender=Gender.male,
+        marriage_date=datetime(2020, 1, 1).date(),
+        marital_status=MaritalStatus.married,
+        registered_date=datetime(1980, 1, 1).date(),
+        social_media_links= [SocialMediaLink(type="twitter",url="https://www.twitter.com/test"), SocialMediaLink(type="facebook",url="https://www.facebook.com/test")]
+    )
+
+    person_entity = people_factory.create_person_entity_from_create_person(person)
+
+    assert person_entity.first_name == person.first_name
+    assert person_entity.last_name == person.last_name
+    assert person_entity.email == person.email
+    assert person_entity.mobile_number == person.mobile_number
+    assert person_entity.date_of_birth == person.date_of_birth
+    assert person_entity.gender == person.gender
+    assert person_entity.marriage_date == person.marriage_date
+    assert person_entity.marital_status == person.marital_status
+    assert person_entity.registered_date == person.registered_date
+    assert len(person_entity.social_media_links) == 2
+    assert person_entity.social_media_links[0].type == person.social_media_links[0].type
+    assert person_entity.social_media_links[0].url == person.social_media_links[0].url
+    assert person_entity.social_media_links[1].type == person.social_media_links[1].type
+    assert person_entity.social_media_links[1].url == person.social_media_links[1].url
+
+
+def test_create_person_entity_from_create_person_with_addresses():
+    person = CreatePerson(
+        first_name="test",
+        last_name="test",
+        email="test@test.com",
+        mobile_number="0721234567",
+        date_of_birth=datetime(1980, 1, 1, 0, 0).date(),
+        gender=Gender.male,
+        marriage_date=datetime(2020, 1, 1).date(),
+        marital_status=MaritalStatus.married,
+        registered_date=datetime(1980, 1, 1).date(),
+        social_media_links= [SocialMediaLink(type="twitter",url="https://www.twitter.com/test"), SocialMediaLink(type="facebook",url="https://www.facebook.com/test")]
+    )
+
+    address_entity_1 = models.Address(id=1)
+    address_entity_2 = models.Address(id=2)
+    address_entities = [address_entity_1, address_entity_2]
+    person_entity = people_factory.create_person_entity_from_create_person(person, address_entities)
+
+    assert person_entity.first_name == person.first_name
+    assert person_entity.last_name == person.last_name
+    assert person_entity.email == person.email
+    assert person_entity.mobile_number == person.mobile_number
+    assert person_entity.date_of_birth == person.date_of_birth
+    assert person_entity.gender == person.gender
+    assert person_entity.marriage_date == person.marriage_date
+    assert person_entity.marital_status == person.marital_status
+    assert person_entity.registered_date == person.registered_date
+    assert len(person_entity.social_media_links) == 2
+    assert person_entity.social_media_links[0].type == person.social_media_links[0].type
+    assert person_entity.social_media_links[0].url == person.social_media_links[0].url
+    assert person_entity.social_media_links[1].type == person.social_media_links[1].type
+    assert person_entity.social_media_links[1].url == person.social_media_links[1].url
+
+    assert len(person_entity.addresses) == 2
+    assert person_entity.addresses[0].address.id == address_entity_1.id
+    assert person_entity.addresses[1].address.id == address_entity_2.id
+
