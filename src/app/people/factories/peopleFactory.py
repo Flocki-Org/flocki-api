@@ -103,10 +103,7 @@ class PeopleFactory:
             # TODO consider querying DB if an address already exists with the given values. otherwise you will end up with
             # multiple rows in the DB for the same address
             for address_entity in address_entities:
-                pa = models.PeopleAddress(
-                    address=address_entity,
-                    person=new_person
-                )
+                pa = models.PeopleAddress(address=address_entity, person=new_person)
                 new_person.addresses.append(pa)
 
         return new_person

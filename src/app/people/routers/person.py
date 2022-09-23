@@ -94,3 +94,4 @@ def add_person(person: CreatePerson, people_service: PeopleService = Depends(Peo
     except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException,
                 NoImageException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
+

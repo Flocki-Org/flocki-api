@@ -246,4 +246,3 @@ class PeopleService:
             household_entity = self.household_DAO.get_household_by_id(household_id)
             self.household_DAO.remove_person_from_household(household_entity, person)
 
-
