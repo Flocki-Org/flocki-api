@@ -71,13 +71,17 @@ class PeopleService:
         person_with_profile_image = self.peopleFactory.create_person_from_person_entity(person_entity, False, True)
         if person_with_profile_image is None:
             return None
-        elif person_with_profile_image.profile_image is None:
+        else:
+            full_profile_image_info = self.media_DAO.get_image_by_id(person_with_profile_image.profile_image.id)
+
+            if full_profile_image_info is None:
+                return None
+            elif full_profile_image_info.store is not None and full_profile_image_info.store == 'local':
+                return FileResponse(full_profile_image_info.address)
+            elif full_profile_image_info.store is not None and full_profile_image_info.store == 's3':
+                raise NotImplementedError("S3 not implemented")
+
             return None
-        elif person_with_profile_image.profile_image.store is not None and person_with_profile_image.profile_image.store == 'local':
-            return FileResponse(person_with_profile_image.profile_image.address)
-        elif person_with_profile_image.profile_image.store is not None and person_with_profile_image.profile_image.store == 's3':
-            return NotImplementedError("S3 not implemented")
-        return
 
     # TODO fis this code for new address int array on person
     def update_person(self, id: int, person: UpdatePerson):
