@@ -1,6 +1,6 @@
 from datetime import datetime
 from unittest import mock
-from unittest.mock import MagicMock, Mock, call
+from unittest.mock import call
 
 from src.app.media.factories.mediaFactory import MediaFactory
 from src.app.people.factories.addressFactory import AddressFactory
@@ -11,7 +11,6 @@ from src.app.people.models.people import SocialMediaLink, BasicViewPerson, ViewA
     MaritalStatus
 from src.app.media.models.database import models as media_models
 
-# Mock.patch("src.app.media.factories.mediaFactory.MediaFactory")
 
 people_factory = PeopleFactory()
 
@@ -271,7 +270,7 @@ def test_create_person_entity_from_create_person():
         marriage_date=datetime(2020, 1, 1).date(),
         marital_status=MaritalStatus.married,
         registered_date=datetime(1980, 1, 1).date(),
-        social_media_links= [SocialMediaLink(type="twitter",url="https://www.twitter.com/test"), SocialMediaLink(type="facebook",url="https://www.facebook.com/test")]
+        social_media_links= [SocialMediaLink(type="twitter", url="https://www.twitter.com/test"), SocialMediaLink(type="facebook",url="https://www.facebook.com/test")]
     )
 
     person_entity = people_factory.create_person_entity_from_create_person(person)
@@ -326,7 +325,7 @@ def test_create_person_entity_from_create_person_with_addresses():
     assert person_entity.social_media_links[1].type == person.social_media_links[1].type
     assert person_entity.social_media_links[1].url == person.social_media_links[1].url
 
-    # TODO There is some issue with this test case that whenever addresses is added to the personaddress it gets duplicated.
+    # TODO FIX THIS TESTCASE. There is some issue with this test case that whenever addresses is added to the personaddress it gets duplicated.
     #assert len(person_entity.addresses) == 2
     assert address_entity_1.id in [address.address_id for address in person_entity.addresses]
     assert address_entity_2.id in [address.address_id for address in person_entity.addresses]

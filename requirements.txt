@@ -27,6 +27,7 @@ pyparsing==3.0.9
 pytest==7.1.2
 pytest-cov==3.0.0
 pytest-mock==3.8.2
+pytest-unordered==0.5.1
 python-dotenv==0.20.0
 python-jose==3.3.0
 python-multipart==0.0.5
