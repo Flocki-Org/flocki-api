@@ -327,6 +327,6 @@ def test_create_person_entity_from_create_person_with_addresses():
 
     # TODO FIX THIS TESTCASE. There is some issue with this test case that whenever addresses is added to the personaddress it gets duplicated.
     #assert len(person_entity.addresses) == 2
-    assert address_entity_1.id in [address.address_id for address in person_entity.addresses]
-    assert address_entity_2.id in [address.address_id for address in person_entity.addresses]
+    assert address_entity_1.id in [address.address.id for address in person_entity.addresses]
+    assert address_entity_2.id in [address.address.id for address in person_entity.addresses]
 

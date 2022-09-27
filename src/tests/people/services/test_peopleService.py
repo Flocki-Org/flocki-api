@@ -7,9 +7,12 @@ from unittest.mock import call
 from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.models.media import ViewImage
 from src.app.media.models.database import models as media_models
+from src.app.media.services.mediaService import NoImageException
+from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.people import FullViewPerson
+from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.peopleService import PeopleService, NoPersonException
 from src.app.people.models.database import models
 from pytest_unordered import unordered
@@ -155,4 +158,47 @@ def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_c
     response = people_service.get_profile_image_by_person_id(1)
 
     assert response == None
+
+#TODO test update person
+
+@mock.patch.object(MediaDAO, 'get_image_by_id')
+def test_validate_image_id_invalid(mock_get_image_by_id):
+    mediaDAO = MediaDAO()
+    people_service = PeopleService( media_DAO=mediaDAO)
+    mock_get_image_by_id.return_value = None
+    with pytest.raises(NoImageException) as e:
+        people_service.validate_image_id(1)
+
+    assert e is not None
+
+@mock.patch.object(MediaDAO, 'get_image_by_id')
+def test_validate_image_id_valid(mock_get_image_by_id):
+    mediaDAO = MediaDAO()
+    people_service = PeopleService( media_DAO=mediaDAO)
+    mock_get_image_by_id.return_value = media_models.Image(id=1, store="local", address="path/to/image.jpg")
+
+    people_service.validate_image_id(1)
+
+    # no exception has been raised. test passes
+
+@mock.patch.object(AddressDAO, 'get_address_by_id')
+def test_validate_addresses_invalid(mock_get_address_by_id):
+    addressDAO = AddressDAO()
+    people_service = PeopleService(addressDAO=addressDAO)
+    mock_get_address_by_id.return_value = None
+    with pytest.raises(NoAddressException) as e:
+        people_service.validate_addresses([1])
+
+    assert e is not None
+
+
+@mock.patch.object(AddressDAO, 'get_address_by_id')
+def test_validate_addresses_valid(mock_get_address_by_id):
+    addressDAO = AddressDAO()
+    people_service = PeopleService(addressDAO=addressDAO)
+    mock_get_address_by_id.return_value = models.Address(id=1)
+
+    people_service.validate_addresses([1])
+
+    # no exception has been raised. test passes
 
