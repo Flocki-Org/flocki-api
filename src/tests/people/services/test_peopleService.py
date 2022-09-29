@@ -314,7 +314,7 @@ def test_update_person_person_not_found(mock_get_person_by_id):
         people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith"))
 
 
-@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households', autospec=True)
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
 def test_update_person_person_invalid_household_provided(mock_get_person_by_id, mock_validate_households):
     peopleDAO = PeopleDAO()
@@ -330,7 +330,7 @@ def test_update_person_person_invalid_household_provided(mock_get_person_by_id, 
 
 
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_household_remove_person')
-@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households', autospec=True)
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
 def test_update_person_person_unable_to_remove_person_from_household(mock_get_person_by_id, mock_validate_households,
                                                                      mock_validate_household_remove_person):
@@ -349,7 +349,7 @@ def test_update_person_person_unable_to_remove_person_from_household(mock_get_pe
 
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_household_remove_person')
-@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households', autospec=True)
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
 def test_update_person_person_unable_to_remove_person_from_household(mock_get_person_by_id, mock_validate_households,
                                                                      mock_validate_household_remove_person, mock_validate_addresses):
@@ -370,7 +370,7 @@ def test_update_person_person_unable_to_remove_person_from_household(mock_get_pe
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_image_id')
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_household_remove_person')
-@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households', autospec=True)
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
 def test_update_person_person_unable_to_remove_person_from_household(mock_get_person_by_id, mock_validate_households,
                                                                      mock_validate_household_remove_person, mock_validate_addresses,
@@ -390,7 +390,3 @@ def test_update_person_person_unable_to_remove_person_from_household(mock_get_pe
         people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith", profile_image_id=1))
 
 
-#
-# @mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
-# @mock.patch('src.app.people.services.peopleService.PeopleService.validate_household_remove_person')
-# @mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
