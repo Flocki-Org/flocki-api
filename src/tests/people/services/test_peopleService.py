@@ -13,7 +13,8 @@ from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.people import FullViewPerson, UpdatePerson, SocialMediaLink
 from src.app.people.services.addressService import NoAddressException
-from src.app.people.services.peopleService import PeopleService, NoPersonException
+from src.app.people.services.peopleService import PeopleService, NoPersonException, \
+    NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException
 from src.app.people.models.database import models
 from pytest_unordered import unordered
 
@@ -313,15 +314,83 @@ def test_update_person_person_not_found(mock_get_person_by_id):
         people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith"))
 
 
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households', autospec=True)
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
-def test_update_person_person_not_found(mock_get_person_by_id):
+def test_update_person_person_invalid_household_provided(mock_get_person_by_id, mock_validate_households):
     peopleDAO = PeopleDAO()
     people_service = PeopleService(peopleDAO=peopleDAO)
+    existing_person = models.Person(id=1, first_name="John")
+    mock_get_person_by_id.return_value = existing_person
 
-    mock_get_person_by_id.return_value = None
+    # mock validate households to raise an exception
+    mock_validate_households.side_effect = NoHouseholdExceptionForPersonCreation
 
-    with pytest.raises(NoPersonException):
+    with pytest.raises(NoHouseholdExceptionForPersonCreation):
         people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith"))
 
 
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_household_remove_person')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households', autospec=True)
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+def test_update_person_person_unable_to_remove_person_from_household(mock_get_person_by_id, mock_validate_households,
+                                                                     mock_validate_household_remove_person):
+    peopleDAO = PeopleDAO()
+    people_service = PeopleService(peopleDAO=peopleDAO)
+    existing_person = models.Person(id=1, first_name="John")
+    mock_get_person_by_id.return_value = existing_person
 
+    # mock validate households to raise an exception
+    mock_validate_households.return_value = None
+    mock_validate_household_remove_person.side_effect = UnableToRemoveLeaderFromHouseholdException
+
+    with pytest.raises(UnableToRemoveLeaderFromHouseholdException):
+        people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith"))
+
+
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_household_remove_person')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households', autospec=True)
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+def test_update_person_person_unable_to_remove_person_from_household(mock_get_person_by_id, mock_validate_households,
+                                                                     mock_validate_household_remove_person, mock_validate_addresses):
+    peopleDAO = PeopleDAO()
+    people_service = PeopleService(peopleDAO=peopleDAO)
+    existing_person = models.Person(id=1, first_name="John")
+    mock_get_person_by_id.return_value = existing_person
+
+    # mock validate households to raise an exception
+    mock_validate_households.return_value = None
+    mock_validate_household_remove_person.return_value = None
+    mock_validate_addresses.side_effect = NoAddressException
+
+    with pytest.raises(NoAddressException):
+        people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith"))
+
+
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_image_id')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_household_remove_person')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households', autospec=True)
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+def test_update_person_person_unable_to_remove_person_from_household(mock_get_person_by_id, mock_validate_households,
+                                                                     mock_validate_household_remove_person, mock_validate_addresses,
+                                                                     mock_validate_image_id):
+    peopleDAO = PeopleDAO()
+    people_service = PeopleService(peopleDAO=peopleDAO)
+    existing_person = models.Person(id=1, first_name="John")
+    mock_get_person_by_id.return_value = existing_person
+
+    # mock validate households to raise an exception
+    mock_validate_households.return_value = None
+    mock_validate_household_remove_person.return_value = None
+    mock_validate_addresses.return_value = None
+    mock_validate_image_id.side_effect = NoImageException("Image with id: 1 does not exist")
+    # test that update_person raises NoImageException(message) when validate_image_id raises NoImageException
+    with pytest.raises(NoImageException):
+        people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith", profile_image_id=1))
+
+
+#
+# @mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
+# @mock.patch('src.app.people.services.peopleService.PeopleService.validate_household_remove_person')
+# @mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
