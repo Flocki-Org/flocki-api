@@ -58,6 +58,7 @@ class UpdateHousehold(BaseModel):
             }
         }
 
+
 class ViewHousehold(BaseModel):
     def __eq__(self, other):
         return self.id == other.id
@@ -67,8 +68,5 @@ class ViewHousehold(BaseModel):
     address: ViewAddress = Field(title="An addresses")
     household_image: CreateImage = Field(None, title="The image of this household")
     people: List[BasicViewPerson] = Field([], title="A list of people belonging to the household")
-
-
-
 
 

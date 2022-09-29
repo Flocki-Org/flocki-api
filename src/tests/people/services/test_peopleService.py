@@ -13,10 +13,12 @@ from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.people import FullViewPerson, UpdatePerson, SocialMediaLink
 from src.app.people.services.addressService import NoAddressException
+from src.app.people.services.householdUtils import HouseholdUtils
 from src.app.people.services.peopleService import PeopleService, NoPersonException, \
     NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException
 from src.app.people.models.database import models
 from pytest_unordered import unordered
+from src.app.people.daos.householdDAO import HouseholdDAO
 
 
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
@@ -385,8 +387,56 @@ def test_update_person_person_unable_to_remove_person_from_household(mock_get_pe
     mock_validate_household_remove_person.return_value = None
     mock_validate_addresses.return_value = None
     mock_validate_image_id.side_effect = NoImageException("Image with id: 1 does not exist")
-    # test that update_person raises NoImageException(message) when validate_image_id raises NoImageException
     with pytest.raises(NoImageException):
         people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith", profile_image_id=1))
 
+@mock.patch.object(MediaDAO, 'get_image_by_id')
+def test_validate_image_id(mock_get_image_by_id):
+    mediaDAO = MediaDAO()
+    people_service = PeopleService(media_DAO=mediaDAO)
+    mock_get_image_by_id.return_value = None
+    with pytest.raises(NoImageException):
+        people_service.validate_image_id(1)
+
+
+@mock.patch.object(AddressDAO, 'get_address_by_id')
+def test_validate_addresses(mock_get_address_by_id):
+    addressDAO = AddressDAO()
+    people_service = PeopleService(addressDAO=addressDAO)
+    mock_get_address_by_id.return_value = None
+    with pytest.raises(NoAddressException):
+        people_service.validate_addresses([1])
+
+
+@mock.patch.object(HouseholdDAO, 'get_household_by_id')
+@mock.patch.object(HouseholdDAO, 'remove_person_from_household')
+@mock.patch.object(HouseholdDAO, 'add_person_to_household')
+@mock.patch.object(HouseholdUtils, 'get_household_ids_to_remove')
+@mock.patch.object(HouseholdUtils, 'get_household_ids_to_add')
+@mock.patch.object(HouseholdUtils, 'get_existing_household_ids')
+def test_update_households_for_persons(mock_get_existing_household_ids, mock_get_household_ids_to_add, mock_get_household_ids_to_remove,
+                                       mock_add_person_to_household, mock_remove_person_from_household, mock_get_household_by_id):
+    householdUtils = HouseholdUtils()
+    householdDAO = HouseholdDAO()
+    people_service = PeopleService(household_utils=householdUtils, household_DAO=householdDAO)
+    mock_get_existing_household_ids.return_value = [1, 2]
+    mock_get_household_ids_to_add.return_value = [3]
+    mock_get_household_ids_to_remove.return_value = [1]
+    household_1 = models.Household(id=1, leader_id=1)
+    household_3 = models.Household(id=3, leader_id=2)
+    def side_effect(household_id):
+        if(household_id == 1):
+            return household_1
+        elif(household_id == 3):
+            return household_3
+
+    mock_get_household_by_id.side_effect = side_effect
+
+    #Person is not relevant in this call because of the mocking.
+    person_entity = models.Person(id=1)
+    people_service.update_households_for_person([2, 3], person_entity)
+
+    mock_get_household_by_id.assert_has_calls([call(1), call(3)], any_order=True)
+    mock_add_person_to_household.assert_called_once_with(household_3, person_entity)
+    mock_remove_person_from_household.assert_called_once_with(household_1, person_entity)
 
