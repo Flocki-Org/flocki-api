@@ -202,6 +202,8 @@ def test_validate_addresses_valid(mock_get_address_by_id):
 
     # no exception has been raised. test passes
 
+#TODO the update person test can be expanded to test a lot more of its paths. But for now, this will do.
+
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
 @mock.patch('src.app.people.services.peopleService.PeopleService.update_households_for_person')
 @mock.patch.object(PeopleDAO, 'update_person')
@@ -298,4 +300,28 @@ def test_update_person(mock_get_person_by_id, mock_validate_households, mock_val
     mock_update_person.assert_called_with(1, update_values, image_entity)
     mock_update_households_for_person.assert_has_calls([call(updated_household_ids, existing_person)])
     mock_create_person_from_person_entity.call_count == 1
+
+
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+def test_update_person_person_not_found(mock_get_person_by_id):
+    peopleDAO = PeopleDAO()
+    people_service = PeopleService(peopleDAO=peopleDAO)
+
+    mock_get_person_by_id.return_value = None
+
+    with pytest.raises(NoPersonException):
+        people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith"))
+
+
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+def test_update_person_person_not_found(mock_get_person_by_id):
+    peopleDAO = PeopleDAO()
+    people_service = PeopleService(peopleDAO=peopleDAO)
+
+    mock_get_person_by_id.return_value = None
+
+    with pytest.raises(NoPersonException):
+        people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith"))
+
+
 
