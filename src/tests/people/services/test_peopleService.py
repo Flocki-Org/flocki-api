@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from fastapi.responses import FileResponse
 
@@ -11,7 +13,9 @@ from src.app.media.services.mediaService import NoImageException
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
-from src.app.people.models.people import FullViewPerson, UpdatePerson, SocialMediaLink
+from src.app.people.models.household import ViewHousehold
+from src.app.people.models.people import FullViewPerson, UpdatePerson, SocialMediaLink, CreatePerson, Gender, \
+    MaritalStatus, ViewAddress, BasicViewPerson
 from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.householdUtils import HouseholdUtils
 from src.app.people.services.peopleService import PeopleService, NoPersonException, \
@@ -19,6 +23,7 @@ from src.app.people.services.peopleService import PeopleService, NoPersonExcepti
 from src.app.people.models.database import models
 from pytest_unordered import unordered
 from src.app.people.daos.householdDAO import HouseholdDAO
+from src.app.utils.DateUtils import DateUtils
 
 
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
@@ -439,4 +444,108 @@ def test_update_households_for_persons(mock_get_existing_household_ids, mock_get
     mock_get_household_by_id.assert_has_calls([call(1), call(3)], any_order=True)
     mock_add_person_to_household.assert_called_once_with(household_3, person_entity)
     mock_remove_person_from_household.assert_called_once_with(household_1, person_entity)
+
+
+
+@mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
+@mock.patch.object(PeopleDAO, 'create_person')
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+@mock.patch('src.app.people.services.peopleService.PeopleService.add_person_to_households')
+@mock.patch.object(DateUtils, 'get_current_datetime')
+@mock.patch.object(PeopleFactory, 'create_person_entity_from_create_person')
+@mock.patch.object(AddressDAO, 'get_address_by_id')
+@mock.patch.object(MediaDAO, 'get_image_by_id')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_image_id')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
+def test_create_person(mock_validate_households, mock_validate_addresses, mock_validate_image_id, mock_get_image_by_id,
+                       mock_get_address_by_id, mock_create_person_entity_from_create_person, mock_get_current_datetime,
+                       mock_add_person_to_households, mock_get_person_by_id, mock_create_person, mock_create_person_from_person_entity):
+    peopleDAO = PeopleDAO()
+    addressDAO = AddressDAO()
+    mediaDAO = MediaDAO()
+    peopleFactory = PeopleFactory()
+    people_service = PeopleService(peopleDAO=peopleDAO, addressDAO=addressDAO, media_DAO=mediaDAO, people_factory=peopleFactory)
+
+
+    new_person = CreatePerson(first_name="John", last_name="Smith", email="john.smith@test.com", mobile_number="07212345678",
+                              date_of_birth= datetime.date(1980, 1, 1), gender=Gender.male, marriage_date=datetime.date(2010, 1, 1),
+                              social_media_links=[SocialMediaLink(url="https://www.facebook.com/1", type="facebook"),
+                               SocialMediaLink(url="https://www.instagram.com/1", type="instagram")],
+                              marital_status=MaritalStatus.married, profile_image_id=1, addresses=[1,2], household_ids=[1, 2])
+    #no validation errors
+    mock_validate_households.return_value = None
+    mock_validate_addresses.return_value = None
+    mock_validate_image_id.return_value = None
+    image_to_link = media_models.Image(id=1)
+    mock_get_image_by_id.return_value = image_to_link
+    home_address = models.Address(
+        id=1,
+        type="home",
+    )
+    business_address = models.Address(
+        id=2,
+        type="business",
+    )
+    def side_effect(address_id):
+        if(address_id == 1):
+            return home_address
+        elif(address_id == 2):
+            return business_address
+    mock_get_address_by_id.side_effect = side_effect
+
+    people_address_home = models.PeopleAddress(person_id=1, address=home_address)
+    people_address_business = models.PeopleAddress(person_id=1, address=business_address)
+    create_entity = models.Person(
+        first_name="John", last_name="Smith", email="john.smith@test.com", mobile_number="07212345678",
+        date_of_birth=datetime.date(1980, 1, 1), gender=Gender.male, marriage_date=datetime.date(2010, 1, 1),
+        social_media_links=[models.SocialMediaLink(url="https://www.facebook.com/1", type="facebook"),
+                               models.SocialMediaLink(url="https://www.instagram.com/1", type="instagram")],
+        marital_status=MaritalStatus.married, addresses=[people_address_home, people_address_business])
+    mock_create_person_entity_from_create_person.return_value = create_entity
+
+    now = datetime.datetime.now()
+    mock_get_current_datetime.return_value = now
+
+    people_address_home_created = models.PeopleAddress(id=1, address=home_address)
+    people_address_business_created = models.PeopleAddress(id=2, address=business_address)
+    created_person = models.Person(id=1,
+        first_name="John", last_name="Smith", email="john.smith@test.com", mobile_number="07212345678",
+        date_of_birth=datetime.date(1980, 1, 1), gender=Gender.male, marriage_date=datetime.date(2010, 1, 1),
+        social_media_links=[models.SocialMediaLink(id=1, url="https://www.facebook.com/1", type="facebook"),
+                               models.SocialMediaLink(id=2, url="https://www.instagram.com/1", type="instagram")],
+        marital_status=MaritalStatus.married, addresses=[people_address_home_created, people_address_business_created])
+    mock_create_person.return_value = created_person
+
+    mock_add_person_to_households.return_value = None
+    mock_get_person_by_id.return_value = created_person
+    #TODO it doesnt
+    mock_create_person_from_person_entity.return_value = FullViewPerson(id=1, first_name="John", last_name="Smith", email="john.smith@test.com", mobile_number="07212345678",
+                              date_of_birth= datetime.date(1980, 1, 1), gender=Gender.male, marriage_date=datetime.date(2010, 1, 1),
+                              social_media_links=[SocialMediaLink(url="https://www.facebook.com/1", type="facebook"),
+                              SocialMediaLink(url="https://www.instagram.com/1", type="instagram")],
+                              marital_status=MaritalStatus.married, profile_image_id=1, addresses=[ViewAddress(id=1),ViewAddress(id=2)],
+                              household_ids=[ViewHousehold(id=1, leader=BasicViewPerson(id=1),address=ViewAddress(id=1)),
+                                             ViewHousehold(id=2, leader=BasicViewPerson(id=1), address=ViewAddress(id=1))])
+
+
+    people_service.create_person(new_person)
+
+    mock_validate_households.assert_called_once()
+    mock_validate_addresses.assert_called_once()
+    mock_validate_image_id.assert_called_once()
+    mock_get_image_by_id.assert_called_once()
+    assert mock_get_address_by_id.call_count == 2
+    mock_create_person_entity_from_create_person.assert_called_once()
+    mock_get_current_datetime.assert_called_once()
+    mock_add_person_to_households.assert_called_once()
+    mock_create_person.assert_called_once()
+    mock_create_person.assert_called_with(create_entity, image_to_link)
+    mock_create_person_from_person_entity.assert_called_once()
+    mock_add_person_to_households.assert_called_once()
+    mock_add_person_to_households.assert_called_with(created_person, [1,2])
+    mock_get_person_by_id.assert_called_once()
+    mock_get_person_by_id.assert_called_with(1)
+    mock_create_person_from_person_entity.assert_called_with(created_person, include_households=True, include_profile_image=True)
+
 

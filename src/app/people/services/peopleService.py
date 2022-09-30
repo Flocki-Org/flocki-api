@@ -17,6 +17,7 @@ from mimetypes import guess_extension
 from src.app.people.daos.householdDAO import HouseholdDAO
 from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.householdUtils import HouseholdUtils
+from src.app.utils.DateUtils import DateUtils
 
 
 class NoPersonException(Exception):
@@ -163,16 +164,6 @@ class PeopleService:
             for household_id in household_ids_to_remove:
                 self.household_DAO.remove_person_from_household(self.household_DAO.get_household_by_id(household_id), personToUpdate)
 
-    # def get_households_to_remove(self, existing_household_ids, new_household_ids):
-    #     return [household_id for household_id in existing_household_ids if
-    #             household_id not in new_household_ids]
-    #
-    # def get_household_ids_to_add(self, existing_household_ids, new_household_ids):
-    #     return [household_id for household_id in new_household_ids if
-    #             household_id not in existing_household_ids]
-    #
-    # def get_existing_household_ids(self, personToUpdate):
-    #     return [household.id for household in personToUpdate.households]
 
     def create_person(self, person: CreatePerson):
         self.validate_households(person.household_ids)
@@ -190,7 +181,7 @@ class PeopleService:
         new_person = self.peopleFactory.create_person_entity_from_create_person(person, address_entities)
 
         if new_person.registered_date is None:
-            new_person.registered_date = datetime.now()
+            new_person.registered_date = DateUtils.get_current_datetime()
 
         created_person = self.peopleDAO.create_person(new_person, image_entity)
         if person.household_ids is not None:
