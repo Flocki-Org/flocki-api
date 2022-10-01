@@ -463,11 +463,7 @@ def test_update_households_for_persons(mock_get_existing_household_ids, mock_get
 def test_create_person(mock_validate_households, mock_validate_addresses, mock_validate_image_id, mock_get_image_by_id,
                        mock_get_address_by_id, mock_create_person_entity_from_create_person, mock_get_current_datetime,
                        mock_add_person_to_households, mock_get_person_by_id, mock_create_person, mock_create_person_from_person_entity):
-    peopleDAO = PeopleDAO()
-    addressDAO = AddressDAO()
-    mediaDAO = MediaDAO()
-    peopleFactory = PeopleFactory()
-    people_service = PeopleService(peopleDAO=peopleDAO, addressDAO=addressDAO, media_DAO=mediaDAO, people_factory=peopleFactory)
+    people_service = PeopleService(peopleDAO=PeopleDAO(), addressDAO=AddressDAO(), media_DAO=MediaDAO(), people_factory=PeopleFactory())
 
 
     new_person = CreatePerson(first_name="John", last_name="Smith", email="john.smith@test.com", mobile_number="07212345678",
@@ -621,4 +617,26 @@ def test_validate_household_remove_person(mock_get_existing_household_ids, mock_
     #no exception means test passed
     mock_get_existing_household_ids.assert_called_once()
     mock_get_household_ids_to_remove.assert_called_once()
+    mock_get_household_by_id.assert_called_once()
+
+@mock.patch.object(HouseholdDAO, 'get_household_by_id')
+def test_validate_households(mock_get_household_by_id):
+    people_service = PeopleService(household_DAO=HouseholdDAO(), household_utils=HouseholdUtils())
+
+    mock_get_household_by_id.return_value = models.Household(id=1, leader=models.Person(id=1), address_id=1)
+
+    people_service.validate_households([1])
+
+    #no exception means test passed
+    mock_get_household_by_id.assert_called_once()
+
+
+@mock.patch.object(HouseholdDAO, 'get_household_by_id')
+def test_validate_households(mock_get_household_by_id):
+    people_service = PeopleService(household_DAO=HouseholdDAO(), household_utils=HouseholdUtils())
+
+    mock_get_household_by_id.return_value = None
+    with(pytest.raises(NoHouseholdExceptionForPersonCreation)):
+        people_service.validate_households([1])
+
     mock_get_household_by_id.assert_called_once()
