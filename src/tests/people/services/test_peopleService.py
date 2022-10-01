@@ -519,7 +519,6 @@ def test_create_person(mock_validate_households, mock_validate_addresses, mock_v
 
     mock_add_person_to_households.return_value = None
     mock_get_person_by_id.return_value = created_person
-    #TODO it doesnt
     mock_create_person_from_person_entity.return_value = FullViewPerson(id=1, first_name="John", last_name="Smith", email="john.smith@test.com", mobile_number="07212345678",
                               date_of_birth= datetime.date(1980, 1, 1), gender=Gender.male, marriage_date=datetime.date(2010, 1, 1),
                               social_media_links=[SocialMediaLink(url="https://www.facebook.com/1", type="facebook"),
@@ -548,4 +547,38 @@ def test_create_person(mock_validate_households, mock_validate_addresses, mock_v
     mock_get_person_by_id.assert_called_with(1)
     mock_create_person_from_person_entity.assert_called_with(created_person, include_households=True, include_profile_image=True)
 
+
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
+def test_create_person_invalid_household_provided(mock_validate_households):
+    people_service = PeopleService()
+
+    mock_validate_households.side_effect = NoHouseholdExceptionForPersonCreation
+
+    with pytest.raises(NoHouseholdExceptionForPersonCreation):
+        people_service.create_person(CreatePerson(first_name="John", last_name="Smith", email="test@test.com", mobile_number="07212345678"))
+
+
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
+def test_create_person_invalid_addresses_provided(mock_validate_households, mock_validate_addresses):
+    people_service = PeopleService()
+
+    mock_validate_households.return_value = None
+    mock_validate_addresses.side_effect = NoAddressException
+
+    with pytest.raises(NoAddressException):
+        people_service.create_person(CreatePerson(first_name="John", last_name="Smith", email="test@test.com", mobile_number="07212345678"))
+
+
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_image_id')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
+@mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
+def test_create_person_invalid_image_id_provided(mock_validate_households, mock_validate_addresses, mock_validate_image_id):
+    people_service = PeopleService()
+    mock_validate_households.return_value = None
+    mock_validate_addresses.return_value=None
+    mock_validate_image_id.side_effect = NoImageException("No image with id 1")
+
+    with pytest.raises(NoImageException):
+        people_service.create_person(CreatePerson(first_name="John", last_name="Smith", email="test@test.com", mobile_number="07212345678"))
 
