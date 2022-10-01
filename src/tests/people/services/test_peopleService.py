@@ -584,3 +584,41 @@ def test_create_person_invalid_image_id_provided(mock_validate_households, mock_
     with pytest.raises(NoImageException):
         people_service.create_person(CreatePerson(first_name="John", last_name="Smith", email="test@test.com", mobile_number="07212345678"))
 
+
+#def validate_household_remove_person(self, new_household_ids, personToUpdate):
+@mock.patch.object(HouseholdDAO, 'get_household_by_id')
+@mock.patch.object(HouseholdUtils, 'get_household_ids_to_remove')
+@mock.patch.object(HouseholdUtils, 'get_existing_household_ids')
+def test_validate_household_remove_person_valid(mock_get_existing_household_ids, mock_get_household_ids_to_remove, mock_get_household_by_id):
+    people_service = PeopleService(household_DAO=HouseholdDAO(), household_utils=HouseholdUtils())
+
+    mock_get_existing_household_ids.return_value = [1,2,3,4]
+    mock_get_household_ids_to_remove.return_value = [3]
+    mock_get_household_by_id.return_value = models.Household(id=3, leader=models.Person(id=2), address_id=1)
+
+    people_service.validate_household_remove_person([1,2,3], models.Person(id=1))
+
+    #no exception means test passed
+    mock_get_existing_household_ids.assert_called_once()
+    mock_get_household_ids_to_remove.assert_called_once()
+    mock_get_household_by_id.assert_called_once()
+
+
+#def validate_household_remove_person(self, new_household_ids, personToUpdate):
+@mock.patch.object(HouseholdDAO, 'get_household_by_id')
+@mock.patch.object(HouseholdUtils, 'get_household_ids_to_remove')
+@mock.patch.object(HouseholdUtils, 'get_existing_household_ids')
+def test_validate_household_remove_person(mock_get_existing_household_ids, mock_get_household_ids_to_remove, mock_get_household_by_id):
+    people_service = PeopleService(household_DAO=HouseholdDAO(), household_utils=HouseholdUtils())
+
+    mock_get_existing_household_ids.return_value = [1,2,3,4]
+    mock_get_household_ids_to_remove.return_value = [3]
+    mock_get_household_by_id.return_value = models.Household(id=3, leader=models.Person(id=1), address_id=1)
+
+    with(pytest.raises(UnableToRemoveLeaderFromHouseholdException)):
+        people_service.validate_household_remove_person([1,2,3], models.Person(id=1))
+
+    #no exception means test passed
+    mock_get_existing_household_ids.assert_called_once()
+    mock_get_household_ids_to_remove.assert_called_once()
+    mock_get_household_by_id.assert_called_once()
