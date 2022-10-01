@@ -1,15 +1,17 @@
 import datetime
 
 import pytest
+from fastapi import UploadFile
 from fastapi.responses import FileResponse
 
 from unittest import mock
 from unittest.mock import call
 
 from src.app.media.daos.mediaDAO import MediaDAO
+from src.app.media.factories.mediaFactory import MediaFactory
 from src.app.media.models.media import ViewImage
 from src.app.media.models.database import models as media_models
-from src.app.media.services.mediaService import NoImageException
+from src.app.media.services.mediaService import NoImageException, MediaService
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
@@ -640,3 +642,51 @@ def test_validate_households(mock_get_household_by_id):
         people_service.validate_households([1])
 
     mock_get_household_by_id.assert_called_once()
+
+@mock.patch.object(MediaFactory, 'create_image_from_image_entity')
+@mock.patch.object(PeopleDAO, 'add_person_image')
+@mock.patch.object(MediaService, 'upload_image')
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+def test_upload_profile_image(mock_get_person_by_id, mock_upload_image, mock_add_person_image, mock_create_image_from_image_entity):
+    people_service = PeopleService(peopleDAO=PeopleDAO(), media_DAO=MediaDAO(), media_service=MediaService(), media_factory=MediaFactory())
+    person = models.Person(id=1, first_name="John", last_name="Smith")
+    mock_get_person_by_id.return_value = person
+    file = UploadFile(filename="test.jpg", content_type="image/jpeg")
+    file.content_type = "image/jpeg"
+
+    mock_upload_image.return_value = media_models.Image(id=1, description=f"Profile image for user: {person.first_name}  {person.last_name}  with ID: {person.id}")
+
+    people_service.upload_profile_image(1, file)
+
+    mock_add_person_image.assert_called_once()
+    mock_add_person_image.assert_called_with(person, mock_upload_image.return_value)
+    mock_create_image_from_image_entity.assert_called_once()
+    mock_create_image_from_image_entity.assert_called_with(mock_upload_image.return_value)
+
+
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+def test_upload_profile_image(mock_get_person_by_id):
+    people_service = PeopleService(peopleDAO=PeopleDAO())
+    mock_get_person_by_id.return_value = None
+    file = UploadFile(filename="test.jpg", content_type="image/jpeg")
+    file.content_type = "image/jpeg"
+
+    with(pytest.raises(NoPersonException)):
+        people_service.upload_profile_image(1, file)
+
+
+
+    # def upload_profile_image(self, id, file: UploadFile):
+    #     personToUpdate = self.peopleDAO.get_person_by_id(id)
+    #     if personToUpdate is None:
+    #         raise NoPersonException(
+    #             "No person with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+    #     if file is not None:
+    #         if file.content_type == 'image/jpeg':
+    #             file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
+    #         filename = str(personToUpdate.id) + '_' + str(uuid.uuid4()) + guess_extension(
+    #             file.content_type, strict=False).strip()
+    #         description = f"Profile image for user: {personToUpdate.first_name}  {personToUpdate.last_name}  with ID: {personToUpdate.id}"
+    #         image_entity = self.media_service.upload_image(file, filename, description)
+    #         self.peopleDAO.add_person_image(personToUpdate, image_entity)
+    #         return self.media_factory.create_image_from_image_entity(image_entity)
