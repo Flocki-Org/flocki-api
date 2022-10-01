@@ -446,7 +446,9 @@ def test_update_households_for_persons(mock_get_existing_household_ids, mock_get
     mock_remove_person_from_household.assert_called_once_with(household_1, person_entity)
 
 
-
+# The fact that this test is so complicated or at least long, is a sign that the method should be refactored. There is
+# no complex logic, but just a lot of things happening in the one method. The test mocks almost everything making it a little
+# less valuable.
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
 @mock.patch.object(PeopleDAO, 'create_person')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
@@ -522,13 +524,13 @@ def test_create_person(mock_validate_households, mock_validate_addresses, mock_v
     mock_create_person_from_person_entity.return_value = FullViewPerson(id=1, first_name="John", last_name="Smith", email="john.smith@test.com", mobile_number="07212345678",
                               date_of_birth= datetime.date(1980, 1, 1), gender=Gender.male, marriage_date=datetime.date(2010, 1, 1),
                               social_media_links=[SocialMediaLink(url="https://www.facebook.com/1", type="facebook"),
-                              SocialMediaLink(url="https://www.instagram.com/1", type="instagram")],
+                              SocialMediaLink(url="https://www.instagram.com/1", type="instagram")], registered_date=now,
                               marital_status=MaritalStatus.married, profile_image_id=1, addresses=[ViewAddress(id=1),ViewAddress(id=2)],
                               household_ids=[ViewHousehold(id=1, leader=BasicViewPerson(id=1),address=ViewAddress(id=1)),
                                              ViewHousehold(id=2, leader=BasicViewPerson(id=1), address=ViewAddress(id=1))])
 
 
-    people_service.create_person(new_person)
+    new_created_person = people_service.create_person(new_person)
 
     mock_validate_households.assert_called_once()
     mock_validate_addresses.assert_called_once()
@@ -546,7 +548,7 @@ def test_create_person(mock_validate_households, mock_validate_addresses, mock_v
     mock_get_person_by_id.assert_called_once()
     mock_get_person_by_id.assert_called_with(1)
     mock_create_person_from_person_entity.assert_called_with(created_person, include_households=True, include_profile_image=True)
-
+    assert new_created_person.registered_date == now.date()
 
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
 def test_create_person_invalid_household_provided(mock_validate_households):
