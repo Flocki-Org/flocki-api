@@ -255,7 +255,7 @@ def test_create_profile_image_list_from_entity_list(mock_create_image_from_image
 
     person_entity.profile_images = [personImage_1, personImage_2]
 
-    pfactory.create_profile_image_list_from_entity_list(person_entity)
+    pfactory.create_profile_image_list_from_entity_list(person_entity.profile_images)
 
     mock_create_image_from_image_entity.assert_has_calls([call(personImage_1.image), call(personImage_2.image)], any_order=True)
 
