@@ -696,8 +696,50 @@ def test_get_profile_images_by_person_id(mock_get_person_by_id, mock_create_prof
 
     mock_create_profile_image_list_from_entity_list.assert_called_once()
     mock_create_profile_image_list_from_entity_list.assert_called_with(mock_get_person_by_id.return_value.profile_images)
-    # def get_profile_images_by_person_id(self, id):
-    #     person_entity = self.peopleDAO.get_person_by_id(id)
-    #     if person_entity is None:
-    #         raise NoPersonException("No person with that Id")
-    #     return self.peopleFactory.create_profile_image_list_from_entity_list(person_entity)
+
+
+@mock.patch.object(HouseholdDAO, 'add_person_to_household')
+@mock.patch.object(HouseholdDAO, 'get_household_by_id')
+def test_add_person_to_households(mock_get_household_by_id, mock_add_person_to_household):
+    people_service = PeopleService(household_DAO=HouseholdDAO())
+    person = models.Person(id=1, first_name="John", last_name="Smith")
+
+    household_1 = models.Household(id=1, leader=models.Person(id=1), address_id=1)
+    household_2 = models.Household(id=2, leader=models.Person(id=2), address_id=2)
+    def side_effect(household_id):
+        if household_id == 1:
+            return household_1
+        elif household_id == 2:
+            return household_2
+
+    mock_get_household_by_id.side_effect = side_effect
+    people_service.add_person_to_households(person, [1,2])
+
+    mock_get_household_by_id.call_count == 2
+    mock_get_household_by_id.assert_has_calls([call(1), call(2)], any_order=True)
+    mock_add_person_to_household.call_count == 2
+    mock_add_person_to_household.assert_has_calls([call(household_1, person), call(household_2, person)], any_order=True)
+
+@mock.patch.object(HouseholdDAO, 'remove_person_from_household')
+@mock.patch.object(HouseholdDAO, 'get_household_by_id')
+def test_remove_person_from_households(mock_get_household_by_id, mock_remove_person_from_household):
+    people_service = PeopleService(household_DAO=HouseholdDAO())
+    person = models.Person(id=1, first_name="John", last_name="Smith")
+
+    household_1 = models.Household(id=1, leader=models.Person(id=1), address_id=1)
+    household_2 = models.Household(id=2, leader=models.Person(id=2), address_id=2)
+
+    def side_effect(household_id):
+        if household_id == 1:
+            return household_1
+        elif household_id == 2:
+            return household_2
+
+    mock_get_household_by_id.side_effect = side_effect
+    people_service.remove_person_from_households(person, [1, 2])
+
+    mock_get_household_by_id.call_count == 2
+    mock_get_household_by_id.assert_has_calls([call(1), call(2)], any_order=True)
+    mock_remove_person_from_household.call_count == 2
+    mock_remove_person_from_household.assert_has_calls([call(household_1, person), call(household_2, person)],
+                                                       any_order=True)
