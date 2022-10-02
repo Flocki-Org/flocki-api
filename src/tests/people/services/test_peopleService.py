@@ -674,19 +674,30 @@ def test_upload_profile_image(mock_get_person_by_id):
     with(pytest.raises(NoPersonException)):
         people_service.upload_profile_image(1, file)
 
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+def test_get_profile_images_by_person_id(mock_get_person_by_id):
+    people_service = PeopleService(peopleDAO=PeopleDAO())
+    mock_get_person_by_id.return_value = None
 
 
-    # def upload_profile_image(self, id, file: UploadFile):
-    #     personToUpdate = self.peopleDAO.get_person_by_id(id)
-    #     if personToUpdate is None:
-    #         raise NoPersonException(
-    #             "No person with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
-    #     if file is not None:
-    #         if file.content_type == 'image/jpeg':
-    #             file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
-    #         filename = str(personToUpdate.id) + '_' + str(uuid.uuid4()) + guess_extension(
-    #             file.content_type, strict=False).strip()
-    #         description = f"Profile image for user: {personToUpdate.first_name}  {personToUpdate.last_name}  with ID: {personToUpdate.id}"
-    #         image_entity = self.media_service.upload_image(file, filename, description)
-    #         self.peopleDAO.add_person_image(personToUpdate, image_entity)
-    #         return self.media_factory.create_image_from_image_entity(image_entity)
+    with(pytest.raises(NoPersonException)):
+        people_service.get_profile_images_by_person_id(1)
+
+
+@mock.patch.object(PeopleFactory, 'create_profile_image_list_from_entity_list')
+@mock.patch.object(PeopleDAO, 'get_person_by_id')
+def test_get_profile_images_by_person_id(mock_get_person_by_id, mock_create_profile_image_list_from_entity_list):
+    people_service = PeopleService(peopleDAO=PeopleDAO(), people_factory=PeopleFactory())
+    person = models.Person(id=1, first_name="John", last_name="Smith")
+    person.profile_images=[models.PersonImage(id=1), models.PersonImage(id=2)]
+    mock_get_person_by_id.return_value = person
+
+    people_service.get_profile_images_by_person_id(1)
+
+    mock_create_profile_image_list_from_entity_list.assert_called_once()
+    mock_create_profile_image_list_from_entity_list.assert_called_with(mock_get_person_by_id.return_value.profile_images)
+    # def get_profile_images_by_person_id(self, id):
+    #     person_entity = self.peopleDAO.get_person_by_id(id)
+    #     if person_entity is None:
+    #         raise NoPersonException("No person with that Id")
+    #     return self.peopleFactory.create_profile_image_list_from_entity_list(person_entity)

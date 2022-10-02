@@ -225,7 +225,7 @@ class PeopleService:
         person_entity = self.peopleDAO.get_person_by_id(id)
         if person_entity is None:
             raise NoPersonException("No person with that Id")
-        return self.peopleFactory.create_profile_image_list_from_entity_list(person_entity)
+        return self.peopleFactory.create_profile_image_list_from_entity_list(person_entity.profile_images)
 
     # I would have prefered adding this method to the household service, and make each service only dependent on it's own DAO,
     # but I couldn't get it to work due to circular dependencies.

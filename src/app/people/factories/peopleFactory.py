@@ -75,8 +75,8 @@ class PeopleFactory:
         )
         return view_household
 
-    def create_profile_image_list_from_entity_list(self, person_entity) -> List[ViewImage]:
-        person_images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
+    def create_profile_image_list_from_entity_list(self, profile_images) -> List[ViewImage]:
+        person_images = sorted(profile_images, key=lambda x: x.id, reverse=True)
         profile_image_list: List[ViewImage] = []
         for person_image in person_images:
             profile_image_list.append(self.media_factory.create_image_from_image_entity(person_image.image))
