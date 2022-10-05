@@ -4,7 +4,6 @@ from fastapi import Depends
 from src.app.database import get_db, SessionLocal
 from src.app.people.models.database import models
 from src.app.people.models.database.models import HouseholdImage
-from src.app.people.models.household import UpdateHousehold
 
 
 class HouseholdDAO:
@@ -43,7 +42,7 @@ class HouseholdDAO:
         household_entity.people.remove(person)
         self.db.commit()
 
-    def update_household(self, household_entity: models.Household, update_household: UpdateHousehold, image_entity=None):
+    def update_household(self, household_entity: models.Household, update_leader_id: int, update_address_id: int, image_entity=None):
         if image_entity is not None:
             household_image = HouseholdImage(
                 household=household_entity,
@@ -51,6 +50,6 @@ class HouseholdDAO:
                 created=datetime.now(),
             )
             self.db.add(household_image)
-        household_entity.leader_id = update_household.leader_id
-        household_entity.address_id = update_household.address_id
+        household_entity.leader_id = update_leader_id
+        household_entity.address_id = update_address_id
         self.db.commit()

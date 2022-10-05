@@ -146,7 +146,7 @@ class HouseholdService:
             if not image_entity:
                 raise NoImageException(f"No image with the following ID: {household.household_image_id}")
 
-        self.household_DAO.update_household(household_entity, household, image_entity)
+        self.household_DAO.update_household(household_entity, household.leader_id, household.address_id, image_entity)
 
         existing_people_ids = self.household_utils.get_existing_people_ids(household_entity)
         people_ids_to_add = self.household_utils.get_people_ids_to_add(existing_people_ids, update_people_ids)

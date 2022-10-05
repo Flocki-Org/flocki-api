@@ -1,7 +1,9 @@
 from datetime import datetime
 
-#from main import app
-from src.app.database import get_db, SessionLocal
+# from main import app
+import pytest
+
+from src.app.database import get_db, SessionLocal, Base
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.media.models.database import models as media_models
 
@@ -21,27 +23,31 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 models.Base.metadata.create_all(engine)
 
+
 def override_get_db():
-    connection = engine.connect()
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
 
-    # begin a non-ORM transaction
-    transaction = connection.begin()
 
-    # bind an individual Session to the connection
-    db = SessionLocal(bind=connection)
-    # db = Session(engine)
-
-    yield db
-
-    db.rollback()
-    connection.close()
-
+@pytest.fixture()
+def test_db():
+    Base.metadata.create_all(bind=engine)
+    yield
+    try:
+        Base.metadata.drop_all(bind=engine)
+    except Exception as e:
+        print("teardown of DB failed")
+        print(e)
 
 
 db = next(override_get_db())
 peopleDAO = PeopleDAO(db)
 
-def test_get_all():
+
+def test_get_all(test_db):
     new_person_1 = models.Person(
         first_name="Test Name"
     )
@@ -57,7 +63,23 @@ def test_get_all():
     assert people[1].first_name == new_person_2.first_name
 
 
-def test_get_person_by_id_person_found():
+def test_get_all_none(test_db):
+    new_person_1 = models.Person(
+        first_name="Test Name"
+    )
+    new_person_2 = models.Person(
+        first_name="Test Name 2"
+    )
+    db.add(new_person_1)
+    db.add(new_person_2)
+    db.commit()
+    people = peopleDAO.get_all()
+    assert len(people) == 2
+    assert people[0].first_name == new_person_1.first_name
+    assert people[1].first_name == new_person_2.first_name
+
+
+def test_get_person_by_id_person_found(test_db):
     # test get_person_by_id
     new_person_1 = models.Person(
         first_name="Test Name"
@@ -70,7 +92,7 @@ def test_get_person_by_id_person_found():
     assert person.first_name == new_person_1.first_name
 
 
-def test_get_person_by_id_person_not_found():
+def test_get_person_by_id_person_not_found(test_db):
     # test get_person_by_id
     new_person_1 = models.Person(
         first_name="Test Name"
@@ -81,19 +103,20 @@ def test_get_person_by_id_person_not_found():
     person = peopleDAO.get_person_by_id(-1)
     assert person is None
 
-def test_update_person():
+
+def test_update_person(test_db):
     # test update person
     # update_person(self, person_id, update_values, image_entity=None):
     existing_person = models.Person(
         first_name="Test Name",
         last_name="Last Name",
         email="test@test.com",
-        mobile_number = "0721231234",
-        #date_of_birth = "1984-10-01",
-        gender = "male",
-        #marriage_date = "2015-10-01",
-        marital_status = "single",
-        #egistered_date = "2020-01-01"
+        mobile_number="0721231234",
+        # date_of_birth = "1984-10-01",
+        gender="male",
+        # marriage_date = "2015-10-01",
+        marital_status="single",
+        # egistered_date = "2020-01-01"
     )
     print("got here")
     db.add(existing_person)
@@ -106,7 +129,7 @@ def test_update_person():
         "mobile_number": "0721231235",
         "gender": "female",
         "marital_status": "married",
-        "marriage_date":  datetime(2020, 1, 1, 0 ,0),
+        "marriage_date": datetime(2020, 1, 1, 0, 0),
         "registered_date": datetime(2022, 1, 1, 10, 10, 10),
         "date_of_birth": datetime(1984, 1, 1, 10, 10, 10),
 
@@ -123,19 +146,19 @@ def test_update_person():
     assert updated_person.date_of_birth == datetime(1984, 1, 1, 0, 0).date()
 
 
-def test_update_person_including_image():
+def test_update_person_including_image(test_db):
     # test update person
     # update_person(self, person_id, update_values, image_entity=None):
     existing_person = models.Person(
         first_name="Test Name",
         last_name="Last Name",
         email="test@test.com",
-        mobile_number = "0721231234",
-        #date_of_birth = "1984-10-01",
-        gender = "male",
-        #marriage_date = "2015-10-01",
-        marital_status = "single",
-        #egistered_date = "2020-01-01"
+        mobile_number="0721231234",
+        # date_of_birth = "1984-10-01",
+        gender="male",
+        # marriage_date = "2015-10-01",
+        marital_status="single",
+        # egistered_date = "2020-01-01"
     )
     db.add(existing_person)
     db.commit()
@@ -144,7 +167,7 @@ def test_update_person_including_image():
     image_entity = media_models.Image(
         description="test_image.jpg",
         address="test_image.jpg",
-        created=datetime(2020, 1, 1, 0 ,0),
+        created=datetime(2020, 1, 1, 0, 0),
         store="local"
     )
     db.add(image_entity)
@@ -158,7 +181,7 @@ def test_update_person_including_image():
         "mobile_number": "0721231235",
         "gender": "female",
         "marital_status": "married",
-        "marriage_date":  datetime(2020, 1, 1, 0 ,0),
+        "marriage_date": datetime(2020, 1, 1, 0, 0),
         "registered_date": datetime(2022, 1, 1, 10, 10, 10),
         "date_of_birth": datetime(1984, 1, 1, 10, 10, 10),
 
@@ -177,7 +200,7 @@ def test_update_person_including_image():
     assert updated_person.profile_images[0].id == image_entity.id
 
 
-def test_get_existing_social_media_links():
+def test_get_existing_social_media_links(test_db):
     # test get_existing_social_media_links
     new_person_1 = models.Person(
         first_name="Test Name"
@@ -206,7 +229,8 @@ def test_get_existing_social_media_links():
     assert smls[1].type == "twitter"
     assert smls[1].url == "https://www.twitter.com/test"
 
-def test_delete_social_media_link():
+
+def test_delete_social_media_link(test_db):
     # test get_existing_social_media_links
     new_person_1 = models.Person(
         first_name="Test Name"
@@ -232,12 +256,15 @@ def test_delete_social_media_link():
     peopleDAO.delete_social_media_link(sml_fb.id)
 
     smls = db.query(models.SocialMediaLink).filter(
-            models.SocialMediaLink.person_id == new_person_1.id).all()
+        models.SocialMediaLink.person_id == new_person_1.id).all()
     assert len(smls) == 1
     assert smls[0].type == "twitter"
     assert smls[0].url == "https://www.twitter.com/test"
+    db.flush()
+    db.commit()
 
-def test_create_social_media_link():
+
+def test_create_social_media_link(test_db):
     # test get_existing_social_media_links
     new_person_1 = models.Person(
         first_name="Test Name"
@@ -252,12 +279,13 @@ def test_create_social_media_link():
     #  have one method in the DAO that rolls back everything.
     db.commit()
     smls = db.query(models.SocialMediaLink).filter(
-            models.SocialMediaLink.person_id == new_person_1.id).all()
+        models.SocialMediaLink.person_id == new_person_1.id).all()
     assert len(smls) == 1
     assert smls[0].type == "facebook"
     assert smls[0].url == "https://www.facebook.com/test"
 
-def test_create_person():
+
+def test_create_person(test_db):
     new_person = models.Person(
         first_name="Test Name",
         last_name="Last Name",
@@ -279,7 +307,8 @@ def test_create_person():
     assert created_person.gender == "male"
     assert created_person.marital_status == "single"
 
-def test_person_create_with_image():
+
+def test_person_create_with_image(test_db):
     new_person = models.Person(
         first_name="Test Name",
         last_name="Last Name",
@@ -312,7 +341,7 @@ def test_person_create_with_image():
     assert created_person.profile_images[0].image.address == "test_image.jpg"
 
 
-def test_add_person_image():
+def test_add_person_image(test_db):
     # test get_existing_social_media_links
     new_person_1 = models.Person(
         first_name="Test Name"
@@ -333,4 +362,3 @@ def test_add_person_image():
     person = db.query(models.Person).filter(models.Person.id == new_person_1.id).first()
     assert person.profile_images[0] is not None
     assert person.profile_images[0].image.address == "test_image.jpg"
-
