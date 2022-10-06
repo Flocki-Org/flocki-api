@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from src.app.database import get_db, SessionLocal, Base
@@ -28,7 +30,11 @@ def override_get_db():
 def test_db():
     Base.metadata.create_all(bind=engine)
     yield
-    Base.metadata.drop_all(bind=engine)
+    try:
+        Base.metadata.drop_all(bind=engine)
+    except Exception as e:
+        print("teardown of DB failed")
+        print(e)
 
 db = next(override_get_db())
 householdDAO = HouseholdDAO(db)
@@ -65,4 +71,64 @@ def test_get_all_households_many_households(test_db):
     households = householdDAO.get_all_households()
     assert len(households) == 2
 
+
+def test_get_household_by_id_one_household(test_db):
+    household = models.Household(
+        leader_id=1,
+        address_id=1,
+    )
+    db.add(household)
+    db.commit()
+    household = householdDAO.get_household_by_id(household.id)
+    assert household is not None
+    assert household.leader_id == 1
+    assert household.address_id == 1
+
+
+def test_get_household_by_id_no_household(test_db):
+    household = householdDAO.get_household_by_id(99)
+    assert household is None
+
+
+def test_add_household(test_db):
+    household = models.Household(
+        leader_id=1,
+        address_id=1,
+    )
+    household = householdDAO.add_household(household)
+
+    assert household is not None
+    assert household.leader_id == 1
+    assert household.address_id == 1
+
+    household_queried = db.query(models.Household).filter(models.Household.id == household.id).first()
+    assert household_queried is not None
+    assert household_queried.leader_id == 1
+    assert household_queried.address_id == 1
+
+
+def test_add_household_image(test_db):
+    household = models.Household(
+        leader_id=1,
+        address_id=1,
+    )
+    household = householdDAO.add_household(household)
+
+    image = media_models.Image(
+        address="test",
+        description="test",
+        store="local",
+        created=datetime.now(),
+    )
+    db.add(image)
+    db.commit()
+    db.refresh(image)
+    householdDAO.add_household_image(household, image)
+
+    household_queried = db.query(models.Household).filter(models.Household.id == household.id).first()
+
+    assert household_queried.household_images is not None
+    assert len(household_queried.household_images) == 1
+    assert household_queried.household_images[0].image.address == "test"
+    assert household_queried.household_images[0].image.description == "test"
 
