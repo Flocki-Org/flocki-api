@@ -1,5 +1,6 @@
 import uuid
 from mimetypes import guess_extension
+from typing import List
 
 from fastapi import Depends
 from starlette.responses import FileResponse
@@ -13,7 +14,7 @@ from src.app.people.daos.householdDAO import HouseholdDAO
 
 from src.app.people.factories.householdFactory import HouseholdFactory
 from src.app.people.factories.peopleFactory import PeopleFactory
-from src.app.people.models.household import CreateHousehold, UpdateHousehold
+from src.app.people.models.household import CreateHousehold, UpdateHousehold, ViewHousehold
 from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.householdUtils import HouseholdUtils
 from src.app.people.services.peopleService import NoPersonException
@@ -43,7 +44,7 @@ class HouseholdService:
         self.address_DAO = address_DAO
         self.household_utils = household_utils
 
-    def get_all_households(self):
+    def get_all_households(self) -> List[ViewHousehold]:
         households_response = []
         households = self.household_DAO.get_all_households()
         for household in households:

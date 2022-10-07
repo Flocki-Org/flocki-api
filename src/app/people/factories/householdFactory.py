@@ -15,7 +15,7 @@ class HouseholdFactory:
         self.people_factory = people_factory
         self.media_factory = media_factory
 
-    def createHouseholdFromHouseholdEntity(self, household_entity: models.Household, include_household_image=False):
+    def createHouseholdFromHouseholdEntity(self, household_entity: models.Household, include_household_image=False) -> ViewHousehold:
 
         leader_response = None
         if household_entity.leader:
