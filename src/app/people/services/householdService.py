@@ -2,7 +2,7 @@ import uuid
 from mimetypes import guess_extension
 from typing import List
 
-from fastapi import Depends
+from fastapi import Depends, UploadFile
 from starlette.responses import FileResponse
 
 from src.app.media.daos.mediaDAO import MediaDAO
@@ -61,7 +61,7 @@ class HouseholdService:
 
         people_entities = []
         invalid_people_ids = []
-        for person_id in household.people:
+        for person_id in household.people_ids:
             person_entity = self.people_DAO.get_person_by_id(person_id)
             if not person_entity:
                 invalid_people_ids.append(person_id)
@@ -71,25 +71,28 @@ class HouseholdService:
             raise NoPersonException(f"No people with the following IDs: {invalid_people_ids}")
 
         leader_entity = self.people_DAO.get_person_by_id(household.leader_id)
-        if not leader_entity:
-            raise Exception(f"invalid leader ID provided. Person with that id: {household.leader_id} does not exist")
+        # leader entity can never be None because leader id is required to be in the list of people ids, and so would have
+        # failed validation in the previous check above.
 
 
-        image_entity = self.media_DAO.get_image_by_id(household.household_image)
+        image_entity = self.media_DAO.get_image_by_id(household.household_image_id)
+        if image_entity is None:
+            raise NoImageException(f"No image with that ID: {household.household_image_id}")
+
         new_household = self.household_factory.createHouseholdEntityFromHousehold(household, people_entities)
         return self.household_factory.createHouseholdFromHouseholdEntity(self.household_DAO.add_household(new_household, image_entity), True)
 
     def get_household_images_by_household_id(self, id):
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
-            raise NoHouseholdException("No household with that Id")
+            raise NoHouseholdException(f"No household with that ID: {id}")
+
         return self.household_factory.create_household_image_list_from_entity_list(household_entity)
 
-    def upload_household_image(self, id, file):
+    def upload_household_image(self, id, file: UploadFile):
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
-            raise NoHouseholdException(
-                "No household with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+            raise NoHouseholdException(f"No household with that ID: {id}")
 
         if file is not None:
             if file.content_type == 'image/jpeg':
@@ -102,11 +105,11 @@ class HouseholdService:
             self.household_DAO.add_household_image(household_entity, image_entity)
             return self.media_factory.create_image_from_image_entity(image_entity)
 
-    def get_household_image_by_household_id(self, id):
+    def get_household_image_by_household_id(self, id) -> FileResponse:
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
             raise NoHouseholdException(
-                "No household with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+                f"No household with that ID: {id}")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
         household_with_image = self.household_factory.createHouseholdFromHouseholdEntity(household_entity, True)
         if household_with_image is None:
             return None
@@ -115,7 +118,7 @@ class HouseholdService:
         elif household_with_image.household_image.store is not None and household_with_image.household_image.store == 'local':
             return FileResponse(household_with_image.household_image.address)
         elif household_with_image.household_image.store is not None and household_with_image.household_image.store == 's3':
-            return NotImplementedError("S3 not implemented")
+            raise NotImplementedError("S3 not implemented")
         return
 
     def update_household(self, id, household: UpdateHousehold):

@@ -6,6 +6,7 @@ from typing import List
 from ..services.householdService import HouseholdService, NoHouseholdException
 from ..services.peopleService import NoPersonException
 from ...media.models.media import ViewImage
+from ...media.services.mediaService import NoImageException
 from ...users.models.user import User
 from ...users.routers.login import get_current_user
 
@@ -29,6 +30,8 @@ def add_household(household: CreateHousehold, household_service: HouseholdServic
     try:
         return household_service.add_household(household)
     except NoPersonException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args[0])
+    except NoImageException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args[0])
 
 @router.put('/households/{id}', response_model=ViewHousehold)

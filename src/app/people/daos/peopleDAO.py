@@ -14,7 +14,7 @@ class PeopleDAO:
     def get_all(self):
         return self.db.query(models.Person).order_by(models.Person.last_name).all()
 
-    def get_person_by_id(self, id: int):
+    def get_person_by_id(self, id: int) -> models.Person:
         return self.db.query(models.Person).filter(models.Person.id == id).first()
 
     def update_person(self, person_id, update_values, image_entity=None):
