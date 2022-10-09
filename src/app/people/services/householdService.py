@@ -54,7 +54,7 @@ class HouseholdService:
     def get_household_by_id(self, id: int):
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
-            raise NoHouseholdException(f"Household does not exist with ID: {id}")
+            raise NoHouseholdException(f"Household does not exist with the following ID: {id}")
         return self.household_factory.createHouseholdFromHouseholdEntity(household_entity, include_household_image=True)
 
     def add_household(self, household: CreateHousehold):
@@ -77,7 +77,7 @@ class HouseholdService:
 
         image_entity = self.media_DAO.get_image_by_id(household.household_image_id)
         if image_entity is None:
-            raise NoImageException(f"No image with that ID: {household.household_image_id}")
+            raise NoImageException(f"No image with the following ID: {household.household_image_id}")
 
         new_household = self.household_factory.createHouseholdEntityFromHousehold(household, people_entities)
         return self.household_factory.createHouseholdFromHouseholdEntity(self.household_DAO.add_household(new_household, image_entity), True)
@@ -85,14 +85,14 @@ class HouseholdService:
     def get_household_images_by_household_id(self, id):
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
-            raise NoHouseholdException(f"No household with that ID: {id}")
+            raise NoHouseholdException(f"No household with the following ID: {id}")
 
         return self.household_factory.create_household_image_list_from_entity_list(household_entity)
 
     def upload_household_image(self, id, file: UploadFile):
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
-            raise NoHouseholdException(f"No household with that ID: {id}")
+            raise NoHouseholdException(f"No household with the following ID: {id}")
 
         if file is not None:
             if file.content_type == 'image/jpeg':
@@ -109,7 +109,7 @@ class HouseholdService:
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
             raise NoHouseholdException(
-                f"No household with that ID: {id}")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+                f"No household with the following ID: {id}")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
         household_with_image = self.household_factory.createHouseholdFromHouseholdEntity(household_entity, True)
         if household_with_image is None:
             return None
@@ -125,11 +125,11 @@ class HouseholdService:
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
             raise NoHouseholdException(
-                "No household with that Id")
+                f"No household with the following ID: {id}")
 
         address_entity = self.address_DAO.get_address_by_id(household.address_id)
         if address_entity is None:
-            raise NoAddressException("No address with that Id")
+            raise NoAddressException(f"No address with the following ID: {household.address_id}")
 
         update_values = household.dict()
         update_people_ids = update_values.pop('people_ids', household.dict())
@@ -141,8 +141,6 @@ class HouseholdService:
             people_entities.append(person_entity)
 
         leader_entity = self.people_DAO.get_person_by_id(household.leader_id)
-        if not leader_entity:
-            raise Exception(f"invalid leader ID provided. Person with that id: {household.leader_id} does not exist")
 
         image_entity = None
         if household.household_image_id is not None:
