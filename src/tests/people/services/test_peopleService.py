@@ -743,3 +743,39 @@ def test_remove_person_from_households(mock_get_household_by_id, mock_remove_per
     mock_remove_person_from_household.call_count == 2
     mock_remove_person_from_household.assert_has_calls([call(household_1, person), call(household_2, person)],
                                                        any_order=True)
+
+
+@mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
+@mock.patch.object(PeopleDAO, 'find_people_by_email_or_first_name_and_last_name')
+def test_find_people_by_email_or_first_name_and_last_name(mock_find_people_by_email_or_first_and_last_name,
+                                                          mock_create_person_from_person_entity):
+    peopleDAO = PeopleDAO()
+    peopleFactory = PeopleFactory()
+    people_service = PeopleService(peopleDAO=peopleDAO, people_factory=peopleFactory)
+    people_list = [models.Person(id=1), models.Person(id=2)]
+    mock_find_people_by_email_or_first_and_last_name.return_value = people_list
+
+    people_service.find_people_by_email_or_first_and_last_name('test@email.com', 'first', 'last')
+
+    mock_find_people_by_email_or_first_and_last_name.assert_called_once_with('test@email.com', 'first', 'last')
+    mock_create_person_from_person_entity.assert_has_calls([call(people_list[0],include_households=False, include_profile_image=True),
+                                                            call(people_list[1],include_households=False, include_profile_image=True)], any_order=True)
+
+
+@mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
+@mock.patch.object(PeopleDAO, 'find_people_by_email_or_first_name_and_last_name')
+def test_find_people_by_email_or_first_name_and_last_name_with_blank_strings(mock_find_people_by_email_or_first_and_last_name,
+                                                          mock_create_person_from_person_entity):
+    peopleDAO = PeopleDAO()
+    peopleFactory = PeopleFactory()
+    people_service = PeopleService(peopleDAO=peopleDAO, people_factory=peopleFactory)
+    people_list = [models.Person(id=1), models.Person(id=2)]
+    mock_find_people_by_email_or_first_and_last_name.return_value = people_list
+
+    people_service.find_people_by_email_or_first_and_last_name(None, None, None)
+
+    mock_find_people_by_email_or_first_and_last_name.assert_called_once_with('','','')
+    mock_create_person_from_person_entity.assert_has_calls([call(people_list[0],include_households=False, include_profile_image=True),
+                                                            call(people_list[1],include_households=False, include_profile_image=True)], any_order=True)
+
+

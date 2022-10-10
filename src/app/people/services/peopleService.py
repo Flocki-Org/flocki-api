@@ -53,8 +53,7 @@ class PeopleService:
         people_response = []
         people = self.peopleDAO.get_all()
         for person in people:
-            people_response.append(
-                self.peopleFactory.create_person_from_person_entity(person_entity=person, include_profile_image=True,
+            people_response.append(self.peopleFactory.create_person_from_person_entity(person_entity=person, include_profile_image=True,
                                                                     include_households=True))
         return people_response
 
@@ -241,3 +240,15 @@ class PeopleService:
             household_entity = self.household_DAO.get_household_by_id(household_id)
             self.household_DAO.remove_person_from_household(household_entity, person)
 
+    def find_people_by_email_or_first_and_last_name(self, email, first_name, last_name):
+        email = email if email is not None else ''
+        first_name = first_name if first_name is not None else ''
+        last_name = last_name if last_name is not None else ''
+        people = self.peopleDAO.find_people_by_email_or_first_name_and_last_name(email, first_name, last_name)
+        people_list_response = []
+        for person in people:
+            person_response = self.peopleFactory.create_person_from_person_entity(person, include_households=False, include_profile_image=True)
+            # remove household field from person_response because it is not needed in this context
+            people_list_response.append(person_response.dict(exclude={'households'}))
+
+        return people_list_response

@@ -8,7 +8,7 @@ from ...media.models.media import ViewImage
 from ...media.services.mediaService import NoImageException
 from ...people.models.people import CreatePerson, FullViewPerson, UpdatePerson
 from fastapi import APIRouter
-from typing import List
+from typing import List, Union
 from ...users.models.user import User
 from ...users.routers.login import get_current_user
 
@@ -19,6 +19,12 @@ router = APIRouter(tags=['People'])
 def get_people(people_service: PeopleService = Depends(PeopleService), current_user: User = Depends(get_current_user)):
     people_response = people_service.get_all()
     return people_response
+
+#find people by email or first name and last name
+@router.get('/people/find_by_email_or_names')
+def find_by_email_or_names(email: Union[str, None] = None, first_name: Union[str, None] = None, last_name: Union[str, None] = None,
+                           people_service: PeopleService = Depends(PeopleService), current_user: User = Depends(get_current_user)):
+    return people_service.find_people_by_email_or_first_and_last_name(email, first_name, last_name)
 
 
 @router.get('/people/{id}', response_model=FullViewPerson)

@@ -6,6 +6,7 @@ from src.app.database import get_db, SessionLocal
 from src.app.people.models.database import models
 from src.app.people.models.database.models import PersonImage
 
+from sqlalchemy import or_, and_
 
 class PeopleDAO:
     def __init__(self, db: SessionLocal = Depends(get_db)):
@@ -16,6 +17,13 @@ class PeopleDAO:
 
     def get_person_by_id(self, id: int) -> models.Person:
         return self.db.query(models.Person).filter(models.Person.id == id).first()
+
+    def find_people_by_email_or_first_name_and_last_name(self, email: str, first_name: str, last_name: str) -> List[models.Person]:
+        return self.db.query(models.Person).filter(or_(models.Person.email == email, and_(models.Person.first_name == first_name,
+                                                        models.Person.last_name == last_name))).order_by(models.Person.id).all()
+
+        #return self.db.query(models.Person).filter(
+        #    models.Person.email == email or (models.Person.first_name == first_name and models.Person.last_name == last_name)).all()
 
     def update_person(self, person_id, update_values, image_entity=None):
         personToUpdate = self.db.query(models.Person).filter(models.Person.id == person_id)

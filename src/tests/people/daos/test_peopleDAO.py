@@ -362,3 +362,115 @@ def test_add_person_image(test_db):
     person = db.query(models.Person).filter(models.Person.id == new_person_1.id).first()
     assert person.profile_images[0] is not None
     assert person.profile_images[0].image.address == "test_image.jpg"
+
+def test_find_people_by_email_or_first_name_and_last_name_match_email(test_db):
+    match_by_email_1 = models.Person(
+        first_name="Test Name",
+        last_name="Last Name",
+        email="match@gmail.com")
+
+    match_by_email_2 = models.Person(
+        first_name="Test Name 2",
+        last_name="Last Name 2",
+        email="match@gmail.com")
+
+    not_match_by_email = models.Person(
+        first_name="Test Name 3",
+        last_name="Last Name 3",
+        email="not_match@gmail.com")
+
+    db.add(match_by_email_1)
+    db.add(match_by_email_2)
+    db.add(not_match_by_email)
+    db.commit()
+
+    people = peopleDAO.find_people_by_email_or_first_name_and_last_name("match@gmail.com", "", "")
+
+    assert len(people) == 2
+    assert people[0].id == match_by_email_1.id
+    assert people[0].first_name == "Test Name"
+    assert people[1].id == match_by_email_2.id
+    assert people[1].first_name == "Test Name 2"
+
+
+def test_find_people_by_email_or_first_name_and_last_name_match_name(test_db):
+    match_by_name_1 = models.Person(
+        first_name="Match_First_1",
+        last_name="Match_Last_1",
+        email="non_match_email@gmail.com")
+
+    match_by_name_2 = models.Person(
+        first_name="Match_First_1",
+        last_name="Match_Last_1",
+        email="non_match_email_2@gmail.com")
+
+    non_match_all = models.Person(
+        first_name="Non_Match_First_2",
+        last_name="Non_Match_Last_2",
+        email="non_match_email@gmail.com")
+
+    not_match_by_first_name = models.Person(
+        first_name="Non_Match_First_1",
+        last_name="Match_Last_1",
+        email="non_match_email@gmail.com")
+
+    not_match_by_last_name = models.Person(
+        first_name="Match_First_1",
+        last_name="Non_Match_Last_1",
+        email="non_match_email@gmail.com")
+
+    db.add(match_by_name_1)
+    db.add(match_by_name_2)
+    db.add(non_match_all)
+    db.add(not_match_by_first_name)
+    db.add(not_match_by_last_name)
+    db.commit()
+
+    people = peopleDAO.find_people_by_email_or_first_name_and_last_name("test@gmail.com", "Match_First_1", "Match_Last_1")
+
+    assert len(people) == 2
+    assert people[0].id == match_by_name_1.id
+    assert people[0].first_name == "Match_First_1"
+    assert people[1].id == match_by_name_2.id
+    assert people[1].first_name == "Match_First_1"
+
+
+def test_find_people_by_email_or_first_name_and_last_name_match_email_and_names(test_db):
+    match_by_email_1 = models.Person(
+        first_name="Test Name",
+        last_name="Last Name",
+        email="match@gmail.com")
+
+    match_by_email_2 = models.Person(
+        first_name="Test Name 2",
+        last_name="Last Name 2",
+        email="match@gmail.com")
+
+    match_by_names = models.Person(
+        first_name="Match_First",
+        last_name="Match_Last",
+        email="not_match@gmail.com")
+
+    non_match = models.Person(
+        first_name="Non Match First",
+        last_name="Non Match Last",
+        email="not_match@gmail.com")
+
+    db.add(match_by_email_1)
+    db.add(match_by_email_2)
+    db.add(match_by_names)
+    db.add(non_match)
+    db.commit()
+
+    people = peopleDAO.find_people_by_email_or_first_name_and_last_name("match@gmail.com", "Match_First", "Match_Last")
+
+    #people is sorted by id, so should be in order of creation
+    assert len(people) == 3
+    assert people[0].id == match_by_email_1.id
+    assert people[0].first_name == "Test Name"
+    assert people[1].id == match_by_email_2.id
+    assert people[1].first_name == "Test Name 2"
+    assert people[2].id == match_by_names.id
+    assert people[2].first_name == "Match_First"
+    assert people[2].last_name == "Match_Last"
+
