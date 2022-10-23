@@ -10,7 +10,7 @@ class UserFactory:
         self.password_utils = password_utils
         pass
 
-    def create_user_from_user_entity(self, user_entity):
+    def create_user_from_user_entity(self, user_entity) -> User:
         user_response = User(
             id=user_entity.id,
             first_name=user_entity.first_name,

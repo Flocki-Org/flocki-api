@@ -1,7 +1,10 @@
 from fastapi import Depends
 
+from fastapi_pagination import Page, Params
+
 from src.app.users.daos.userDAO import UserDAO
 from src.app.users.factories.userFactory import UserFactory
+from src.app.users.models.user import User
 from src.app.users.services.passwordUtil import PasswordUtil
 
 
@@ -14,10 +17,16 @@ class UserService:
         self.user_DAO = user_DAO
         self.password_utils = password_utils
 
-    def get_all_users(self):
-        user_entities = self.user_DAO.get_all_users()
-        for user_entity in user_entities:
-            yield self.user_factory.create_user_from_user_entity(user_entity)
+    def get_all_users(self, params: Params = Params(page=1, size=100)) -> Page[User]:
+        user_entities = []
+        user_entities_page = self.user_DAO.get_all_users(params)
+        if user_entities_page:
+            for user_entity in user_entities_page.items:
+                user_entities.append(self.user_factory.create_user_from_user_entity(user_entity))
+
+            return Page.create(items=user_entities, params=params, total=user_entities_page.total)
+        else:
+            return []
 
     def get_user_by_id(self, id):
         user_entity = self.user_DAO.get_user_by_id(id)

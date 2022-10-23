@@ -1,5 +1,7 @@
 from fastapi import status, Depends, HTTPException
 
+from fastapi_pagination import Page, Params
+
 from .login import get_current_user
 from ..services.userService import UserService, NoUserException
 from ...users.models.user import User, DisplayUser
@@ -8,9 +10,9 @@ from typing import List
 
 router = APIRouter(tags=['Users'])
 
-@router.get('/users', response_model=List[DisplayUser])
-def get_users(user_service: UserService = Depends(UserService), current_user: User = Depends(get_current_user)):
-    return user_service.get_all_users()
+@router.get('/users', response_model=Page[DisplayUser])
+def get_users(page: int = 1, page_size: int = 100, user_service: UserService = Depends(UserService), current_user: User = Depends(get_current_user)):
+    return user_service.get_all_users(Params(page=page, size=page_size))
 
 @router.get('/users/{id}', response_model=DisplayUser)
 def get_user(id: int, user_service: UserService = Depends(UserService), current_user: User = Depends(get_current_user)):
