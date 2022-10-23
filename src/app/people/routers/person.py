@@ -1,7 +1,8 @@
 from fastapi import status, Depends, HTTPException, UploadFile
 
+from fastapi_pagination import Params, Page
+
 from ..services.addressService import NoAddressException
-from ..services.householdService import NoHouseholdException
 from ..services.peopleService import PeopleService, NoPersonException, NoHouseholdExceptionForPersonCreation, \
     UnableToRemoveLeaderFromHouseholdException
 from ...media.models.media import ViewImage
@@ -15,9 +16,11 @@ from ...users.routers.login import get_current_user
 router = APIRouter(tags=['People'])
 
 
-@router.get('/people', response_model=List[FullViewPerson])
-def get_people(people_service: PeopleService = Depends(PeopleService), current_user: User = Depends(get_current_user)):
-    people_response = people_service.get_all()
+@router.get('/people', response_model=Page[FullViewPerson])
+def get_people(page: int = 1, page_size:int = 10, people_service: PeopleService = Depends(PeopleService),
+               current_user: User = Depends(get_current_user)):
+    params: Params = Params(page=page, size=page_size)
+    people_response = people_service.get_all(params)
     return people_response
 
 #find people by email or first name and last name

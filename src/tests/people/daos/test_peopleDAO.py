@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from fastapi_pagination import Params
 # from main import app
 import pytest
 
@@ -57,10 +58,84 @@ def test_get_all(test_db):
     db.add(new_person_1)
     db.add(new_person_2)
     db.commit()
-    people = peopleDAO.get_all()
+    people_page = peopleDAO.get_all()
+    people = people_page.items
     assert len(people) == 2
     assert people[0].first_name == new_person_1.first_name
     assert people[1].first_name == new_person_2.first_name
+
+
+def test_get_all_pagination(test_db):
+    new_person_1 = models.Person(
+        first_name="A",
+        last_name="B"
+    )
+    new_person_2 = models.Person(
+        first_name="B",
+        last_name="B"
+    )
+    db.add(new_person_1)
+    db.add(new_person_2)
+    db.commit()
+    people_page = peopleDAO.get_all(Params(page=1, size=1))
+    people = people_page.items
+    assert len(people) == 1
+    assert people[0].first_name == new_person_1.first_name
+
+    people_page = peopleDAO.get_all(Params(page=2, size=1))
+    people = people_page.items
+    assert len(people) == 1
+    assert people[0].first_name == new_person_2.first_name
+
+
+def test_get_all_pagination_ordered_by_dob(test_db):
+    new_person_1 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth= datetime(1984, 1, 1, 10, 10, 10),
+    )
+    new_person_2 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth = datetime(1960, 1, 1, 10, 10, 10),
+    )
+    db.add(new_person_1)
+    db.add(new_person_2)
+    db.commit()
+    people_page = peopleDAO.get_all(Params(page=1, size=1))
+    people = people_page.items
+    assert len(people) == 1
+    assert people[0].date_of_birth == new_person_2.date_of_birth
+
+    people_page = peopleDAO.get_all(Params(page=2, size=1))
+    people = people_page.items
+    assert len(people) == 1
+    assert people[0].date_of_birth == new_person_1.date_of_birth
+
+
+def test_get_all_pagination_ordered_by_id(test_db):
+    new_person_1 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth= datetime(1960, 1, 1, 10, 10, 10),
+    )
+    new_person_2 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth = datetime(1960, 1, 1, 10, 10, 10),
+    )
+    db.add(new_person_1)
+    db.add(new_person_2)
+    db.commit()
+    people_page = peopleDAO.get_all(Params(page=1, size=1))
+    people = people_page.items
+    assert len(people) == 1
+    assert people[0].date_of_birth == new_person_1.date_of_birth
+
+    people_page = peopleDAO.get_all(Params(page=2, size=1))
+    people = people_page.items
+    assert len(people) == 1
+    assert people[0].date_of_birth == new_person_2.date_of_birth
 
 
 def test_get_all_none(test_db):
@@ -73,7 +148,8 @@ def test_get_all_none(test_db):
     db.add(new_person_1)
     db.add(new_person_2)
     db.commit()
-    people = peopleDAO.get_all()
+    people_page = peopleDAO.get_all()
+    people = people_page.items
     assert len(people) == 2
     assert people[0].first_name == new_person_1.first_name
     assert people[1].first_name == new_person_2.first_name
@@ -118,7 +194,7 @@ def test_update_person(test_db):
         marital_status="single",
         # egistered_date = "2020-01-01"
     )
-    print("got here")
+
     db.add(existing_person)
     db.commit()
     db.refresh(existing_person)

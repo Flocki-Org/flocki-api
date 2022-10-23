@@ -4,6 +4,8 @@ import pytest
 from fastapi import UploadFile
 from fastapi.responses import FileResponse
 
+from fastapi_pagination import Page, Params
+
 from unittest import mock
 from unittest.mock import call
 
@@ -37,7 +39,8 @@ def test_get_all(mock_get_all, mock_create_person_from_person_entity):
     person_1 = models.Person(id=1, first_name="John")
     person_2 = models.Person(id=2, first_name="Jane")
     person_3 = models.Person(id=3, first_name="Jimmy")
-    mock_get_all.return_value = [person_1, person_2, person_3]
+
+    mock_get_all.return_value = Page.create(items=[person_1, person_2, person_3], total=3, params=Params(page=1, size=10))
 
     full_view_person_1 = FullViewPerson(id=1, first_name='John')
     full_view_person_2 = FullViewPerson(id=2, first_name='Jane')
@@ -53,7 +56,8 @@ def test_get_all(mock_get_all, mock_create_person_from_person_entity):
 
     mock_create_person_from_person_entity.side_effect = side_effect
 
-    people = people_service.get_all()
+    people_page = people_service.get_all()
+    people = people_page.items
     # for some reason the order of parameters matters, and is reversed to what is actually passed in, in the code.
     calls = [call(include_households=True, include_profile_image=True, person_entity=person_1),
              call(include_households=True, include_profile_image=True, person_entity=person_2),
@@ -64,6 +68,7 @@ def test_get_all(mock_get_all, mock_create_person_from_person_entity):
 
     assert len(people) == 3
     assert people == unordered([full_view_person_1, full_view_person_2, full_view_person_3])
+
 
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')

@@ -3,6 +3,8 @@ from datetime import datetime
 from fastapi import Depends, UploadFile
 from fastapi.responses import FileResponse
 
+from fastapi_pagination import Page, Params
+
 from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.factories.mediaFactory import MediaFactory
 from src.app.media.services.mediaService import MediaService, NoImageException
@@ -49,13 +51,15 @@ class PeopleService:
         self.household_DAO = household_DAO
         self.household_utils = household_utils
 
-    def get_all(self):
+    def get_all(self, params: Params = Params(page=1, size=100)):
         people_response = []
-        people = self.peopleDAO.get_all()
-        for person in people:
+        people_page = self.peopleDAO.get_all(params)
+
+        for person in people_page.items:
             people_response.append(self.peopleFactory.create_person_from_person_entity(person_entity=person, include_profile_image=True,
                                                                     include_households=True))
-        return people_response
+
+        return Page.create(items=people_response, params=params, total=people_page.total)
 
     def get_by_id(self, id):
         person_entity = self.peopleDAO.get_person_by_id(id)
