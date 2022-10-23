@@ -1,4 +1,5 @@
 from fastapi import status, Depends, HTTPException, UploadFile
+from fastapi_pagination import Page, Params
 
 from ..models.household import CreateHousehold, ViewHousehold, UpdateHousehold
 from fastapi import APIRouter
@@ -12,9 +13,10 @@ from ...users.routers.login import get_current_user
 
 router = APIRouter(tags=['Household'])
 
-@router.get('/households', response_model=List[ViewHousehold])
-def get_households(household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):
-    return household_service.get_all_households()
+@router.get('/households', response_model=Page[ViewHousehold])
+def get_households(page: int = 1, page_size:int = 10, household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):
+    params: Params = Params(page=page, size=page_size)
+    return household_service.get_all_households(params=params)
 
 @router.get('/households/{id}', response_model=ViewHousehold)
 def get_household(id: int, household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):

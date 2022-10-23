@@ -42,7 +42,8 @@ householdDAO = HouseholdDAO(db)
 
 
 def test_get_all_households_no_households(test_db):
-    households = householdDAO.get_all_households()
+    households_page = householdDAO.get_all_households()
+    households = households_page.items
     len(households) == 0
 
 
@@ -53,7 +54,8 @@ def test_get_all_households_one_household(test_db):
     )
     db.add(household)
     db.commit()
-    households = householdDAO.get_all_households()
+    households_page = householdDAO.get_all_households()
+    households = households_page.items
     assert len(households) == 1
 
 
@@ -69,7 +71,8 @@ def test_get_all_households_many_households(test_db):
     db.add(household)
     db.add(household_2)
     db.commit()
-    households = householdDAO.get_all_households()
+    households_page = householdDAO.get_all_households()
+    households = households_page.items
     assert len(households) == 2
 
 

@@ -3,6 +3,7 @@ from unittest.mock import call, ANY
 
 import pytest
 from fastapi import UploadFile
+from fastapi_pagination import Page, Params
 from starlette.responses import FileResponse
 
 from src.app.media.daos.mediaDAO import MediaDAO
@@ -30,8 +31,8 @@ def test_get_all_households_none(mock_get_all_households, mock_createHouseholdFr
     mock_get_all_households.return_value = []
     mock_createHouseholdFromHouseholdEntity.return_value = []
 
-    households = household_service.get_all_households()
-    assert households == []
+    households_page = household_service.get_all_households()
+    assert households_page == []
     assert mock_get_all_households.call_count == 1
     assert mock_createHouseholdFromHouseholdEntity.call_count == 0
 
@@ -42,8 +43,7 @@ def test_get_all_households_some(mock_get_all_households, mock_createHouseholdFr
     household_service = HouseholdService(household_DAO=HouseholdDAO(), household_factory=HouseholdFactory())
     household_entity_1 = models.Household(id=1, leader_id=1, address_id=1)
     household_entity_2 = models.Household(id=2, leader_id=2, address_id=2)
-    mock_get_all_households.return_value = [household_entity_1, household_entity_2]
-
+    mock_get_all_households.return_value = Page.create(items=[household_entity_1, household_entity_2], total=3, params=Params(page=1, size=10))
     household_1 = ViewHousehold(id=1, leader=BasicViewPerson(id=1), address=ViewAddress(id=1))
     household_2 = ViewHousehold(id=2, leader=BasicViewPerson(id=1), address=ViewAddress(id=1))
 
@@ -55,7 +55,8 @@ def test_get_all_households_some(mock_get_all_households, mock_createHouseholdFr
 
     mock_createHouseholdFromHouseholdEntity.side_effect = side_effect
 
-    households = household_service.get_all_households()
+    households_page = household_service.get_all_households()
+    households = households_page.items
     assert households == [household_1, household_2]
     assert mock_get_all_households.call_count == 1
     assert mock_createHouseholdFromHouseholdEntity.call_count == 2

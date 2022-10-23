@@ -3,6 +3,9 @@ from mimetypes import guess_extension
 from typing import List
 
 from fastapi import Depends, UploadFile
+
+from fastapi_pagination import Page, Params
+
 from starlette.responses import FileResponse
 
 from src.app.media.daos.mediaDAO import MediaDAO
@@ -44,18 +47,24 @@ class HouseholdService:
         self.address_DAO = address_DAO
         self.household_utils = household_utils
 
-    def get_all_households(self) -> List[ViewHousehold]:
+    def get_all_households(self, params: Params = Params(page=1, size=100)) -> Page[ViewHousehold]:
         households_response = []
-        households = self.household_DAO.get_all_households()
-        for household in households:
-            households_response.append(self.household_factory.createHouseholdFromHouseholdEntity(household_entity=household))
-        return households_response
+        households_page = self.household_DAO.get_all_households(params=params)
+        if households_page:
+            for household in households_page.items:
+                households_response.append(self.household_factory.createHouseholdFromHouseholdEntity(household_entity=household))
+
+            return Page.create(items=households_response, params=params, total=households_page.total)
+
+        return []
+
 
     def get_household_by_id(self, id: int):
         household_entity = self.household_DAO.get_household_by_id(id)
         if household_entity is None:
             raise NoHouseholdException(f"Household does not exist with the following ID: {id}")
         return self.household_factory.createHouseholdFromHouseholdEntity(household_entity, include_household_image=True)
+
 
     def add_household(self, household: CreateHousehold):
 
