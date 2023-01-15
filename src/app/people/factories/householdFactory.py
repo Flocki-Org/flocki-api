@@ -60,7 +60,7 @@ class HouseholdFactory:
 
         new_household = models.Household(
             leader_id=household.leader_id,
-            address_id=household.address,
+            address_id=household.address_id,
         )
         for person in people_models:
             new_household.people.append(person)
