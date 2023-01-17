@@ -2,6 +2,8 @@ import uvicorn
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from src.app.church.routers import church
 from src.app.database import engine, SessionLocal
 from src.app.media.routers import media
 from src.app.users.daos.userDAO import UserDAO
@@ -24,6 +26,7 @@ app.include_router(login.router)
 app.include_router(household.router)
 app.include_router(media.router)
 app.include_router(address.router)
+app.include_router(church.router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.flocki_cors_origins,
