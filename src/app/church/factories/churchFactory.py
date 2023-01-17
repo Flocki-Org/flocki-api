@@ -28,7 +28,7 @@ class ChurchFactory:
             return None
 
         address_response = None
-        if church_entity.address_id is not None:
+        if church_entity.address is not None:
             address_response = self.address_factory.create_address_from_address_entity(church_entity.address)
 
         logo_image_response = None

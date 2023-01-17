@@ -30,4 +30,13 @@ class ChurchDAO:
             raise Exception("Church does not exist")
         church_entity_to_update.update(update_values)
         self.db.commit()
+        return self.db.query(models.Church).first()
+
+
+    def delete_church(self):
+        church_entity = self.db.query(models.Church).first()
+        if church_entity is None:
+            raise Exception("There is no existing church configuration to delete")
+        self.db.delete(church_entity)
+        self.db.commit()
 

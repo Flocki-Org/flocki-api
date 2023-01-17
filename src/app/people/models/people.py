@@ -35,6 +35,7 @@ class AddressType(str, Enum):
     home = 'home'
     business = 'business'
     student_accommodation = 'student_accommodation'
+    church = 'church'
 
 
 class SocialMediaLink(BaseModel):
