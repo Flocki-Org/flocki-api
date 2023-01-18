@@ -9,7 +9,7 @@ from src.app.users.routers.login import get_current_user
 router = APIRouter(tags=['Church'])
 
 @router.get('/church', response_model=ViewChurch)
-def get_church(church_service: ChurchService = Depends(ChurchService), current_user: User = Depends(get_current_user)):
+def get_church(church_service: ChurchService = Depends(ChurchService)):
     church = church_service.get_church()
     if church is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="The church has not yet been defined")
