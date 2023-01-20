@@ -12,6 +12,7 @@ from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.people import CreatePerson, UpdatePerson
+from src.app.utils.fileUtils import FileUtils
 
 import uuid
 from mimetypes import guess_extension
@@ -217,8 +218,7 @@ class PeopleService:
         if file is not None:
             if file.content_type == 'image/jpeg':
                 file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
-            filename = str(personToUpdate.id) + '_' + str(uuid.uuid4()) + guess_extension(
-                file.content_type, strict=False).strip()
+            filename = str(personToUpdate.id) + '_' + str(uuid.uuid4()) + "." + FileUtils.get_file_extension(file)
             description = f"Profile image for user: {personToUpdate.first_name}  {personToUpdate.last_name}  with ID: {personToUpdate.id}"
             image_entity = self.media_service.upload_image(file, filename, description)
             self.peopleDAO.add_person_image(personToUpdate, image_entity)

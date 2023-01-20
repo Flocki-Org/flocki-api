@@ -22,7 +22,7 @@ from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.householdUtils import HouseholdUtils
 from src.app.people.services.peopleService import NoPersonException
 
-
+from src.app.utils.fileUtils import FileUtils
 class NoHouseholdException(Exception):
     pass
 
@@ -107,8 +107,7 @@ class HouseholdService:
             if file.content_type == 'image/jpeg':
                 file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
 
-            filename = 'household_' + str(household_entity.id) + '_' + str(uuid.uuid4()) + guess_extension(
-                file.content_type, strict=False).strip()
+            filename = 'household_' + str(household_entity.id) + '_' + str(uuid.uuid4()) + FileUtils.get_file_extension(file)
             description = f"Profile image for household with ID: {household_entity.id}"
             image_entity = self.media_service.upload_image(file, filename, description)
             self.household_DAO.add_household_image(household_entity, image_entity)
@@ -127,7 +126,7 @@ class HouseholdService:
         elif household_with_image.household_image.store is not None and household_with_image.household_image.store == 'local':
             return FileResponse(household_with_image.household_image.address)
         elif household_with_image.household_image.store is not None and household_with_image.household_image.store == 's3':
-            raise NotImplementedError("S3 not implemented")
+            return self.media_service.get_image_by_id(household_with_image.household_image.id)
         return
 
     def update_household(self, id, household: UpdateHousehold):

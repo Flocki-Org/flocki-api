@@ -8,6 +8,7 @@ from src.app.church.daos.churchDAO import ChurchDAO
 from src.app.church.factories.churchFactory import ChurchFactory
 from src.app.church.models.church import CreateChurch, UpdateChurch, ViewChurch
 from src.app.media.daos.mediaDAO import MediaDAO
+from src.app.media.services.mediaService import MediaService
 from src.app.people.daos.addressDAO import AddressDAO
 
 
@@ -28,11 +29,13 @@ class AddressDoesNotExist(Exception):
 
 class ChurchService:
     def __init__(self, church_dao: ChurchDAO = Depends(ChurchDAO), church_factory: ChurchFactory = Depends(ChurchFactory),
-                 media_DAO: MediaDAO = Depends(MediaDAO), address_DAO: AddressDAO = Depends(AddressDAO)):
+                 media_DAO: MediaDAO = Depends(MediaDAO), address_DAO: AddressDAO = Depends(AddressDAO),
+                 media_service: MediaService = Depends(MediaService)):
         self.church_dao = church_dao
         self.church_factory = church_factory
         self.media_DAO = media_DAO
         self.address_DAO = address_DAO
+        self.media_service = media_service
 
     def get_church(self) -> ViewChurch:
         return self.church_factory.create_church_from_church_entity(self.church_dao.get_church())
@@ -86,15 +89,6 @@ class ChurchService:
 
 
         if church_entity.logo_image is not None:
-            logo = self.media_DAO.get_image_by_id(church_entity.logo_image.id)
-
-            if logo is None:
-                return None
-            elif logo.store is not None and logo.store == 'local':
-                return FileResponse(logo.address)
-            elif logo.store is not None and logo.store == 's3':
-                raise NotImplementedError("S3 not implemented")
-
-            return None
+            return self.media_service.get_image_by_id(church_entity.logo_image.id)
 
         return None
