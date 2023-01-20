@@ -20,6 +20,8 @@ class Settings(BaseSettings):
 
     flocki_s3_bucket_name = "flockiapp-s3"
     flocki_s3_region_name = "eu-west-1"
+    flocki_s3_access_key = "" 
+    flocki_s3_secret_access_key = "" 
 
     class Config:
         env_file = ".env"
