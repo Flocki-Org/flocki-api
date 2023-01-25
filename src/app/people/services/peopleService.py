@@ -84,7 +84,7 @@ class PeopleService:
             elif full_profile_image_info.store is not None and full_profile_image_info.store == 'local':
                 return FileResponse(full_profile_image_info.address)
             elif full_profile_image_info.store is not None and full_profile_image_info.store == 's3':
-                raise NotImplementedError("S3 not implemented")
+                return self.media_service.get_image_by_id(full_profile_image_info.id)
 
             return None
 

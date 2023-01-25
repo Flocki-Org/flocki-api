@@ -41,7 +41,7 @@ def delete_church(church_service: ChurchService = Depends(ChurchService), curren
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="There is not church configuration to delete")
 
 @router.get('/church/logo')
-def get_church_logo(church_service: ChurchService = Depends(ChurchService), current_user: User = Depends(get_current_user)):
+def get_church_logo(church_service: ChurchService = Depends(ChurchService)):
     logo_image = church_service.get_church_logo()
     if logo_image is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Church logo has not been defined")
