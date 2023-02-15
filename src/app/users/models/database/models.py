@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, UniqueConstraint
+from sqlalchemy import Column, Integer, String, UniqueConstraint, ForeignKey
+from sqlalchemy.orm import relationship
+
 from src.app.database import Base
 
 class User(Base):
@@ -9,4 +11,5 @@ class User(Base):
     email = Column(String)
     mobile_number = Column(String)
     password = Column(String)
-    __table_args__ = (UniqueConstraint('email', name='users_uc'),)
+    person_id = Column(Integer, ForeignKey('people.id'))
+    __table_args__ = (UniqueConstraint('email', name='users_uc'), UniqueConstraint('person_id', name='person_id_uc'))

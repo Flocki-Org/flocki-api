@@ -7,6 +7,7 @@ class User(BaseModel):
     email: EmailStr
     mobile_number: str
     password: str
+    person_id: int = Field(None)
     class Config:
             schema_extra={
                   "example": {
@@ -24,6 +25,8 @@ class DisplayUser(BaseModel):
     last_name: str
     email: EmailStr
     mobile_number: str
+    person_id: int = Field(None)
+
     class Config:
         orm_mode = True
 

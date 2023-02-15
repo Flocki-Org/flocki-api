@@ -320,11 +320,11 @@ def test_get_household_image_by_household_id_none_image(mock_get_household_by_id
     assert file_response is None
 
 
-
+@mock.patch.object(MediaService, 'get_image_by_id')
 @mock.patch.object(HouseholdFactory, 'createHouseholdFromHouseholdEntity')
 @mock.patch.object(HouseholdDAO, 'get_household_by_id')
-def test_get_household_image_by_household_id_s3_not_implemented(mock_get_household_by_id, mock_createHouseholdFromHouseholdEntity):
-    household_service = HouseholdService(household_DAO=HouseholdDAO(), household_factory=HouseholdFactory())
+def test_get_household_image_by_household_id_s3_not_implemented(mock_get_household_by_id, mock_createHouseholdFromHouseholdEntity, mock_get_image_by_id):
+    household_service = HouseholdService(household_DAO=HouseholdDAO(), household_factory=HouseholdFactory(), media_service=MediaService())
 
     household_entity = models.Household(id=1, leader_id=1, address_id=1)
 
@@ -334,10 +334,9 @@ def test_get_household_image_by_household_id_s3_not_implemented(mock_get_househo
     household_view.household_image = image
     mock_createHouseholdFromHouseholdEntity.return_value = household_view
 
-    with pytest.raises(NotImplementedError) as e:
-        household_service.get_household_image_by_household_id(1)
+    household_service.get_household_image_by_household_id(1)
 
-    e.value.args[0] == 'S3 not implemented yet'
+    mock_get_image_by_id.assert_called_once_with(1)
 
 
 @mock.patch('src.app.people.services.householdService.HouseholdService.get_household_by_id')

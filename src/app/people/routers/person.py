@@ -96,10 +96,10 @@ def update_person_with_profile_image(id: int, file: UploadFile, people_service: 
 
 
 @router.post('/people', status_code=status.HTTP_201_CREATED, response_model=FullViewPerson)
-def add_person(person: CreatePerson, people_service: PeopleService = Depends(PeopleService),
+def add_person(create_login: Union[bool, None], person: CreatePerson, people_service: PeopleService = Depends(PeopleService),
                current_user: User = Depends(get_current_user)):
     try:
-        return people_service.create_person(person)
+        return people_service.create_person(person, create_login)
     except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException,
                 NoImageException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])

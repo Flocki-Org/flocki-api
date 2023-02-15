@@ -8,6 +8,8 @@ from ...people.factories.addressFactory import AddressFactory
 from ...people.models.household import ViewHousehold
 from ...people.models.database import models
 from ...media.factories.mediaFactory import MediaFactory
+from ...users.models.user import DisplayUser
+
 
 class PeopleFactory:
     def __init__(self, address_factory: AddressFactory = Depends(AddressFactory), media_factory: MediaFactory = Depends(MediaFactory)):
@@ -22,7 +24,7 @@ class PeopleFactory:
             last_name=person_entity.last_name)
         return person_response
 
-    def create_person_from_person_entity(self, person_entity, include_households=True, include_profile_image=False) -> FullViewPerson:
+    def create_person_from_person_entity(self, person_entity: models.Person, include_households=True, include_profile_image=False, user: DisplayUser = None) -> FullViewPerson:
         person_response = FullViewPerson(
             id=person_entity.id,
             first_name=person_entity.first_name,
@@ -59,6 +61,18 @@ class PeopleFactory:
             if len(images) > 0 and images[0] is not None:
                 person_response.profile_image = self.media_factory.create_view_image_from_image_entity(images[0].image)
 
+
+        if user is not None:
+            person_response.user = user
+
+        if person_response.user is None and person_entity.user is not None:
+            person_response.user = DisplayUser(
+                id=person_entity.user.id,
+                first_name=person_entity.user.first_name,
+                last_name=person_entity.user.last_name,
+                email=person_entity.user.email,
+                is_active=person_entity.user.is_active
+            )
         return person_response
 
     def create_household_view(self, household) -> ViewHousehold:

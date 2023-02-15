@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Union
 
 from fastapi import Depends, UploadFile
 from fastapi.responses import FileResponse
@@ -12,6 +13,8 @@ from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.people import CreatePerson, UpdatePerson
+from src.app.users.models.user import DisplayUser
+from src.app.users.services.userService import UserService
 from src.app.utils.fileUtils import FileUtils
 
 import uuid
@@ -42,7 +45,8 @@ class PeopleService:
                  people_factory: PeopleFactory = Depends(PeopleFactory),
                  media_factory: MediaFactory = Depends(MediaFactory),
                  household_DAO: HouseholdDAO = Depends(HouseholdDAO),
-                 household_utils: HouseholdUtils = Depends(HouseholdUtils)):
+                 household_utils: HouseholdUtils = Depends(HouseholdUtils),
+                 user_service: UserService = Depends(UserService)):
         self.peopleDAO = peopleDAO
         self.peopleFactory = people_factory
         self.addressDAO = addressDAO
@@ -51,6 +55,7 @@ class PeopleService:
         self.media_service = media_service
         self.household_DAO = household_DAO
         self.household_utils = household_utils
+        self.user_service = user_service
 
     def get_all(self, params: Params = Params(page=1, size=100)):
         people_response = []
@@ -169,7 +174,7 @@ class PeopleService:
                 self.household_DAO.remove_person_from_household(self.household_DAO.get_household_by_id(household_id), personToUpdate)
 
 
-    def create_person(self, person: CreatePerson):
+    def create_person(self, person: CreatePerson, create_login: Union[bool, None] = False):
         self.validate_households(person.household_ids)
         # validate address ids
         self.validate_addresses(person.addresses)
@@ -190,7 +195,12 @@ class PeopleService:
         created_person = self.peopleDAO.create_person(new_person, image_entity)
         if person.household_ids is not None:
             self.add_person_to_households(created_person, person.household_ids)
-        return self.peopleFactory.create_person_from_person_entity(self.peopleDAO.get_person_by_id(created_person.id), include_households=True, include_profile_image=True)
+
+        created_user: DisplayUser = None
+        if create_login is not None and create_login is True:
+            created_user = self.create_login_for_person(created_person)
+
+        return self.peopleFactory.create_person_from_person_entity(self.peopleDAO.get_person_by_id(created_person.id), include_households=True, include_profile_image=True, user=created_user)
 
     def validate_household_remove_person(self, new_household_ids, personToUpdate):
         existing_household_ids = self.household_utils.get_existing_household_ids(personToUpdate)
@@ -256,3 +266,10 @@ class PeopleService:
             people_list_response.append(person_response.dict(exclude={'households'}))
 
         return people_list_response
+
+    def create_login_for_person(self, created_person) -> DisplayUser:
+        try:
+            return self.user_service.create_user_from_person(created_person)
+        except:
+            #TODO log warning and somehow include warning to the frontend.
+            return None;

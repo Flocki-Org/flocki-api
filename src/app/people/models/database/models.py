@@ -27,7 +27,8 @@ class Person(Base):
     addresses = relationship("PeopleAddress", back_populates="person", cascade="all, delete-orphan")
     households = relationship("Household", secondary=HouseholdPerson, viewonly=True)  # , cascade="all, delete-orphan")
     profile_images = relationship("PersonImage", back_populates="person", cascade="all, delete-orphan")
-
+    #as list false
+    user = relationship("User", backref="person", uselist=False)
 
 class SocialMediaLink(Base):
     __tablename__ = 'social_media_links'

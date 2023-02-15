@@ -14,7 +14,7 @@ class UserDAO:
     def get_all_users(self, params: Params = Params(page=1, size=100)) -> Page[models.User]:
         return paginate(self.db.query(models.User), params)
 
-    def get_user_by_id(self, id):
+    def get_user_by_id(self, id) -> models.User:
         return self.db.query(models.User).filter(models.User.id == id).first()
 
     def create_user(self, new_user):
@@ -33,3 +33,10 @@ class UserDAO:
 
     def get_user_by_name(self, username):
         return self.db.query(models.User).filter(func.lower(models.User.email) == func.lower(username)).first()
+
+    def update_user_person(self, id, person_id):
+        userToUpdate = self.db.query(models.User).filter(models.User.id == id)
+        userToUpdate.update({'person_id': person_id})
+        self.db.commit()
+
+

@@ -550,7 +550,7 @@ def test_create_person(mock_validate_households, mock_validate_addresses, mock_v
     mock_add_person_to_households.assert_called_with(created_person, [1,2])
     mock_get_person_by_id.assert_called_once()
     mock_get_person_by_id.assert_called_with(1)
-    mock_create_person_from_person_entity.assert_called_with(created_person, include_households=True, include_profile_image=True)
+    mock_create_person_from_person_entity.assert_called_with(created_person, include_households=True, include_profile_image=True, user=None)
     assert new_created_person.registered_date == now.date()
 
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')

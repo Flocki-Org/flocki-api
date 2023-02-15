@@ -7,6 +7,7 @@ from typing import List, ForwardRef, Optional
 
 # from src.app.people.models.household import Household
 from src.app.media.models.media import CreateImage, ViewImage
+from src.app.users.models.user import DisplayUser
 
 Household = ForwardRef('Household')
 FullViewPerson = ForwardRef('FullViewPerson')
@@ -212,7 +213,7 @@ class FullViewPerson(BasicViewPerson):
     addresses: List[ViewAddress] = Field([], title="A list of addresses (normally just one home address)")
     households: List[ViewHousehold] = Field(None)
     profile_image: ViewImage = Field(None)
-
+    user: DisplayUser = Field(None)
     class Config:
         orm_mode = True
 
