@@ -133,3 +133,5 @@ images/
 
 test_db.db
 test_db.db-journal
+
+.pf.swp
