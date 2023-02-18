@@ -53,6 +53,28 @@ class AuthService:
             person=basic_view_person
         )
 
+    def login(self, username) -> AuthResponse:
+        # this gets user by name or email address
+        user = self.user_DAO.get_user_by_name(username)
+        if user is None:
+            raise NoUserException("Invalid user name")
+
+        access_token = self.token_util.generate_token(
+            data={"sub": user.email}
+        )
+
+        linked_person = self.person_DAO.get_person_by_id(user.person_id)
+        basic_view_person = None
+        if linked_person is not None:
+            basic_view_person = self.people_factory.create_basic_person_view_from_person_entity(linked_person)
+
+        return AuthResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=self.user_factory.create_display_user_from_user_entity(user),
+            person=basic_view_person
+        )
+
     def get_current_user(self, token):
         invalid_auth_exception = InvalidAuthCredentials("Invalid Auth")
         try:

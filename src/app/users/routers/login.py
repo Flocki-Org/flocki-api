@@ -1,10 +1,7 @@
 from fastapi import APIRouter, Depends, status, HTTPException
-from src.app.database import get_db, SessionLocal
-from src.app.users.models.database import models
-from src.app.users.models.login import Token, TokenData
-from sqlalchemy import func
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
-from ..daos.userDAO import UserDAO
 from src.app.users.models.login import AuthResponse
 from ..services.authService import AuthService, InvalidAuthCredentials, InvalidPasswordException, NoUserException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -22,6 +19,22 @@ def login(request: OAuth2PasswordRequestForm = Depends(), auth_service: AuthServ
     except NoUserException as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid username or password",
                             headers={'WWW-Authenticate': "Bearer"})
+
+@router.post("/login_with_google_token", response_model=AuthResponse)
+async def verify_google_token(token: str, auth_service: AuthService = Depends(AuthService)):
+    try:
+        print("Attempting to verify Google token: ${token}")
+        idinfo = id_token.verify_oauth2_token(token, requests.Request())
+        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            raise HTTPException(status_code=401, detail='Invalid issuer')
+
+        print("Verified Google token: ${token}")
+        # If the token is valid, return the user's email address
+        return auth_service.login(idinfo['email'])
+    except ValueError as e:
+        # If the token is invalid, return a 401 Unauthorized error
+        raise HTTPException(status_code=401, detail=str(e))
+
 
 def get_current_user(token: AuthResponse = Depends(oauth2_scheme), auth_service: AuthService = Depends(AuthService)):
     try:
