@@ -33,7 +33,11 @@ async def verify_google_token(token: str, auth_service: AuthService = Depends(Au
         return auth_service.login(idinfo['email'])
     except ValueError as e:
         # If the token is invalid, return a 401 Unauthorized error
+        print(e)
         raise HTTPException(status_code=401, detail=str(e))
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def get_current_user(token: AuthResponse = Depends(oauth2_scheme), auth_service: AuthService = Depends(AuthService)):
