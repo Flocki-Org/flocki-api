@@ -29,12 +29,12 @@ class AuthService:
         self.person_DAO = person_DAO
         self.people_factory = people_factory
 
-    def login(self, username, password) -> AuthResponse:
+    def login_basic_auth(self, username, password, validate_password=True) -> AuthResponse:
         user = self.user_DAO.get_user_by_name(username)
         if user is None:
             raise NoUserException("Invalid user name")
 
-        if not self.password_utils.verify_pwd(password, user.password):
+        if validate_password and not self.password_utils.verify_pwd(password, user.password):
             raise InvalidPasswordException("Invalid password")
 
         access_token = self.token_util.generate_token(
@@ -85,3 +85,4 @@ class AuthService:
             return TokenData(username=user_name)
         except:
             raise invalid_auth_exception
+

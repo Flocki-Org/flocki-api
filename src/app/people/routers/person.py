@@ -104,3 +104,4 @@ def add_person(create_login: Union[bool, None], person: CreatePerson, people_ser
                 NoImageException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
 
+
