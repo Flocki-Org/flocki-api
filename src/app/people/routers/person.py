@@ -24,7 +24,7 @@ def get_people(page: int = 1, page_size:int = 10, people_service: PeopleService 
     return people_response
 
 #find people by email or first name and last name
-@router.get('/people/find_by_email_or_names')
+@router.get('/people/find_by_email_or_names', name="Find People By Email or (First and Last Name)")
 def find_by_email_or_names(email: Union[str, None] = None, first_name: Union[str, None] = None, last_name: Union[str, None] = None,
                            people_service: PeopleService = Depends(PeopleService), current_user: User = Depends(get_current_user)):
     return people_service.find_people_by_email_or_first_and_last_name(email, first_name, last_name)

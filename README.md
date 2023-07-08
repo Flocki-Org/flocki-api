@@ -20,6 +20,11 @@ Install all the dependencies via:
 pip3 install -r requirements.txt
 ```
 
+Then, to run tests, run:
+```
+python -m pytest
+```
+
 Then, to run the app locally, run the following: 
 ```
 python main.py

@@ -19,6 +19,10 @@ class NoPersonException(Exception):
 class ExistingUserExistsException(Exception):
     pass
 
+class AlreadyExistPersonAssociatedWithUser(Exception):
+    pass
+
+
 class UserService:
     def __init__(self, user_factory: UserFactory = Depends(UserFactory), user_DAO: UserDAO = Depends(UserDAO), password_utils: PasswordUtil = Depends(PasswordUtil),
                  peopleDAO: PeopleDAO = Depends(PeopleDAO)):
@@ -48,6 +52,11 @@ class UserService:
         return self.user_DAO.get_user_by_name(name)
 
     def create_user(self, new_user: User):
+        #check if user with particular email already exists in database
+        existing_user = self.user_DAO.get_user_by_name(new_user.email)
+        if existing_user is not None:
+            raise ExistingUserExistsException("User already exists with the email provided.");
+
         new_user_entity = self.user_factory.create_user_entity_from_user(new_user)
         response_new_user_entity = self.user_DAO.create_user(new_user_entity)
         return self.user_factory.create_user_from_user_entity(response_new_user_entity)
@@ -82,6 +91,9 @@ class UserService:
         person = self.peopleDAO.get_person_by_id(person_id)
         if person is None:
             raise NoPersonException("Person with that id does not exist")
+
+        if person.user is not None:
+            raise AlreadyExistPersonAssociatedWithUser("Person already has a user associated with it")
 
         self.user_DAO.update_user_person(id, person_id)
         return self.user_factory.create_user_from_user_entity(self.get_user_by_id(id))
