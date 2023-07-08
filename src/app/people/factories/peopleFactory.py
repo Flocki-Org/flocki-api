@@ -71,7 +71,8 @@ class PeopleFactory:
                 first_name=person_entity.user.first_name,
                 last_name=person_entity.user.last_name,
                 email=person_entity.user.email,
-                is_active=person_entity.user.is_active
+                mobile_number=person_entity.user.mobile_number
+                #is_active=person_entity.user.is_active
             )
         return person_response
 

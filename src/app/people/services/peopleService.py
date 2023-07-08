@@ -71,7 +71,7 @@ class PeopleService:
         person_entity = self.peopleDAO.get_person_by_id(id)
         if person_entity is None:
             return None
-        return self.peopleFactory.create_person_from_person_entity(person_entity)
+        return self.peopleFactory.create_person_from_person_entity(person_entity, include_households=True, include_profile_image=True)
 
     # TODO refactor this code a bit so that the local vs s3 logic can be centralized
     def get_profile_image_by_person_id(self, id):

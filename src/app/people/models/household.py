@@ -8,15 +8,17 @@ from ...media.models.media import CreateImage
 
 class CreateHousehold(BaseModel):
     id: int = Field(None)
-    address_id: int = Field("An address")
+    address_id: int = Field(None)
     people_ids: List[int] = Field(title="A list of IDs of the people to be added to the household")
     household_image_id: int = Field(None, title="The ID of the image of this household")
-    leader_id: int = Field(title="The ID of the leader of the household. If not specified, the leader will be the first person in the household")
+    leader_id: int = Field(title="The ID of the leader of the household")
 
     @root_validator
     def validate_leader(cls, values):
         if 'leader_id' not in values:
             raise ValueError("Leader must have an id")
+        if 'people_ids' not in values:
+            raise ValueError("Household must have people")
         if values['leader_id'] not in values['people_ids']:
             raise ValueError("Leader must be a member of the household")
         return values

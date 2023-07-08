@@ -24,7 +24,7 @@ class DisplayUser(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
-    mobile_number: str
+    mobile_number: str = Field(None)
     person_id: int = Field(None)
 
     class Config:

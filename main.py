@@ -1,7 +1,8 @@
 import uvicorn
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 
 from src.app.church.routers import church
 from src.app.database import engine, SessionLocal
@@ -35,6 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -42,10 +44,11 @@ def get_db():
     finally:
         db.close()
 
+
 # This sets up an initial user and is here only for now in the early stages of devs. Will move to migrations when ready.
 @app.on_event("startup")
 async def startup_event():
-    user_DAO = UserDAO(db =  next(get_db()))
+    user_DAO = UserDAO(db=next(get_db()))
     password_utils = PasswordUtil()
     user_factory = UserFactory(password_utils=password_utils)
     user_service = UserService(user_factory=user_factory, user_DAO=user_DAO, password_utils=password_utils)
@@ -61,6 +64,7 @@ async def startup_event():
 @app.get('/')
 def index():
     return 'Hello this is the first endpoint of the flocki-api.'
+
 
 if __name__ == "__main__":
     print(f"Listening on port {os.environ.get('PORT')}")
