@@ -82,6 +82,9 @@ class PeopleService:
         if person_with_profile_image is None:
             return None
         else:
+            if person_with_profile_image.profile_image is None:
+                return None
+
             full_profile_image_info = self.media_DAO.get_image_by_id(person_with_profile_image.profile_image.id)
 
             if full_profile_image_info is None:
