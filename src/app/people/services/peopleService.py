@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Union
 
 from fastapi import Depends, UploadFile
@@ -8,7 +7,7 @@ from fastapi_pagination import Page, Params
 
 from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.factories.mediaFactory import MediaFactory
-from src.app.media.services.mediaService import MediaService, NoImageException
+from src.app.media.services.mediaService import MediaService, NoMediaItemException
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
@@ -18,7 +17,6 @@ from src.app.users.services.userService import UserService
 from src.app.utils.fileUtils import FileUtils
 
 import uuid
-from mimetypes import guess_extension
 
 from src.app.people.daos.householdDAO import HouseholdDAO
 from src.app.people.services.addressService import NoAddressException
@@ -85,14 +83,14 @@ class PeopleService:
             if person_with_profile_image.profile_image is None:
                 return None
 
-            full_profile_image_info = self.media_DAO.get_image_by_id(person_with_profile_image.profile_image.id)
+            full_profile_image_info = self.media_DAO.get_media_item_by_id(person_with_profile_image.profile_image.id)
 
             if full_profile_image_info is None:
                 return None
             elif full_profile_image_info.store is not None and full_profile_image_info.store == 'local':
                 return FileResponse(full_profile_image_info.address)
             elif full_profile_image_info.store is not None and full_profile_image_info.store == 's3':
-                return self.media_service.get_image_by_id(full_profile_image_info.id)
+                return self.media_service.get_media_item_by_id(full_profile_image_info.id)
 
             return None
 
@@ -143,7 +141,7 @@ class PeopleService:
         image_entity = None
         profile_image_id = update_values.pop('profile_image_id', person.dict())
         if profile_image_id is not None:
-            image_entity = self.media_DAO.get_image_by_id(profile_image_id)
+            image_entity = self.media_DAO.get_media_item_by_id(profile_image_id)
 
 
         self.peopleDAO.update_person(person_entity.id, update_values, image_entity)
@@ -154,9 +152,9 @@ class PeopleService:
 
     def validate_image_id(self, profile_image_id):
         if profile_image_id is not None:
-            image_entity = self.media_DAO.get_image_by_id(profile_image_id)
+            image_entity = self.media_DAO.get_media_item_by_id(profile_image_id)
             if image_entity is None:
-                raise NoImageException(f"Image with id: {profile_image_id} does not exist")
+                raise NoMediaItemException(f"Image with id: {profile_image_id} does not exist")
 
     def validate_addresses(self, addresses):
         for address_id in addresses:
@@ -186,7 +184,7 @@ class PeopleService:
 
         image_entity = None
         if person.profile_image_id is not None:
-            image_entity = self.media_DAO.get_image_by_id(person.profile_image_id)
+            image_entity = self.media_DAO.get_media_item_by_id(person.profile_image_id)
         address_entities = []
         for address_id in person.addresses:
             address_entities.append(self.addressDAO.get_address_by_id(address_id))
@@ -235,7 +233,7 @@ class PeopleService:
             description = f"Profile image for user: {personToUpdate.first_name}  {personToUpdate.last_name}  with ID: {personToUpdate.id}"
             image_entity = self.media_service.upload_image(file, filename, description)
             self.peopleDAO.add_person_image(personToUpdate, image_entity)
-            return self.media_factory.create_image_from_image_entity(image_entity)
+            return self.media_factory.create_media_item_from_media_item_entity(image_entity)
 
     def get_profile_images_by_person_id(self, id):
         person_entity = self.peopleDAO.get_person_by_id(id)

@@ -11,9 +11,9 @@ from unittest.mock import call
 
 from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.factories.mediaFactory import MediaFactory
-from src.app.media.models.media import ViewImage
+from src.app.media.models.media import ViewMediaItem
 from src.app.media.models.database import models as media_models
-from src.app.media.services.mediaService import NoImageException, MediaService
+from src.app.media.services.mediaService import NoMediaItemException, MediaService
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
@@ -86,10 +86,10 @@ def test_get_by_id(mock_get_person_by_id, mock_create_person_from_person_entity)
     assert person.first_name == "John"
 
 
-@mock.patch.object(MediaDAO, 'get_image_by_id')
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
-def test_get_profile_image_by_person_id_store_local(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_image_by_id):
+def test_get_profile_image_by_person_id_store_local(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_media_item_by_id):
     peopleDAO = PeopleDAO()
     peopleFactory = PeopleFactory()
     mediaDAO = MediaDAO()
@@ -97,18 +97,18 @@ def test_get_profile_image_by_person_id_store_local(mock_get_person_by_id, mock_
     person_1 = models.Person(id=1, first_name="John")
 
     mock_get_person_by_id.return_value = [person_1]
-    view_image = ViewImage(id=1)
+    view_image = ViewMediaItem(id=1)
     mock_create_person_from_person_entity.return_value = FullViewPerson(id=1, first_name='John', profile_image=view_image)
-    mock_get_image_by_id.return_value = media_models.Image(id=1, store="local", address="path/to/image.jpg")
+    mock_get_media_item_by_id.return_value = media_models.MediaItem(id=1, store="local", address="path/to/image.jpg")
     fileResponse: FileResponse = people_service.get_profile_image_by_person_id(1)
 
     assert fileResponse.path == "path/to/image.jpg"
 
 
-@mock.patch.object(MediaDAO, 'get_image_by_id')
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
-def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_image_by_id):
+def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_media_item_by_id):
     peopleDAO = PeopleDAO()
     peopleFactory = PeopleFactory()
     mediaDAO = MediaDAO()
@@ -116,17 +116,17 @@ def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_c
     person_1 = models.Person(id=1, first_name="John")
 
     mock_get_person_by_id.return_value = [person_1]
-    view_image = ViewImage(id=1)
+    view_image = ViewMediaItem(id=1)
     mock_create_person_from_person_entity.return_value = FullViewPerson(id=1, first_name='John', profile_image=view_image)
-    mock_get_image_by_id.return_value = media_models.Image(id=1, store=None, address="path/to/image.jpg")
+    mock_get_media_item_by_id.return_value = media_models.MediaItem(id=1, store=None, address="path/to/image.jpg")
     fileResponse: FileResponse = people_service.get_profile_image_by_person_id(1)
 
     assert fileResponse == None
 
-@mock.patch.object(MediaDAO, 'get_image_by_id')
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
-def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_image_by_id):
+def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_media_item_by_id):
     peopleDAO = PeopleDAO()
     peopleFactory = PeopleFactory()
     mediaDAO = MediaDAO()
@@ -134,18 +134,18 @@ def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_c
     person_1 = models.Person(id=1, first_name="John")
 
     mock_get_person_by_id.return_value = [person_1]
-    view_image = ViewImage(id=1)
+    view_image = ViewMediaItem(id=1)
     mock_create_person_from_person_entity.return_value = FullViewPerson(id=1, first_name='John', profile_image=view_image)
-    mock_get_image_by_id.return_value = media_models.Image(id=1, store="s3", address="path/to/image.jpg")
+    mock_get_media_item_by_id.return_value = media_models.MediaItem(id=1, store="s3", address="path/to/image.jpg")
     with pytest.raises(NotImplementedError) as e:
         people_service.get_profile_image_by_person_id(1)
 
     assert e is not None
 
-@mock.patch.object(MediaDAO, 'get_image_by_id')
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
-def test_get_profile_image_by_person_id_person_none(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_image_by_id):
+def test_get_profile_image_by_person_id_person_none(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_media_item_by_id):
     peopleDAO = PeopleDAO()
     peopleFactory = PeopleFactory()
     mediaDAO = MediaDAO()
@@ -158,10 +158,10 @@ def test_get_profile_image_by_person_id_person_none(mock_get_person_by_id, mock_
 
     assert e is not None
 
-@mock.patch.object(MediaDAO, 'get_image_by_id')
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
 @mock.patch.object(PeopleDAO, 'get_person_by_id')
-def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_image_by_id):
+def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_create_person_from_person_entity, mock_get_media_item_by_id):
     peopleDAO = PeopleDAO()
     peopleFactory = PeopleFactory()
     mediaDAO = MediaDAO()
@@ -176,21 +176,21 @@ def test_get_profile_image_by_person_id_store_none(mock_get_person_by_id, mock_c
 
 #TODO test update person
 
-@mock.patch.object(MediaDAO, 'get_image_by_id')
-def test_validate_image_id_invalid(mock_get_image_by_id):
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
+def test_validate_image_id_invalid(mock_get_media_item_by_id):
     mediaDAO = MediaDAO()
-    people_service = PeopleService( media_DAO=mediaDAO)
-    mock_get_image_by_id.return_value = None
-    with pytest.raises(NoImageException) as e:
+    people_service = PeopleService(media_DAO=mediaDAO)
+    mock_get_media_item_by_id.return_value = None
+    with pytest.raises(NoMediaItemException) as e:
         people_service.validate_image_id(1)
 
     assert e is not None
 
-@mock.patch.object(MediaDAO, 'get_image_by_id')
-def test_validate_image_id_valid(mock_get_image_by_id):
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
+def test_validate_image_id_valid(mock_get_media_item_by_id):
     mediaDAO = MediaDAO()
     people_service = PeopleService( media_DAO=mediaDAO)
-    mock_get_image_by_id.return_value = media_models.Image(id=1, store="local", address="path/to/image.jpg")
+    mock_get_media_item_by_id.return_value = media_models.MediaItem(id=1, store="local", address="path/to/image.jpg")
 
     people_service.validate_image_id(1)
 
@@ -222,7 +222,7 @@ def test_validate_addresses_valid(mock_get_address_by_id):
 @mock.patch.object(PeopleFactory, 'create_person_from_person_entity')
 @mock.patch('src.app.people.services.peopleService.PeopleService.update_households_for_person')
 @mock.patch.object(PeopleDAO, 'update_person')
-@mock.patch.object(MediaDAO, 'get_image_by_id')
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
 @mock.patch.object(AddressDAO, 'delete_address')
 @mock.patch.object(AddressDAO, 'create_address_linked_to_person')
 @mock.patch.object(AddressDAO, 'get_address_by_id')
@@ -238,7 +238,7 @@ def test_validate_addresses_valid(mock_get_address_by_id):
 def test_update_person(mock_get_person_by_id, mock_validate_households, mock_validate_household_remove_person, mock_validate_addresses,
                        mock_validate_image_id, mock_get_existing_social_media_links, mock_delete_social_media_link, mock_create_social_media_link,
                        mock_get_existing_addresses_for_person, mock_get_address_by_id, mock_create_address_linked_to_person,
-                       mock_delete_address, mock_get_image_by_id, mock_update_person, mock_update_households_for_person,
+                       mock_delete_address, mock_get_media_item_by_id, mock_update_person, mock_update_households_for_person,
                        mock_create_person_from_person_entity):
     peopleDAO = PeopleDAO()
     peopleFactory = PeopleFactory()
@@ -290,8 +290,8 @@ def test_update_person(mock_get_person_by_id, mock_validate_households, mock_val
     mock_get_existing_addresses_for_person.return_value = existing_person.addresses
     mock_delete_address.return_value = None
     mock_create_address_linked_to_person.return_value = None
-    image_entity = media_models.Image(id=1, store="local", address="path/to/image.jpg")
-    mock_get_image_by_id.return_value = image_entity
+    image_entity = media_models.MediaItem(id=1, store="local", address="path/to/image.jpg")
+    mock_get_media_item_by_id.return_value = image_entity
     mock_update_person.return_value = None
     mock_update_households_for_person.return_value = None
     mock_create_person_from_person_entity.return_value = FullViewPerson(id=1, first_name="John", last_name="Smith")
@@ -398,16 +398,16 @@ def test_update_person_person_unable_to_remove_person_from_household(mock_get_pe
     mock_validate_households.return_value = None
     mock_validate_household_remove_person.return_value = None
     mock_validate_addresses.return_value = None
-    mock_validate_image_id.side_effect = NoImageException("Image with id: 1 does not exist")
-    with pytest.raises(NoImageException):
+    mock_validate_image_id.side_effect = NoMediaItemException("Image with id: 1 does not exist")
+    with pytest.raises(NoMediaItemException):
         people_service.update_person(1, UpdatePerson(id=1, first_name="John", last_name="Smith", profile_image_id=1))
 
-@mock.patch.object(MediaDAO, 'get_image_by_id')
-def test_validate_image_id(mock_get_image_by_id):
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
+def test_validate_image_id(mock_get_media_item_by_id):
     mediaDAO = MediaDAO()
     people_service = PeopleService(media_DAO=mediaDAO)
-    mock_get_image_by_id.return_value = None
-    with pytest.raises(NoImageException):
+    mock_get_media_item_by_id.return_value = None
+    with pytest.raises(NoMediaItemException):
         people_service.validate_image_id(1)
 
 
@@ -463,11 +463,11 @@ def test_update_households_for_persons(mock_get_existing_household_ids, mock_get
 @mock.patch.object(DateUtils, 'get_current_datetime')
 @mock.patch.object(PeopleFactory, 'create_person_entity_from_create_person')
 @mock.patch.object(AddressDAO, 'get_address_by_id')
-@mock.patch.object(MediaDAO, 'get_image_by_id')
+@mock.patch.object(MediaDAO, 'get_media_item_by_id')
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_image_id')
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_addresses')
 @mock.patch('src.app.people.services.peopleService.PeopleService.validate_households')
-def test_create_person(mock_validate_households, mock_validate_addresses, mock_validate_image_id, mock_get_image_by_id,
+def test_create_person(mock_validate_households, mock_validate_addresses, mock_validate_image_id, mock_get_media_item_by_id,
                        mock_get_address_by_id, mock_create_person_entity_from_create_person, mock_get_current_datetime,
                        mock_add_person_to_households, mock_get_person_by_id, mock_create_person, mock_create_person_from_person_entity):
     people_service = PeopleService(peopleDAO=PeopleDAO(), addressDAO=AddressDAO(), media_DAO=MediaDAO(), people_factory=PeopleFactory())
@@ -482,8 +482,8 @@ def test_create_person(mock_validate_households, mock_validate_addresses, mock_v
     mock_validate_households.return_value = None
     mock_validate_addresses.return_value = None
     mock_validate_image_id.return_value = None
-    image_to_link = media_models.Image(id=1)
-    mock_get_image_by_id.return_value = image_to_link
+    image_to_link = media_models.MediaItem(id=1)
+    mock_get_media_item_by_id.return_value = image_to_link
     home_address = models.Address(
         id=1,
         type="home",
@@ -538,7 +538,7 @@ def test_create_person(mock_validate_households, mock_validate_addresses, mock_v
     mock_validate_households.assert_called_once()
     mock_validate_addresses.assert_called_once()
     mock_validate_image_id.assert_called_once()
-    mock_get_image_by_id.assert_called_once()
+    mock_get_media_item_by_id.assert_called_once()
     assert mock_get_address_by_id.call_count == 2
     mock_create_person_entity_from_create_person.assert_called_once()
     mock_get_current_datetime.assert_called_once()
@@ -582,9 +582,9 @@ def test_create_person_invalid_image_id_provided(mock_validate_households, mock_
     people_service = PeopleService()
     mock_validate_households.return_value = None
     mock_validate_addresses.return_value=None
-    mock_validate_image_id.side_effect = NoImageException("No image with id 1")
+    mock_validate_image_id.side_effect = NoMediaItemException("No image with id 1")
 
-    with pytest.raises(NoImageException):
+    with pytest.raises(NoMediaItemException):
         people_service.create_person(CreatePerson(first_name="John", last_name="Smith", email="test@test.com", mobile_number="07212345678"))
 
 
@@ -659,7 +659,7 @@ def test_upload_profile_image(mock_get_person_by_id, mock_upload_image, mock_add
     file = UploadFile(filename="test.jpg", content_type="image/jpeg")
     file.content_type = "image/jpeg"
 
-    mock_upload_image.return_value = media_models.Image(id=1, description=f"Profile image for user: {person.first_name}  {person.last_name}  with ID: {person.id}")
+    mock_upload_image.return_value = media_models.MediaItem(id=1, description=f"Profile image for user: {person.first_name}  {person.last_name}  with ID: {person.id}")
 
     people_service.upload_profile_image(1, file)
 

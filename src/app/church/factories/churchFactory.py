@@ -33,7 +33,7 @@ class ChurchFactory:
 
         logo_image_response = None
         if church_entity.logo_image is not None:
-            logo_image_response = self.media_factory.create_view_image_from_image_entity(church_entity.logo_image)
+            logo_image_response = self.media_factory.create_view_media_item_from_media_item_entity(church_entity.logo_image)
 
         return ViewChurch(
             id=church_entity.id,

@@ -5,8 +5,8 @@ from fastapi_pagination import Params, Page
 from ..services.addressService import NoAddressException
 from ..services.peopleService import PeopleService, NoPersonException, NoHouseholdExceptionForPersonCreation, \
     UnableToRemoveLeaderFromHouseholdException
-from ...media.models.media import ViewImage
-from ...media.services.mediaService import NoImageException
+from ...media.models.media import ViewMediaItem
+from ...media.services.mediaService import NoMediaItemException
 from ...people.models.people import CreatePerson, FullViewPerson, UpdatePerson
 from fastapi import APIRouter
 from typing import List, Union
@@ -50,7 +50,7 @@ def update_person(id: int, person: UpdatePerson, people_service: PeopleService =
         return person_response
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
-    except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException, NoImageException) as e:
+    except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException, NoMediaItemException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
 
 
@@ -68,20 +68,20 @@ def get_person_profile_image(id: int, people_service: PeopleService = Depends(Pe
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
-@router.get('/people/{id}/profile_images', response_model=List[ViewImage])
+@router.get('/people/{id}/profile_images', response_model=List[ViewMediaItem])
 def get_person_profile_images(id: int, people_service: PeopleService = Depends(PeopleService),
                 current_user: User = Depends(get_current_user)):
     try:
         profile_image_responses = people_service.get_profile_images_by_person_id(id)
         if profile_image_responses is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile images")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile media")
 
         return profile_image_responses
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
 
-@router.put('/people/profile_image', response_model=ViewImage)
+@router.put('/people/profile_image', response_model=ViewMediaItem)
 def update_person_with_profile_image(id: int, file: UploadFile, people_service: PeopleService = Depends(PeopleService),
                   current_user: User = Depends(get_current_user)):
     try:
@@ -101,7 +101,7 @@ def add_person(create_login: Union[bool, None], person: CreatePerson, people_ser
     try:
         return people_service.create_person(person, create_login)
     except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException,
-                NoImageException) as e:
+                NoMediaItemException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
 
 

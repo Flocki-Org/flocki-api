@@ -1,7 +1,7 @@
 from pydantic import HttpUrl, BaseModel, Field, EmailStr
 import datetime
 
-from src.app.media.models.media import ViewImage
+from src.app.media.models.media import ViewMediaItem
 from src.app.people.models.people import ViewAddress
 
 class CreateChurch(BaseModel):
@@ -21,7 +21,7 @@ class ViewChurch(BaseModel):
     email: EmailStr = Field(None, title="The church email")
     phone: str = Field(None, title="The church phone number")
     address: ViewAddress = Field(None, title="The address id of the church")
-    logo_image: ViewImage = Field(None, title="The logo of this church")
+    logo_image: ViewMediaItem = Field(None, title="The logo of this church")
     name: str
     description: str = None
 

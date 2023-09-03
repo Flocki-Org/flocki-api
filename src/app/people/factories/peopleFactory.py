@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import Depends
 
-from ...media.models.media import ViewImage
+from ...media.models.media import ViewMediaItem
 from ...people.models.people import CreatePerson, SocialMediaLink, FullViewPerson, BasicViewPerson
 from ...people.factories.addressFactory import AddressFactory
 from ...people.models.household import ViewHousehold
@@ -59,7 +59,7 @@ class PeopleFactory:
         if include_profile_image and person_entity.profile_images:
             images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
             if len(images) > 0 and images[0] is not None:
-                person_response.profile_image = self.media_factory.create_view_image_from_image_entity(images[0].image)
+                person_response.profile_image = self.media_factory.create_view_media_item_from_media_item_entity(images[0].image)
 
 
         if user is not None:
@@ -90,11 +90,11 @@ class PeopleFactory:
         )
         return view_household
 
-    def create_profile_image_list_from_entity_list(self, profile_images) -> List[ViewImage]:
+    def create_profile_image_list_from_entity_list(self, profile_images) -> List[ViewMediaItem]:
         person_images = sorted(profile_images, key=lambda x: x.id, reverse=True)
-        profile_image_list: List[ViewImage] = []
+        profile_image_list: List[ViewMediaItem] = []
         for person_image in person_images:
-            profile_image_list.append(self.media_factory.create_image_from_image_entity(person_image.image))
+            profile_image_list.append(self.media_factory.create_media_item_from_media_item_entity(person_image.image))
         return profile_image_list
 
     def create_person_entity_from_create_person(self, person: CreatePerson, address_entities=None) -> models.Person:

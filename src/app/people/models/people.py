@@ -6,7 +6,7 @@ from enum import Enum
 from typing import List, ForwardRef, Optional
 
 # from src.app.people.models.household import Household
-from src.app.media.models.media import CreateImage, ViewImage
+from src.app.media.models.media import CreateMediaItem, ViewMediaItem
 from src.app.users.models.user import DisplayUser
 
 Household = ForwardRef('Household')
@@ -212,7 +212,7 @@ class FullViewPerson(BasicViewPerson):
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[ViewAddress] = Field([], title="A list of addresses (normally just one home address)")
     households: List[ViewHousehold] = Field(None)
-    profile_image: ViewImage = Field(None)
+    profile_image: ViewMediaItem = Field(None)
     user: DisplayUser = Field(None)
     class Config:
         orm_mode = True

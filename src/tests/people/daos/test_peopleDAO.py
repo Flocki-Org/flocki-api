@@ -240,7 +240,7 @@ def test_update_person_including_image(test_db):
     db.commit()
     db.refresh(existing_person)
 
-    image_entity = media_models.Image(
+    image_entity = media_models.MediaItem(
         description="test_image.jpg",
         address="test_image.jpg",
         created=datetime(2020, 1, 1, 0, 0),
@@ -397,7 +397,7 @@ def test_person_create_with_image(test_db):
         # egistered_date = "2020-01-01"
     )
 
-    new_image_entity = media_models.Image(
+    new_image_entity = media_models.MediaItem(
         description="test_image.jpg",
         address="test_image.jpg",
         created=datetime(2020, 1, 1, 0, 0),
@@ -426,7 +426,7 @@ def test_add_person_image(test_db):
     db.commit()
     db.refresh(new_person_1)
 
-    new_image_entity = media_models.Image(
+    new_image_entity = media_models.MediaItem(
         description="test_image.jpg",
         address="test_image.jpg",
         created=datetime(2020, 1, 1, 0, 0),

@@ -11,10 +11,10 @@ class Church(Base):
     website = Column(String)
     email = Column(String)
     phone = Column(String)
-    logo_image_id = Column(Integer, ForeignKey('images.id'))
+    logo_image_id = Column(Integer, ForeignKey('media_items.id'))
     address_id = Column(Integer, ForeignKey('addresses.id'))
     name = Column(String)
     description = Column(String)
-    logo_image = relationship("Image", backref="church")
+    logo_image = relationship("MediaItem", backref="church")
     address = relationship("Address", backref="church")
     #add social media links as well

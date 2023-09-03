@@ -1,33 +1,33 @@
 from ...media.models.database import models
-from ...media.models.media import CreateImage, ViewImage
+from ...media.models.media import CreateMediaItem, ViewMediaItem
 
 
 class MediaFactory:
-    def create_image_entity_from_image(self, image):
-        media_entity = models.Image(
-                store=image.store,
-                address=image.address,
-                created=image.created,
-                filename=image.filename,
-                description=image.description,
-                content_type=image.content_type,
-                tags=image.tags)
+    def create_media_item_entity_from_media_item(self, media_item) -> models.MediaItem:
+        media_entity = models.MediaItem(
+                store=media_item.store,
+                address=media_item.address,
+                created=media_item.created,
+                filename=media_item.filename,
+                description=media_item.description,
+                content_type=media_item.content_type,
+                tags=media_item.tags)
         return media_entity
 
-    def create_image_from_image_entity(self, image_entity):
-        return CreateImage(
-            id=image_entity.id,
-            store=image_entity.store,
-            address=image_entity.address,
-            created=image_entity.created,
-            filename=image_entity.filename,
-            description=image_entity.description,
-            content_type=image_entity.content_type,
-            tags=image_entity.tags)
+    def create_media_item_from_media_item_entity(self, media_item_entity):
+        return CreateMediaItem(
+            id=media_item_entity.id,
+            store=media_item_entity.store,
+            address=media_item_entity.address,
+            created=media_item_entity.created,
+            filename=media_item_entity.filename,
+            description=media_item_entity.description,
+            content_type=media_item_entity.content_type,
+            tags=media_item_entity.tags)
 
-    def create_view_image_from_image_entity(self, image_entity):
-        return ViewImage(
-            id=image_entity.id,
-            created=image_entity.created,
-            description=image_entity.description,
-            tags=image_entity.tags)
+    def create_view_media_item_from_media_item_entity(self, media_item_entity):
+        return ViewMediaItem(
+            id=media_item_entity.id,
+            created=media_item_entity.created,
+            description=media_item_entity.description,
+            tags=media_item_entity.tags)

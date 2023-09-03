@@ -1,7 +1,7 @@
 from pydantic import HttpUrl, BaseModel
 import datetime
 
-class CreateImage(BaseModel):
+class CreateMediaItem(BaseModel):
     id: int = None
     created: datetime.datetime
     store: str
@@ -11,7 +11,7 @@ class CreateImage(BaseModel):
     content_type: str = None
     tags: str = None
 
-class ViewImage(BaseModel):
+class ViewMediaItem(BaseModel):
     id: int = None
     created: datetime.datetime = None
     description: str = None

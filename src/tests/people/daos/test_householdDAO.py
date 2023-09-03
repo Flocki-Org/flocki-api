@@ -118,7 +118,7 @@ def test_add_household_image(test_db):
     )
     household = householdDAO.add_household(household)
 
-    image = media_models.Image(
+    image = media_models.MediaItem(
         address="test",
         description="test",
         store="local",
@@ -194,7 +194,7 @@ def test_update_household(test_db):
     db.commit()
     db.refresh(household)
 
-    image = media_models.Image(
+    image = media_models.MediaItem(
         address="test",
         description="test",
         store="local",
@@ -212,7 +212,7 @@ def test_update_household(test_db):
     db.add(household_image)
     db.commit()
 
-    new_image = media_models.Image(
+    new_image = media_models.MediaItem(
         address="new_test",
         description="new_test",
         store="local",

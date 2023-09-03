@@ -1,6 +1,4 @@
 import uuid
-from mimetypes import guess_extension
-from typing import List
 
 from fastapi import Depends, UploadFile
 
@@ -10,7 +8,7 @@ from starlette.responses import FileResponse
 
 from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.factories.mediaFactory import MediaFactory
-from src.app.media.services.mediaService import MediaService, NoImageException
+from src.app.media.services.mediaService import MediaService, NoMediaItemException
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.daos.householdDAO import HouseholdDAO
@@ -84,9 +82,9 @@ class HouseholdService:
         # failed validation in the previous check above.
 
 
-        image_entity = self.media_DAO.get_image_by_id(household.household_image_id)
+        image_entity = self.media_DAO.get_media_item_by_id(household.household_image_id)
         if image_entity is None:
-            raise NoImageException(f"No image with the following ID: {household.household_image_id}")
+            raise NoMediaItemException(f"No image with the following ID: {household.household_image_id}")
 
         new_household = self.household_factory.createHouseholdEntityFromHousehold(household, people_entities)
         return self.household_factory.createHouseholdFromHouseholdEntity(self.household_DAO.add_household(new_household, image_entity), True)
@@ -107,11 +105,11 @@ class HouseholdService:
             if file.content_type == 'image/jpeg':
                 file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
 
-            filename = 'household_' + str(household_entity.id) + '_' + str(uuid.uuid4()) + FileUtils.get_file_extension(file)
+            filename = 'household_' + str(household_entity.id) + '_' + str(uuid.uuid4()) + '.' +FileUtils.get_file_extension(file)
             description = f"Profile image for household with ID: {household_entity.id}"
             image_entity = self.media_service.upload_image(file, filename, description)
             self.household_DAO.add_household_image(household_entity, image_entity)
-            return self.media_factory.create_image_from_image_entity(image_entity)
+            return self.media_factory.create_media_item_from_media_item_entity(image_entity)
 
     def get_household_image_by_household_id(self, id) -> FileResponse:
         household_entity = self.household_DAO.get_household_by_id(id)
@@ -126,7 +124,7 @@ class HouseholdService:
         elif household_with_image.household_image.store is not None and household_with_image.household_image.store == 'local':
             return FileResponse(household_with_image.household_image.address)
         elif household_with_image.household_image.store is not None and household_with_image.household_image.store == 's3':
-            return self.media_service.get_image_by_id(household_with_image.household_image.id)
+            return self.media_service.get_media_item_by_id(household_with_image.household_image.id)
         return
 
     def update_household(self, id, household: UpdateHousehold):
@@ -152,9 +150,9 @@ class HouseholdService:
 
         image_entity = None
         if household.household_image_id is not None:
-            image_entity = self.media_DAO.get_image_by_id(household.household_image_id)
+            image_entity = self.media_DAO.get_media_item_by_id(household.household_image_id)
             if not image_entity:
-                raise NoImageException(f"No image with the following ID: {household.household_image_id}")
+                raise NoMediaItemException(f"No image with the following ID: {household.household_image_id}")
 
         self.household_DAO.update_household(household_entity, household.leader_id, household.address_id, image_entity)
 

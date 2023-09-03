@@ -60,7 +60,7 @@ def test_create_person_from_person_entity(mock_create_address_from_address_entit
         sml_fb, sml_twitter
     ]
 
-    image_entity_1 = media_models.Image(
+    image_entity_1 = media_models.MediaItem(
         id=1,
         description="test_image.jpg",
         address="test_image.jpg",
@@ -68,7 +68,7 @@ def test_create_person_from_person_entity(mock_create_address_from_address_entit
         store="local"
     )
 
-    image_entity_2 = media_models.Image(
+    image_entity_2 = media_models.MediaItem(
         id=2,
         description="test_image.jpg",
         address="test_image.jpg",
@@ -109,8 +109,8 @@ def test_create_person_from_person_entity(mock_create_address_from_address_entit
                                                                         any_order=True)
 
 
-@mock.patch.object(MediaFactory, 'create_view_image_from_image_entity')
-def test_create_person_from_person_entity_with_image(mock_createViewImageFromImageEntity):
+@mock.patch.object(MediaFactory, 'create_view_media_item_from_media_item_entity')
+def test_create_person_from_person_entity_with_image(mock_create_view_media_item_from_media_item_entity):
     media_factory = MediaFactory()
     pfactory = PeopleFactory(media_factory=media_factory)
 
@@ -118,7 +118,7 @@ def test_create_person_from_person_entity_with_image(mock_createViewImageFromIma
         id=1,
     )
 
-    image_entity_1 = media_models.Image(
+    image_entity_1 = media_models.MediaItem(
         id=1,
         description="test_image.jpg",
         address="test_image.jpg",
@@ -126,7 +126,7 @@ def test_create_person_from_person_entity_with_image(mock_createViewImageFromIma
         store="local"
     )
 
-    image_entity_2 = media_models.Image(
+    image_entity_2 = media_models.MediaItem(
         id=2,
         description="test_image.jpg",
         address="test_image.jpg",
@@ -142,8 +142,8 @@ def test_create_person_from_person_entity_with_image(mock_createViewImageFromIma
 
     assert full_person_view.id == 1
 
-    mock_createViewImageFromImageEntity.assert_called_with(image_entity_2)
-    media_factory.create_view_image_from_image_entity.assert_called_with(image_entity_2)
+    mock_create_view_media_item_from_media_item_entity.assert_called_with(image_entity_2)
+    media_factory.create_view_media_item_from_media_item_entity.assert_called_with(image_entity_2)
 
 
 @mock.patch('src.app.people.factories.peopleFactory.PeopleFactory.create_household_view')
@@ -220,8 +220,8 @@ def test_create_household_view(mock_create_basic_person_view_from_person_entity,
         [call(leader_entity), call(leader_entity), call(person_entity_2)], any_order=True)
     mock_create_address_from_address_entity.assert_called_with(address_entity)
 
-@mock.patch.object(MediaFactory, 'create_image_from_image_entity')
-def test_create_profile_image_list_from_entity_list(mock_create_image_from_image_entity):
+@mock.patch.object(MediaFactory, 'create_media_item_from_media_item_entity')
+def test_create_profile_image_list_from_entity_list(mock_create_media_item_from_media_item_entity):
     media_factory = MediaFactory()
     pfactory = PeopleFactory(media_factory=media_factory)
 
@@ -232,7 +232,7 @@ def test_create_profile_image_list_from_entity_list(mock_create_image_from_image
     personImage_1 = models.PersonImage(
         id=1,
         person_id=1,
-        image=media_models.Image(
+        image=media_models.MediaItem(
             id=1,
             description="test_image.jpg",
             address="test_image.jpg",
@@ -244,7 +244,7 @@ def test_create_profile_image_list_from_entity_list(mock_create_image_from_image
     personImage_2 = models.PersonImage(
         id=2,
         person_id=1,
-        image=media_models.Image(
+        image=media_models.MediaItem(
             id=2,
             description="test_image_2.jpg",
             address="test_image_2.jpg",
@@ -257,7 +257,7 @@ def test_create_profile_image_list_from_entity_list(mock_create_image_from_image
 
     pfactory.create_profile_image_list_from_entity_list(person_entity.profile_images)
 
-    mock_create_image_from_image_entity.assert_has_calls([call(personImage_1.image), call(personImage_2.image)], any_order=True)
+    mock_create_media_item_from_media_item_entity.assert_has_calls([call(personImage_1.image), call(personImage_2.image)], any_order=True)
 
 def test_create_person_entity_from_create_person():
     person = CreatePerson(

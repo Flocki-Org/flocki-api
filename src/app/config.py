@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     flocki_app_port = 8000
     flocki_secret_key: str = "secret_key"
     flocki_token_expiry_minutes: int = 20
-    flocki_image_store: str = "s3" # local or s3 (aws)
-    flocki_image_base_path: str = "./images"
+    flocki_media_store: str = "local" # local or s3 (aws)
+    flocki_media_base_path: str = "./media"
 
     flocki_cors_origins: Set[str] = set()
     flocki_cors_origins.add("http://localhost:3000")

@@ -84,9 +84,9 @@ class PersonImage(Base):
     id = Column(Integer, primary_key=True, index=True)
     created = Column(DateTime, nullable=False)
     person_id = Column(Integer, ForeignKey('people.id'), nullable=False)
-    image_id = Column(Integer, ForeignKey('images.id'), nullable=False)
+    image_id = Column(Integer, ForeignKey('media_items.id'), nullable=False)
     person = relationship("Person", back_populates="profile_images")
-    image = relationship("Image")
+    image = relationship("MediaItem")
     # __table_args__ = (UniqueConstraint('person_id', 'image_id', name='peopleimages_person_image_uc'),)
 
 
@@ -95,6 +95,6 @@ class HouseholdImage(Base):
     id = Column(Integer, primary_key=True, index=True)
     created = Column(DateTime, nullable=False)
     household_id = Column(Integer, ForeignKey('households.id'), nullable=False)
-    image_id = Column(Integer, ForeignKey('images.id'), nullable=False)
+    image_id = Column(Integer, ForeignKey('media_items.id'), nullable=False)
     household = relationship("Household", back_populates="household_images")
-    image = relationship("Image")
+    image = relationship("MediaItem")

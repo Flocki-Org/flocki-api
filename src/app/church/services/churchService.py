@@ -2,7 +2,6 @@
 from datetime import datetime
 
 from fastapi import Depends
-from starlette.responses import FileResponse
 
 from src.app.church.daos.churchDAO import ChurchDAO
 from src.app.church.factories.churchFactory import ChurchFactory
@@ -61,7 +60,7 @@ class ChurchService:
             if update_values['logo_image_id'] is None:
                 update_values.pop('logo_image_id')
             else:
-                logo_image = self.media_DAO.get_image_by_id(update_values['logo_image_id'])
+                logo_image = self.media_DAO.get_media_item_by_id(update_values['logo_image_id'])
                 if logo_image is None:
                     raise LogoImageDoesNotExist("Logo image does not exist")
 
@@ -89,6 +88,6 @@ class ChurchService:
 
 
         if church_entity.logo_image is not None:
-            return self.media_service.get_image_by_id(church_entity.logo_image.id)
+            return self.media_service.get_media_item_by_id(church_entity.logo_image.id)
 
         return None

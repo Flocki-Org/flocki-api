@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from .peopleFactory import PeopleFactory
 from ...media.factories.mediaFactory import MediaFactory
-from ...media.models.media import ViewImage
+from ...media.models.media import ViewMediaItem
 from ...people.models.household import ViewHousehold, CreateHousehold
 from ...people.models.database import models
 from ...people.models.people import ViewAddress
@@ -50,7 +50,7 @@ class HouseholdFactory:
         if include_household_image and household_entity.household_images:
             images = sorted(household_entity.household_images, key=lambda x: x.id, reverse=True)
             if len(images) > 0 and images[0] is not None:
-                household_response.household_image = self.media_factory.create_image_from_image_entity(images[0].image)
+                household_response.household_image = self.media_factory.create_media_item_from_media_item_entity(images[0].image)
 
         return household_response
 
@@ -69,8 +69,8 @@ class HouseholdFactory:
 
     def create_household_image_list_from_entity_list(self, household_entity: models.Household):
         images = sorted(household_entity.household_images, key=lambda x: x.id, reverse=True)
-        household_image_list: List[ViewImage] = []
+        household_image_list: List[ViewMediaItem] = []
         for image in images:
-            household_image_list.append(self.media_factory.create_image_from_image_entity(image.image))
+            household_image_list.append(self.media_factory.create_media_item_from_media_item_entity(image.image))
         return household_image_list
 

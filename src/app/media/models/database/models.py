@@ -1,8 +1,10 @@
 from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint, ForeignKey, DECIMAL
+from sqlalchemy.orm import relationship
+
 from src.app.database import Base
 
-class Image(Base):
-    __tablename__ = 'images'
+class MediaItem(Base):
+    __tablename__ = 'media_items'
     id = Column(Integer, primary_key=True, index=True)
     created = Column(DateTime, nullable=False)
     store = Column(String, nullable=False)
@@ -11,4 +13,5 @@ class Image(Base):
     description = Column(String, nullable=True)
     content_type = Column(String, nullable=True)
     tags = Column(String, nullable=True)    # comma separated list of tags
+
 

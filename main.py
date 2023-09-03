@@ -6,7 +6,7 @@ from starlette.responses import JSONResponse
 
 from src.app.church.routers import church
 from src.app.database import engine, SessionLocal
-from src.app.media.routers import media
+from src.app.images.routers import media
 from src.app.users.daos.userDAO import UserDAO
 from src.app.users.models.database import models
 from src.app.people.routers import person, household, address
