@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.app.church.routers import church
 from src.app.database import engine, SessionLocal
-from src.app.images.routers import media
+from src.app.images.routers import image
+from src.app.media.routers import media
 from src.app.users.daos.userDAO import UserDAO
 from src.app.users.models.database import models
 from src.app.people.routers import person, household, address
@@ -25,6 +26,7 @@ app.include_router(user.router)
 app.include_router(login.router)
 app.include_router(household.router)
 app.include_router(media.router)
+app.include_router(image.router)
 app.include_router(address.router)
 app.include_router(church.router)
 app.add_middleware(

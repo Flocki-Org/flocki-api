@@ -88,6 +88,6 @@ class ChurchService:
 
 
         if church_entity.logo_image is not None:
-            return self.media_service.get_media_item_by_id(church_entity.logo_image.id)
+            return self.media_service.get_media_item_by_id(church_entity.logo_image.id, as_attachment=False)
 
         return None

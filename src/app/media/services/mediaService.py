@@ -38,7 +38,7 @@ class MediaService:
                                access_key = settings.flocki_s3_access_key,
                                secret_access_key = settings.flocki_s3_secret_access_key)
 
-    def get_media_item_by_id(self, id):
+    def get_media_item_by_id(self, id, as_attachment=True):
         media_item = self.media_DAO.get_media_item_by_id(id)
         if media_item is None:
             raise NoMediaItemException("No media item with that ID")
@@ -46,7 +46,10 @@ class MediaService:
             if not os.path.isfile(media_item.address):
                 raise NoMediaItemException(f"No media item the filename stored for the provided ID: {id}")
             file_rsp = FileResponse(media_item.address, media_type=media_item.content_type, filename=media_item.filename)
-            file_rsp.headers['Content-Disposition'] = f'attachment; filename="{media_item.filename}"'
+            if as_attachment:
+                file_rsp.headers['Content-Disposition'] = f'attachment; filename="{media_item.filename}"'
+            else:
+                file_rsp.headers['Content-Disposition'] = f'inline; filename="{media_item.filename}"'
             return file_rsp
         elif media_item.store == 's3':
             if(media_item is None):
