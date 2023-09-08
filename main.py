@@ -1,8 +1,7 @@
 import uvicorn
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
 
 from src.app.church.routers import church
 from src.app.database import engine, SessionLocal

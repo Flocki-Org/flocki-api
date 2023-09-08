@@ -46,8 +46,7 @@ def update_household(id: int, household: UpdateHousehold, household_service: Hou
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
 @router.get('/households/{id}/household_image')
-def get_household_image(id: int, household_service: HouseholdService = Depends(HouseholdService),
-               current_user: User = Depends(get_current_user)):
+def get_household_image(id: int, household_service: HouseholdService = Depends(HouseholdService)):
     try:
         household_image_response = household_service.get_household_image_by_household_id(id)
         if household_image_response is None:

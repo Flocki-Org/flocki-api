@@ -53,11 +53,8 @@ def update_person(id: int, person: UpdatePerson, people_service: PeopleService =
     except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException, NoMediaItemException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
 
-
-
 @router.get('/people/{id}/profile_image')
-def get_person_profile_image(id: int, people_service: PeopleService = Depends(PeopleService),
-               current_user: User = Depends(get_current_user)):
+def get_person_profile_image(id: int, people_service: PeopleService = Depends(PeopleService)):
     try:
         profile_image_response = people_service.get_profile_image_by_person_id(id)
         if profile_image_response is None:
@@ -93,6 +90,16 @@ def update_person_with_profile_image(id: int, file: UploadFile, people_service: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
     except NoHouseholdExceptionForPersonCreation as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
+
+
+@router.post('/people/add_people_from_spreadsheet', response_model=List[ViewMediaItem])
+def add_people_from_spreadsheet(file: UploadFile, people_service: PeopleService = Depends(PeopleService),
+                  current_user: User = Depends(get_current_user)):
+    try:
+        people_response = people_service.add_people_from_spreadsheet(file)
+        return people_response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Error uploading spreadsheet")
 
 
 @router.post('/people', status_code=status.HTTP_201_CREATED, response_model=FullViewPerson)

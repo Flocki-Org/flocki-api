@@ -23,18 +23,14 @@ from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.householdUtils import HouseholdUtils
 from src.app.utils.DateUtils import DateUtils
 
-
 class NoPersonException(Exception):
     pass
-
 
 class NoHouseholdExceptionForPersonCreation(Exception):
     pass
 
-
 class UnableToRemoveLeaderFromHouseholdException(Exception):
     pass
-
 
 class PeopleService:
     def __init__(self, peopleDAO: PeopleDAO = Depends(PeopleDAO), addressDAO: AddressDAO = Depends(AddressDAO),
@@ -202,6 +198,7 @@ class PeopleService:
             created_user = self.create_login_for_person(created_person)
 
         return self.peopleFactory.create_person_from_person_entity(self.peopleDAO.get_person_by_id(created_person.id), include_households=True, include_profile_image=True, user=created_user)
+
 
     def validate_household_remove_person(self, new_household_ids, personToUpdate):
         existing_household_ids = self.household_utils.get_existing_household_ids(personToUpdate)

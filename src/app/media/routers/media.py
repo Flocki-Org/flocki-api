@@ -16,8 +16,7 @@ router = APIRouter(tags=['Media'])
 
 
 @router.get('/media/item/{id}')
-def get_media_item_by_id(id: int, media_service: MediaService = Depends(MediaService),
-                    current_user: User = Depends(get_current_user)):
+def get_media_item_by_id(id: int, media_service: MediaService = Depends(MediaService)):
     try:
         media_item = media_service.get_media_item_by_id(id)
         if media_item is None:
