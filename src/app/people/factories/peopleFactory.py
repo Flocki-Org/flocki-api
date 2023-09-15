@@ -86,8 +86,14 @@ class PeopleFactory:
             id=household.id,
             leader=self.create_basic_person_view_from_person_entity(household.leader),
             address=self.address_factory.create_address_from_address_entity(household.address),
-            people=people
+            people=people,
         )
+
+        h_images = sorted(household.household_images, key=lambda x: x.id, reverse=True)
+        if len(h_images) > 0 and h_images[0] is not None:
+            view_household.household_image = self.media_factory.create_view_media_item_from_media_item_entity(
+                h_images[0].image)
+
         return view_household
 
     def create_profile_image_list_from_entity_list(self, profile_images) -> List[ViewMediaItem]:
