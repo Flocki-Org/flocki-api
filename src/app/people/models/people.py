@@ -102,7 +102,7 @@ class CreatePerson(BaseModel):
     id: int = Field(None)
     first_name: str
     last_name: str
-    email: EmailStr
+    email: EmailStr = Field(None)
     mobile_number: str
     date_of_birth: datetime.date = Field(None)
     gender: Gender = Field(None)
@@ -199,6 +199,7 @@ class BasicViewPerson(BaseModel):
     id: int = Field(None)
     first_name: str = Field(None)
     last_name: str = Field(None)
+    profile_image: ViewMediaItem = Field(None)
 
 
 class FullViewPerson(BasicViewPerson):
