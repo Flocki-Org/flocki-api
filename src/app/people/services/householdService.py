@@ -50,7 +50,7 @@ class HouseholdService:
         households_page = self.household_DAO.get_all_households(params=params)
         if households_page:
             for household in households_page.items:
-                households_response.append(self.household_factory.createHouseholdFromHouseholdEntity(household_entity=household))
+                households_response.append(self.household_factory.createHouseholdFromHouseholdEntity(household_entity=household,  include_household_image=True))
 
             return Page.create(items=households_response, params=params, total=households_page.total)
 
