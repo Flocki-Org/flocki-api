@@ -3,7 +3,7 @@ from .people import ViewAddress, BasicViewPerson
 
 from typing import List
 
-from ...media.models.media import CreateMediaItem
+from ...media.models.media import CreateMediaItem, ViewMediaItem
 
 
 class CreateHousehold(BaseModel):
@@ -27,7 +27,7 @@ class CreateHousehold(BaseModel):
         schema_extra = {
             "example": {
                 "leader_id": 1,
-                "address_ids": 1,
+                "address_id": 1,
                 "household_image_id": 1,
                 "people_ids": [1, 4, 5]
             }
@@ -68,7 +68,7 @@ class ViewHousehold(BaseModel):
     id: int = Field(None)
     leader: BasicViewPerson = Field(title="The designated leader of the household")
     address: ViewAddress = Field(title="An addresses")
-    household_image: CreateMediaItem = Field(None, title="The image of this household")
+    household_image: ViewMediaItem = Field(None, title="The image of this household")
     people: List[BasicViewPerson] = Field([], title="A list of people belonging to the household")
 
 

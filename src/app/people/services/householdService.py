@@ -50,7 +50,7 @@ class HouseholdService:
         households_page = self.household_DAO.get_all_households(params=params)
         if households_page:
             for household in households_page.items:
-                households_response.append(self.household_factory.createHouseholdFromHouseholdEntity(household_entity=household))
+                households_response.append(self.household_factory.createHouseholdFromHouseholdEntity(household_entity=household,  include_household_image=True))
 
             return Page.create(items=households_response, params=params, total=households_page.total)
 
@@ -81,10 +81,11 @@ class HouseholdService:
         # leader entity can never be None because leader id is required to be in the list of people ids, and so would have
         # failed validation in the previous check above.
 
-
-        image_entity = self.media_DAO.get_media_item_by_id(household.household_image_id)
-        if image_entity is None:
-            raise NoMediaItemException(f"No image with the following ID: {household.household_image_id}")
+        image_entity = None
+        if household.household_image_id is not None:
+            image_entity = self.media_DAO.get_media_item_by_id(household.household_image_id)
+            if image_entity is None:
+                raise NoMediaItemException(f"No image with the following ID: {household.household_image_id}")
 
         new_household = self.household_factory.createHouseholdEntityFromHousehold(household, people_entities)
         return self.household_factory.createHouseholdFromHouseholdEntity(self.household_DAO.add_household(new_household, image_entity), True)

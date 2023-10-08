@@ -37,7 +37,7 @@ class HouseholdFactory:
         people = []
         if household_entity.people:
             for person in household_entity.people:
-                person_response = self.people_factory.create_person_from_person_entity(person, False)
+                person_response = self.people_factory.create_person_from_person_entity(person, include_households=False, include_profile_image=True)
                 people.append(person_response)
 
         household_response = ViewHousehold(

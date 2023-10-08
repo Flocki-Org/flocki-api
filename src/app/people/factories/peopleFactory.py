@@ -17,11 +17,21 @@ class PeopleFactory:
         self.media_factory = media_factory
 
 
-    def create_basic_person_view_from_person_entity(self, person_entity) -> BasicViewPerson:
+    def create_basic_person_view_from_person_entity(self, person_entity, include_profile_image=False) -> BasicViewPerson:
         person_response = BasicViewPerson(
             id=person_entity.id,
             first_name=person_entity.first_name,
-            last_name=person_entity.last_name)
+            last_name=person_entity.last_name,
+            email=person_entity.email,
+            mobile_number=person_entity.mobile_number,
+            date_of_birth=person_entity.date_of_birth,
+            gender=person_entity.gender,
+        )
+        if include_profile_image and person_entity.profile_images:
+            images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)
+            if len(images) > 0 and images[0] is not None:
+                person_response.profile_image = self.media_factory.create_view_media_item_from_media_item_entity(images[0].image)
+
         return person_response
 
     def create_person_from_person_entity(self, person_entity: models.Person, include_households=True, include_profile_image=False, user: DisplayUser = None) -> FullViewPerson:
@@ -79,15 +89,21 @@ class PeopleFactory:
     def create_household_view(self, household) -> ViewHousehold:
         people = []
         for household_person in household.people:
-            person = self.create_basic_person_view_from_person_entity(household_person)
+            person = self.create_basic_person_view_from_person_entity(household_person, include_profile_image=True)
             people.append(person)
 
         view_household = ViewHousehold(
             id=household.id,
             leader=self.create_basic_person_view_from_person_entity(household.leader),
             address=self.address_factory.create_address_from_address_entity(household.address),
-            people=people
+            people=people,
         )
+
+        h_images = sorted(household.household_images, key=lambda x: x.id, reverse=True)
+        if len(h_images) > 0 and h_images[0] is not None:
+            view_household.household_image = self.media_factory.create_view_media_item_from_media_item_entity(
+                h_images[0].image)
+
         return view_household
 
     def create_profile_image_list_from_entity_list(self, profile_images) -> List[ViewMediaItem]:
