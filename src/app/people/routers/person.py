@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import status, Depends, HTTPException, UploadFile
 
 from fastapi_pagination import Params, Page
@@ -111,4 +113,7 @@ def add_person(create_login: Union[bool, None], person: CreatePerson, people_ser
                 NoMediaItemException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
 
-
+@router.get('/peope/with_birthday_before', name= "Get people with birthdays before date")
+def find_people_with_birthday_before_given_date(date: datetime.date,
+                           people_service: PeopleService = Depends(PeopleService), current_user: User = Depends(get_current_user)):
+    return people_service.find_people_with_birthday_before_given_date(date)

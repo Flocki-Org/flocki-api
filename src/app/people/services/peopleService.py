@@ -1,3 +1,4 @@
+import datetime
 from typing import Union
 
 from fastapi import Depends, UploadFile
@@ -271,3 +272,12 @@ class PeopleService:
         except:
             #TODO log warning and somehow include warning to the frontend.
             return None;
+
+    def find_people_with_birthday_before_given_date(self, date: datetime.date):
+        people = self.peopleDAO.find_people_with_birthday_before_given_date(date)
+        people_list_response = []
+        for person in people:
+            person_response = self.peopleFactory.create_person_from_person_entity(person, include_households=False, include_profile_image=True)
+            people_list_response.append(person_response)
+
+        return people_list_response
