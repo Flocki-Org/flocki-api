@@ -1,5 +1,5 @@
 import datetime
-from typing import Union
+from typing import Union, List
 
 from fastapi import Depends, UploadFile
 from fastapi.responses import FileResponse
@@ -12,7 +12,7 @@ from src.app.media.services.mediaService import MediaService, NoMediaItemExcepti
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
-from src.app.people.models.people import CreatePerson, UpdatePerson
+from src.app.people.models.people import CreatePerson, UpdatePerson, BasicViewPerson
 from src.app.users.models.user import DisplayUser
 from src.app.users.services.userService import UserService
 from src.app.utils.fileUtils import FileUtils
@@ -278,6 +278,15 @@ class PeopleService:
         people_list_response = []
         for person in people:
             person_response = self.peopleFactory.create_person_from_person_entity(person, include_households=False, include_profile_image=True)
+            people_list_response.append(person_response)
+
+        return people_list_response
+
+    def find_people_with_name_or_surname_starting_with(self, name, surname) -> List[BasicViewPerson]:
+        people = self.peopleDAO.find_people_with_name_or_surname_starting_with(name, surname)
+        people_list_response = []
+        for person in people:
+            person_response = self.peopleFactory.create_basic_person_view_from_person_entity(person)
             people_list_response.append(person_response)
 
         return people_list_response

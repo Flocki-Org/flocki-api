@@ -9,7 +9,7 @@ from ..services.peopleService import PeopleService, NoPersonException, NoHouseho
     UnableToRemoveLeaderFromHouseholdException
 from ...media.models.media import ViewMediaItem
 from ...media.services.mediaService import NoMediaItemException
-from ...people.models.people import CreatePerson, FullViewPerson, UpdatePerson
+from ...people.models.people import CreatePerson, FullViewPerson, UpdatePerson, BasicViewPerson
 from fastapi import APIRouter
 from typing import List, Union
 from ...users.models.user import User
@@ -24,6 +24,11 @@ def get_people(page: int = 1, page_size:int = 10, people_service: PeopleService 
     params: Params = Params(page=page, size=page_size)
     people_response = people_service.get_all(params)
     return people_response
+
+@router.get('/people/with_name_or_surname', name="Find People By Name or Surname Starting With", response_model=List[BasicViewPerson])
+def find_people_with_name_or_surname_starting_with(name: Union[str, None] = None, surname: Union[str, None] = None, people_service: PeopleService = Depends(PeopleService),
+               current_user: User = Depends(get_current_user)):
+    return people_service.find_people_with_name_or_surname_starting_with(name, surname)
 
 #find people by email or first name and last name
 @router.get('/people/find_by_email_or_names', name="Find People By Email or (First and Last Name)")

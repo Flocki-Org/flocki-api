@@ -10,7 +10,7 @@ from src.app.database import get_db, SessionLocal
 from src.app.people.models.database import models
 from src.app.people.models.database.models import PersonImage
 
-from sqlalchemy import or_, and_, extract
+from sqlalchemy import or_, and_, extract, case
 
 
 class PeopleDAO:
@@ -109,3 +109,15 @@ class PeopleDAO:
             )
         ).order_by(models.Person.date_of_birth)
         return query.all()
+
+    def find_people_with_name_or_surname_starting_with(self, name, surname) -> List[models.Person]:
+        surname_match = case([(models.Person.last_name.ilike(f"{surname}%"), 1)], else_=0)
+
+        people = self.db.query(models.Person).filter(
+            or_(
+                models.Person.first_name.ilike(f"{name}%"),
+                models.Person.last_name.ilike(f"{surname}%")
+            )
+        ).order_by(surname_match.desc(), models.Person.last_name, models.Person.first_name).all()
+
+        return people
