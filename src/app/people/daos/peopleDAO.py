@@ -111,13 +111,23 @@ class PeopleDAO:
         return query.all()
 
     def find_people_with_name_or_surname_starting_with(self, name, surname) -> List[models.Person]:
-        surname_match = case([(models.Person.last_name.ilike(f"{surname}%"), 1)], else_=0)
+        # Create a case statement to calculate the sorting priority.
+        surname_match = case(
+            [
+                (models.Person.last_name.ilike(f"{surname}%") & models.Person.first_name.ilike(f"{name}%"), 1),
+                (models.Person.last_name.ilike(f"{surname}%"), 2),
+                (models.Person.first_name.ilike(f"{name}%"), 3)
+            ],
+            else_=4
+        )
 
+        # Query and order the results based on the calculated priority.
         people = self.db.query(models.Person).filter(
             or_(
                 models.Person.first_name.ilike(f"{name}%"),
                 models.Person.last_name.ilike(f"{surname}%")
             )
-        ).order_by(surname_match.desc(), models.Person.last_name, models.Person.first_name).all()
+        ).order_by(surname_match, models.Person.last_name, models.Person.first_name).all()
 
         return people
+
