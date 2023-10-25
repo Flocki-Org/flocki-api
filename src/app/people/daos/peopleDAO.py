@@ -89,25 +89,39 @@ class PeopleDAO:
         current_date = datetime.now().date()
         query = self.db.query(models.Person).filter(
             and_(
+                # ensure that date entered is more than or equal to the current year
+                date.year >= current_date.year,
+                # all people with birthdays in the next year before the date entered
                 or_(
-                    current_date.year < date.year,
-                    extract('month', models.Person.date_of_birth) < date.month,
                     and_(
-                        extract('month', models.Person.date_of_birth) == date.month,
-                        extract('day', models.Person.date_of_birth) < date.day
-                    )
-                ),
-                current_date.year <= date.year,
-                or_(
-
-                    extract('month', models.Person.date_of_birth) > current_date.month,
+                        date.year > current_date.year,
+                        or_(
+                            extract('month', models.Person.date_of_birth) < date.month,
+                            and_(
+                                extract('month', models.Person.date_of_birth) == date.month,
+                                extract('day', models.Person.date_of_birth) <= date.day
+                            )
+                        )
+                    ),
+                    # all people with birthdays in the current year before the date entered
                     and_(
-                        extract('month', models.Person.date_of_birth) == current_date.month,
-                        extract('day', models.Person.date_of_birth) > current_date.day
+                        date.year == current_date.year,
+                        or_(
+                            and_(
+                                extract('month', models.Person.date_of_birth) > current_date.month,
+                                extract('month', models.Person.date_of_birth) <= date.month
+                            ),
+                            and_(
+                                extract('month', models.Person.date_of_birth) == current_date.month,
+                                extract('day', models.Person.date_of_birth) > current_date.day,
+                                extract('day', models.Person.date_of_birth) <= date.day
+                            )
+                        ),
                     )
                 )
             )
         ).order_by(models.Person.date_of_birth)
+
         return query.all()
 
     def find_people_with_name_or_surname_starting_with(self, name, surname) -> List[models.Person]:

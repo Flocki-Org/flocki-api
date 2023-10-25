@@ -49,6 +49,7 @@ peopleDAO = PeopleDAO(db)
 
 
 def test_get_all(test_db):
+    # setup test data
     new_person_1 = models.Person(
         first_name="Test Name"
     )
@@ -58,7 +59,11 @@ def test_get_all(test_db):
     db.add(new_person_1)
     db.add(new_person_2)
     db.commit()
+
+    # method under test
     people_page = peopleDAO.get_all()
+
+    # assertions
     people = people_page.items
     assert len(people) == 2
     assert people[0].first_name == new_person_1.first_name
@@ -262,6 +267,7 @@ def test_update_person_including_image(test_db):
         "date_of_birth": datetime(1984, 1, 1, 10, 10, 10),
 
     }, image_entity)
+
     updated_person: Person = db.query(models.Person).filter(models.Person.id == existing_person.id).first()
 
     assert updated_person.first_name == "Test Name Updated"
@@ -550,3 +556,23 @@ def test_find_people_by_email_or_first_name_and_last_name_match_email_and_names(
     assert people[2].first_name == "Match_First"
     assert people[2].last_name == "Match_Last"
 
+
+def test_find_people_with_birthday_before_given_date(test_db):
+    new_person_nov_15 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth = datetime(1960, 11, 15, 10, 10, 10),
+    )
+    new_person_jun_30 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth = datetime(1960, 6, 30, 10, 10, 10),
+    )
+    db.add(new_person_nov_15)
+    db.add(new_person_jun_30)
+    db.commit()
+
+    people = peopleDAO.find_people_with_birthday_before_given_date(datetime(2023, 11, 30, 0, 0, 0))
+
+    assert len(people) == 1
+    assert people[0].id == new_person_nov_15.id

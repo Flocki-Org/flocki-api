@@ -47,7 +47,7 @@ def test_get_all_households_some(mock_get_all_households, mock_createHouseholdFr
     household_1 = ViewHousehold(id=1, leader=BasicViewPerson(id=1), address=ViewAddress(id=1))
     household_2 = ViewHousehold(id=2, leader=BasicViewPerson(id=1), address=ViewAddress(id=1))
 
-    def side_effect(household_entity):
+    def side_effect(household_entity, include_household_image=True):
         if household_entity.id == 1:
             return household_1
         elif household_entity.id == 2:
@@ -61,7 +61,7 @@ def test_get_all_households_some(mock_get_all_households, mock_createHouseholdFr
     assert mock_get_all_households.call_count == 1
     assert mock_createHouseholdFromHouseholdEntity.call_count == 2
     mock_createHouseholdFromHouseholdEntity.assert_has_calls(
-        [call(household_entity=household_entity_1), call(household_entity=household_entity_2)], any_order=True)
+        [call(household_entity=household_entity_1, include_household_image=True), call(household_entity=household_entity_2, include_household_image=True)], any_order=True)
 
 
 @mock.patch.object(HouseholdFactory, 'createHouseholdFromHouseholdEntity')

@@ -202,7 +202,7 @@ def test_create_household_view(mock_create_basic_person_view_from_person_entity,
     address_entity = models.Address(id=1)
     household_entity.address = address_entity
 
-    def side_effect(person):
+    def side_effect(person, include_profile_image = True):
          return BasicViewPerson(
             id=person.id,
             first_name=person.first_name,
@@ -217,7 +217,7 @@ def test_create_household_view(mock_create_basic_person_view_from_person_entity,
     assert household_view.leader.id == 1
     # assert leader_entity call twice because it is the leader and a member of the household
     mock_create_basic_person_view_from_person_entity.assert_has_calls(
-        [call(leader_entity), call(leader_entity), call(person_entity_2)], any_order=True)
+        [call(leader_entity), call(leader_entity, include_profile_image=True), call(person_entity_2, include_profile_image=True)], any_order=True)
     mock_create_address_from_address_entity.assert_called_with(address_entity)
 
 @mock.patch.object(MediaFactory, 'create_media_item_from_media_item_entity')
