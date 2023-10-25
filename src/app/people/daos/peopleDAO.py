@@ -12,6 +12,8 @@ from src.app.people.models.database.models import PersonImage
 
 from sqlalchemy import or_, and_, extract, case
 
+from src.app.utils.DateUtils import DateUtils
+
 
 class PeopleDAO:
     def __init__(self, db: SessionLocal = Depends(get_db)):
@@ -86,7 +88,7 @@ class PeopleDAO:
         self.db.commit()
 
     def find_people_with_birthday_before_given_date(self, date: datetime.date) -> List[models.Person]:
-        current_date = datetime.now().date()
+        current_date = DateUtils.get_current_datetime()
         query = self.db.query(models.Person).filter(
             and_(
                 # ensure that date entered is more than or equal to the current year
@@ -109,7 +111,12 @@ class PeopleDAO:
                         or_(
                             and_(
                                 extract('month', models.Person.date_of_birth) > current_date.month,
-                                extract('month', models.Person.date_of_birth) <= date.month
+                                extract('month', models.Person.date_of_birth) < date.month
+                            ),
+                            and_(
+                                extract('month', models.Person.date_of_birth) > current_date.month,
+                                extract('month', models.Person.date_of_birth) == date.month,
+                                extract('day', models.Person.date_of_birth) <= date.day
                             ),
                             and_(
                                 extract('month', models.Person.date_of_birth) == current_date.month,
