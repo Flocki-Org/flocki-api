@@ -102,7 +102,8 @@ class PeopleDAO:
                             and_(
                                 extract('month', models.Person.date_of_birth) == date.month,
                                 extract('day', models.Person.date_of_birth) <= date.day
-                            )
+                            ),
+                            extract('month', models.Person.date_of_birth) > current_date.month,
                         )
                     ),
                     # all people with birthdays in the current year before the date entered
