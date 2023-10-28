@@ -286,7 +286,7 @@ class PeopleService:
         people = self.peopleDAO.find_people_with_name_or_surname_starting_with(name, surname)
         people_list_response = []
         for person in people:
-            person_response = self.peopleFactory.create_basic_person_view_from_person_entity(person)
+            person_response = self.peopleFactory.create_basic_person_view_from_person_entity(person, include_profile_image=True)
             people_list_response.append(person_response)
 
         return people_list_response
