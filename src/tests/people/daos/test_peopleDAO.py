@@ -583,6 +583,29 @@ def test_find_people_with_birthday_before_given_date_return_result(mock_get_curr
     assert people[0].id == new_person_nov_15.id
 
 @mock.patch.object(DateUtils, 'get_current_datetime')
+def test_find_people_with_birthday_before_given_date_next_month_return_result(mock_get_current_datetime, test_db):
+    mock_get_current_datetime.return_value = datetime(2023, 11, 2, 0, 0, 0)
+
+    new_person_nov_15 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth = datetime(1960, 11, 15, 10, 10, 10),
+    )
+    new_person_jun_30 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth = datetime(1960, 6, 30, 10, 10, 10),
+    )
+    db.add(new_person_nov_15)
+    db.add(new_person_jun_30)
+    db.commit()
+
+    people = peopleDAO.find_people_with_birthday_before_given_date(datetime(2023, 12, 2, 0, 0, 0))
+
+    assert len(people) == 1
+    assert people[0].id == new_person_nov_15.id
+
+@mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_birthday_before_given_date_return_no_result(mock_get_current_datetime, test_db):
     mock_get_current_datetime.return_value = datetime(2023, 12, 1, 0, 0, 0)
 

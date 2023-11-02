@@ -24,13 +24,13 @@ class HouseholdFactory:
         address_response = ViewAddress(
             id=household_entity.address.id,
             type=household_entity.address.type,
-            streetNumber=household_entity.address.streetNumber,
+            street_number=household_entity.address.street_number,
             street=household_entity.address.street,
             suburb=household_entity.address.suburb,
             city=household_entity.address.city,
             province=household_entity.address.province,
             country=household_entity.address.country,
-            postalCode=household_entity.address.postalCode,
+            postal_code=household_entity.address.postal_code,
             latitude=household_entity.address.latitude,
             longitude=household_entity.address.longitude)
 

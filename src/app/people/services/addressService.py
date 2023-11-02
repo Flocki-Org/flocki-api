@@ -48,7 +48,7 @@ class AddressService:
         return self.addressFactory.create_address_from_address_entity(self.addressDAO.get_address_by_id(id))
 
     def create_address(self, address: CreateAddress):
-        existing_address = self.addressDAO.find_address(address.type, address.streetNumber, address.street, address.suburb, address.city, address.province, address.country, address.postalCode)
+        existing_address = self.addressDAO.find_address(address.type, address.street_number, address.street, address.suburb, address.city, address.province, address.country, address.postal_code)
         if(existing_address is not None):
             raise AddressAlreadyExists(self.addressFactory.create_address_from_address_entity(existing_address))
 

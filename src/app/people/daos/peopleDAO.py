@@ -123,6 +123,10 @@ class PeopleDAO:
                                 extract('month', models.Person.date_of_birth) == current_date.month,
                                 extract('day', models.Person.date_of_birth) > current_date.day,
                                 extract('day', models.Person.date_of_birth) <= date.day
+                            ),
+                            and_(
+                                extract('month', models.Person.date_of_birth) == current_date.month,
+                                extract('month', models.Person.date_of_birth) < date.month
                             )
                         ),
                     )

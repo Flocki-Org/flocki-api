@@ -46,13 +46,13 @@ class SocialMediaLink(BaseModel):
 
 class CreateAddress(BaseModel):
     type: AddressType
-    streetNumber: str
+    street_number: str
     street: str
     suburb: str
     city: str
     province: str
     country: str
-    postalCode: str = Field(None)
+    postal_code: str = Field(None)
     latitude: float = Field(None)
     longitude: float = Field(None)
 
@@ -60,26 +60,26 @@ class CreateAddress(BaseModel):
         schema_extra = {
             "example": {
               "type": "home",
-              "streetNumber": "21",
+              "street_number": "21",
               "street": "Allan",
               "suburb": "Noordwyk",
               "city": "Midrand",
               "province": "Johannesburg",
               "country": "South Africa",
-              "postalCode": "1685"
+              "postal_code": "1685"
             }
         }
 
 class UpdateAddress(BaseModel):
     id: int
     type: AddressType = Field(None)
-    streetNumber: str = Field(None)
+    street_number: str = Field(None)
     street: str = Field(None)
     suburb: str = Field(None)
     city: str = Field(None)
     province: str = Field(None)
     country: str = Field(None)
-    postalCode: str = Field(None)
+    postal_code: str = Field(None)
     latitude: float = Field(None)
     longitude: float = Field(None)
 
@@ -87,13 +87,13 @@ class UpdateAddress(BaseModel):
 class ViewAddress(BaseModel):
     id: int
     type: AddressType = Field(None)
-    streetNumber: str = Field(None)
+    street_number: str = Field(None)
     street: str = Field(None)
     suburb: str = Field(None)
     city: str = Field(None)
     province: str = Field(None)
     country: str = Field(None)
-    postalCode: str = Field(None)
+    postal_code: str = Field(None)
     latitude: float = Field(None)
     longitude: float = Field(None)
 

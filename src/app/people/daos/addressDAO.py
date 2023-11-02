@@ -41,11 +41,11 @@ class AddressDAO:
     def find_address(self, type, street_number, street, suburb, city, province, country, postal_code):
         return self.db.query(models.Address).filter(
             models.Address.type == type,
-            models.Address.streetNumber == street_number,
+            models.Address.street_number == street_number,
             models.Address.street == street,
             models.Address.suburb == suburb,
             models.Address.city == city,
             models.Address.province == province if province is not None else True,
             models.Address.country == country if country is not None else True,
-            models.Address.postalCode == postal_code if postal_code is not None else True).first()
+            models.Address.postal_code == postal_code if postal_code is not None else True).first()
 

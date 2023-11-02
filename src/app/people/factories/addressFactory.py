@@ -7,13 +7,13 @@ class AddressFactory:
     def create_address_entity_from_address(self, address):
         address_entity = models.Address(
             type=address.type,
-            streetNumber=address.streetNumber,
+            street_number=address.street_number,
             street=address.street,
             suburb=address.suburb,
             city=address.city,
             province=address.province,
             country=address.country,
-            postalCode=address.postalCode,
+            postal_code=address.postal_code,
             latitude=address.latitude,
             longitude=address.longitude)
 
@@ -23,12 +23,12 @@ class AddressFactory:
         return ViewAddress(
             id=address_entity.id,
             type=address_entity.type,
-            streetNumber=address_entity.streetNumber,
+            street_number=address_entity.street_number,
             street=address_entity.street,
             suburb=address_entity.suburb,
             city=address_entity.city,
             province=address_entity.province,
             country=address_entity.country,
-            postalCode=address_entity.postalCode,
+            postal_code=address_entity.postal_code,
             latitude=address_entity.latitude,
             longitude=address_entity.longitude)
