@@ -19,7 +19,7 @@ class HouseholdFactory:
 
         leader_response = None
         if household_entity.leader:
-            leader_response = self.people_factory.create_person_from_person_entity(household_entity.leader)
+            leader_response = self.people_factory.create_person_from_person_entity(household_entity.leader, include_profile_image=True)
 
         address_response = ViewAddress(
             id=household_entity.address.id,
@@ -73,4 +73,3 @@ class HouseholdFactory:
         for image in images:
             household_image_list.append(self.media_factory.create_media_item_from_media_item_entity(image.image))
         return household_image_list
-
