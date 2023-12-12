@@ -19,21 +19,27 @@ router = APIRouter(tags=['People'])
 
 
 @router.get('/people', response_model=Page[FullViewPerson])
-def get_people(page: int = 1, page_size:int = 10, people_service: PeopleService = Depends(PeopleService),
+def get_people(page: int = 1, page_size: int = 10, people_service: PeopleService = Depends(PeopleService),
                current_user: User = Depends(get_current_user)):
     params: Params = Params(page=page, size=page_size)
     people_response = people_service.get_all(params)
     return people_response
 
-@router.get('/people/with_name_or_surname', name="Find People By Name or Surname Starting With", response_model=List[BasicViewPerson])
-def find_people_with_name_or_surname_starting_with(name: Union[str, None] = None, surname: Union[str, None] = None, people_service: PeopleService = Depends(PeopleService),
-               current_user: User = Depends(get_current_user)):
+
+@router.get('/people/with_name_or_surname', name="Find People By Name or Surname Starting With",
+            response_model=List[BasicViewPerson])
+def find_people_with_name_or_surname_starting_with(name: Union[str, None] = None, surname: Union[str, None] = None,
+                                                   people_service: PeopleService = Depends(PeopleService),
+                                                   current_user: User = Depends(get_current_user)):
     return people_service.find_people_with_name_or_surname_starting_with(name, surname)
 
-#find people by email or first name and last name
+
+# find people by email or first name and last name
 @router.get('/people/find_by_email_or_names', name="Find People By Email or (First and Last Name)")
-def find_by_email_or_names(email: Union[str, None] = None, first_name: Union[str, None] = None, last_name: Union[str, None] = None,
-                           people_service: PeopleService = Depends(PeopleService), current_user: User = Depends(get_current_user)):
+def find_by_email_or_names(email: Union[str, None] = None, first_name: Union[str, None] = None,
+                           last_name: Union[str, None] = None,
+                           people_service: PeopleService = Depends(PeopleService),
+                           current_user: User = Depends(get_current_user)):
     return people_service.find_people_by_email_or_first_and_last_name(email, first_name, last_name)
 
 
@@ -57,8 +63,10 @@ def update_person(id: int, person: UpdatePerson, people_service: PeopleService =
         return person_response
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
-    except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException, NoMediaItemException) as e:
+    except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException,
+            NoMediaItemException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
+
 
 @router.get('/people/{id}/profile_image')
 def get_person_profile_image(id: int, people_service: PeopleService = Depends(PeopleService)):
@@ -72,9 +80,10 @@ def get_person_profile_image(id: int, people_service: PeopleService = Depends(Pe
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
 
+
 @router.get('/people/{id}/profile_images', response_model=List[ViewMediaItem])
 def get_person_profile_images(id: int, people_service: PeopleService = Depends(PeopleService),
-                current_user: User = Depends(get_current_user)):
+                              current_user: User = Depends(get_current_user)):
     try:
         profile_image_responses = people_service.get_profile_images_by_person_id(id)
         if profile_image_responses is None:
@@ -87,7 +96,7 @@ def get_person_profile_images(id: int, people_service: PeopleService = Depends(P
 
 @router.put('/people/profile_image', response_model=ViewMediaItem)
 def update_person_with_profile_image(id: int, file: UploadFile, people_service: PeopleService = Depends(PeopleService),
-                  current_user: User = Depends(get_current_user)):
+                                     current_user: User = Depends(get_current_user)):
     try:
         person_response = people_service.upload_profile_image(id, file)
         if person_response is None:
@@ -101,7 +110,7 @@ def update_person_with_profile_image(id: int, file: UploadFile, people_service: 
 
 @router.post('/people/add_people_from_spreadsheet', response_model=List[ViewMediaItem])
 def add_people_from_spreadsheet(file: UploadFile, people_service: PeopleService = Depends(PeopleService),
-                  current_user: User = Depends(get_current_user)):
+                                current_user: User = Depends(get_current_user)):
     try:
         people_response = people_service.add_people_from_spreadsheet(file)
         return people_response
@@ -110,15 +119,25 @@ def add_people_from_spreadsheet(file: UploadFile, people_service: PeopleService 
 
 
 @router.post('/people', status_code=status.HTTP_201_CREATED, response_model=FullViewPerson)
-def add_person(create_login: Union[bool, None], person: CreatePerson, people_service: PeopleService = Depends(PeopleService),
+def add_person(create_login: Union[bool, None], person: CreatePerson,
+               people_service: PeopleService = Depends(PeopleService),
                current_user: User = Depends(get_current_user)):
     try:
         return people_service.create_person(person, create_login)
     except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException,
-                NoMediaItemException) as e:
+            NoMediaItemException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
 
-@router.get('/peope/with_birthday_before', name= "Get people with birthdays before date")
+
+@router.get('/peope/with_birthday_before', name="Get people with birthdays before date")
 def find_people_with_birthday_before_given_date(date: datetime.date,
-                           people_service: PeopleService = Depends(PeopleService), current_user: User = Depends(get_current_user)):
+                                                people_service: PeopleService = Depends(PeopleService),
+                                                current_user: User = Depends(get_current_user)):
     return people_service.find_people_with_birthday_before_given_date(date)
+
+
+@router.get('/peope/with_anniversary_before', name="Get people with anniversaries before date")
+def find_people_with_anniversary_before_given_date(date: datetime.date,
+                                                   people_service: PeopleService = Depends(PeopleService),
+                                                   current_user: User = Depends(get_current_user)):
+    return people_service.find_people_with_anniversary_before_given_date(date)
