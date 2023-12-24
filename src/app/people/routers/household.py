@@ -1,9 +1,11 @@
-from fastapi import status, Depends, HTTPException, UploadFile
+from fastapi import status, Depends, HTTPException, UploadFile, Query
 from fastapi_pagination import Page, Params
 
 from ..models.household import CreateHousehold, ViewHousehold, UpdateHousehold
 from fastapi import APIRouter
-from typing import List
+from typing import List, Union
+
+from ..models.people import BasicViewPerson
 from ..services.householdService import HouseholdService, NoHouseholdException
 from ..services.peopleService import NoPersonException
 from ...media.models.media import ViewMediaItem
@@ -17,6 +19,21 @@ router = APIRouter(tags=['Household'])
 def get_households(page: int = 1, page_size:int = 10, household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):
     params: Params = Params(page=page, size=page_size)
     return household_service.get_all_households(params=params)
+
+# get list of people that can be added to this household (excludes list of people already in the household,
+# and sorts the list by last name, but prioritizes people with the same last name of the existing household
+# with the household id as a parameter)
+@router.get('/households/people', response_model=List[BasicViewPerson])
+def get_people_not_in_household(household_id: int = Query(None, description="id of the household"),
+                                name: Union[str, None] = None, surname: Union[str, None] = None,
+                                household_service: HouseholdService = Depends(HouseholdService),
+                                current_user: User = Depends(get_current_user)):
+    try:
+        people_response = household_service.get_people_not_in_household(household_id, name, surname)
+        return people_response
+    except NoHouseholdException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household with that id does not exist")
+
 
 @router.get('/households/{id}', response_model=ViewHousehold)
 def get_household(id: int, household_service: HouseholdService = Depends(HouseholdService), current_user: User = Depends(get_current_user)):

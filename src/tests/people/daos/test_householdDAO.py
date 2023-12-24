@@ -233,3 +233,50 @@ def test_update_household(test_db):
     assert household_queried.household_images[1].image.address == "new_test"
 
 
+def test_get_people_not_in_household(test_db):
+    household = models.Household(
+        leader_id=1,
+        address_id=1,
+    )
+    db.add(household)
+    db.commit()
+    db.refresh(household)
+
+    person_in_household = models.Person(
+        first_name="test",
+        last_name="last_name")
+    db.add(person_in_household)
+    db.commit()
+    db.refresh(person_in_household)
+    household.people.append(person_in_household)
+    db.commit()
+
+    person_not_in_household_last_name_b = models.Person(
+        first_name="test",
+        last_name="b_last_name")
+
+    person_not_in_household_last_name_c = models.Person(
+        first_name="test",
+        last_name="c_last_name")
+
+    person_not_in_household_last_name_a = models.Person(
+        first_name="test",
+        last_name="a_last_name")
+
+    db.add(person_not_in_household_last_name_b)
+    db.add(person_not_in_household_last_name_c)
+    db.add(person_not_in_household_last_name_a)
+    db.commit()
+
+    # method under test
+    people = householdDAO.get_people_not_in_household(household.id)
+
+    # assertions
+    assert len(people) == 3
+    #assert people are in the correct order
+    assert people[0].first_name == "test"
+    assert people[0].last_name == "a_last_name"
+    assert people[1].first_name == "test"
+    assert people[1].last_name == "b_last_name"
+    assert people[2].first_name == "test"
+    assert people[2].last_name == "c_last_name"

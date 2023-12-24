@@ -15,6 +15,7 @@ from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.householdDAO import HouseholdDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.householdFactory import HouseholdFactory
+from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.database import models
 from src.app.people.models.household import ViewHousehold, CreateHousehold, UpdateHousehold
 from src.app.people.models.people import BasicViewPerson, ViewAddress
@@ -513,3 +514,56 @@ def test_update_household_no_image(mock_get_household_by_id, mock_get_address_by
 
     assert e.value.args[0] == "No image with the following ID: 1"
 
+
+@mock.patch.object(PeopleFactory, 'create_basic_person_view_from_person_entity')
+@mock.patch.object(HouseholdDAO, 'get_people_not_in_household')
+@mock.patch.object(HouseholdDAO, 'get_household_by_id')
+def test_get_people_not_in_household(mock_get_household_by_id, mock_get_people_not_in_household,
+                                     mock_create_basic_person_view_from_person_entity):
+    household_service = HouseholdService(household_DAO=HouseholdDAO(), people_factory=PeopleFactory())
+
+    household_entity = models.Household(id=1, leader_id=1, address_id=1)
+    household_entity.leader = models.Person(id=1, last_name="last_name")
+    mock_get_household_by_id.return_value = household_entity
+
+    person_b = models.Person(id=1, last_name="b")
+    person_a = models.Person(id=2, last_name="a")
+    person_same_last_name = models.Person(id=3, last_name="last_name")
+    people_list = [person_b, person_a, person_same_last_name]
+    mock_get_people_not_in_household.return_value = people_list
+
+    def side_effect(person_entity, include_profile_image=True):
+        if person_entity.id == 1:
+            return BasicViewPerson(id=1, last_name="b")
+        elif person_entity.id == 2:
+            return BasicViewPerson(id=2, last_name="a")
+        elif person_entity.id == 3:
+            return BasicViewPerson(id=3, last_name="last_name")
+    mock_create_basic_person_view_from_person_entity.side_effect = side_effect
+
+    people = household_service.get_people_not_in_household(1)
+
+    mock_create_basic_person_view_from_person_entity.assert_has_calls(
+        [call(person_same_last_name, include_profile_image=True),
+         call(person_a, include_profile_image=True),
+         call(person_b, include_profile_image=True)]
+    )
+
+    mock_get_household_by_id.assert_called_once_with(1)
+    mock_get_people_not_in_household.assert_called_once_with(1)
+    assert len(people) == 3
+    assert people[0].id == 3
+    assert people[1].id == 2
+    assert people[2].id == 1
+
+
+@mock.patch.object(HouseholdDAO, 'get_household_by_id')
+def test_get_people_not_in_household_no_household(mock_get_household_by_id):
+    household_service = HouseholdService(household_DAO=HouseholdDAO())
+
+    mock_get_household_by_id.return_value = None
+
+    with pytest.raises(NoHouseholdException) as e:
+        household_service.get_people_not_in_household(1)
+
+    assert e.value.args[0] == "No household with the following ID: 1"

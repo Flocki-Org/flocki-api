@@ -161,5 +161,3 @@ class PeopleDAO:
         people = people_query.order_by(surname_match, models.Person.last_name, models.Person.first_name).all()
 
         return people
-
-

@@ -170,3 +170,21 @@ class HouseholdService:
                 self.household_DAO.remove_person_from_household(household_entity, self.people_DAO.get_person_by_id(person_id))
 
         return self.get_household_by_id(id)
+
+    def get_people_not_in_household(self, household_id, name=None, surname=None):
+        household_entity = self.household_DAO.get_household_by_id(household_id)
+        if household_entity is None:
+            raise NoHouseholdException(f"No household with the following ID: {household_id}")
+
+        people_entities = self.household_DAO.find_people_not_in_household_with_name_or_surname_starting_with(household_id, name, surname)
+
+        # Check if household_entity.leader and x.last_name are valid attributes
+        leader_last_name = getattr(household_entity.leader, 'last_name', None)
+
+        #sort people entities by last name but prioritize people with the same last name as the household
+        people_entities = sorted(people_entities, key=lambda x: (x.last_name != leader_last_name, x.last_name))
+        people_response = []
+        for person_entity in people_entities:
+            people_response.append(self.people_factory.create_basic_person_view_from_person_entity(person_entity, include_profile_image=True))
+
+        return people_response

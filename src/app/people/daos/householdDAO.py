@@ -1,9 +1,12 @@
 from datetime import datetime
+from typing import List
 
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 
 from fastapi import Depends
+from sqlalchemy import case, and_, or_
+
 from src.app.database import get_db, SessionLocal
 from src.app.people.models.database import models
 from src.app.people.models.database.models import HouseholdImage
@@ -56,3 +59,36 @@ class HouseholdDAO:
         household_entity.leader_id = update_leader_id
         household_entity.address_id = update_address_id
         self.db.commit()
+
+    def get_people_not_in_household(self, household_id):
+        return self.db.query(models.Person).filter(
+            ~models.Person.households.any(models.Household.id == household_id)).order_by(models.Person.last_name,
+                                                                                        models.Person.first_name).all()
+
+
+    def find_people_not_in_household_with_name_or_surname_starting_with(self, household_id, name, surname) -> List[models.Person]:
+        # Create a case statement to calculate the sorting priority.
+        surname_match = case(
+            [
+                (and_(models.Person.last_name.ilike(f"{surname}%"), models.Person.first_name.ilike(f"{name}%")),
+                 1) if name and surname else (False, 1),
+                (models.Person.last_name.ilike(f"{surname}%"), 2) if surname else (False, 2),
+            ],
+            else_=3
+        )
+
+        # Query and order the results based on the calculated priority.
+        people_query = self.db.query(models.Person)
+
+        if name and surname:
+            people_query = people_query.filter(models.Person.first_name.ilike(f"{name}%"),
+                                               models.Person.last_name.ilike(f"{surname}%"))
+        elif name:
+            people_query = people_query.filter(or_(models.Person.first_name.ilike(f"{name}%"), models.Person.last_name.ilike(f"{name}%")))
+        elif surname:
+            people_query = people_query.filter(models.Person.last_name.ilike(f"{surname}%"))
+
+        people = people_query.order_by(surname_match, models.Person.last_name, models.Person.first_name).all()
+        # remove people that are already in the household
+        people = [person for person in people if household_id not in [household.id for household in person.households]]
+        return people
