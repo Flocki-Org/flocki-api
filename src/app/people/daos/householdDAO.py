@@ -62,8 +62,12 @@ class HouseholdDAO:
 
     def get_people_not_in_household(self, household_id):
         return self.db.query(models.Person).filter(
-            ~models.Person.households.any(models.Household.id == household_id)).order_by(models.Person.last_name,
-                                                                                        models.Person.first_name).all()
+            ~models.Person.households.any(
+                    models.Household.id == household_id))\
+            .order_by(
+                models.Person.last_name,
+                models.Person.first_name)\
+            .all()
 
 
     def find_people_not_in_household_with_name_or_surname_starting_with(self, household_id, name, surname) -> List[models.Person]:
