@@ -16,6 +16,7 @@ from src.app.users.factories.userFactory import UserFactory
 from src.app.config import settings
 from src.app.users.services.passwordUtil import PasswordUtil
 from src.app.users.services.userService import UserService
+from src.app.worship.routers import song
 
 models.Base.metadata.create_all(engine)
 
@@ -29,6 +30,8 @@ app.include_router(media.router)
 app.include_router(image.router)
 app.include_router(address.router)
 app.include_router(church.router)
+app.include_router(song.router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.flocki_cors_origins,
