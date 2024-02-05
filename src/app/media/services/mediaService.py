@@ -38,7 +38,7 @@ class MediaService:
                                access_key = settings.flocki_s3_access_key,
                                secret_access_key = settings.flocki_s3_secret_access_key)
 
-    def get_media_item_by_id(self, id, as_attachment=True):
+    def get_media_item_by_id(self, id, as_attachment=True) -> FileResponse:
         media_item = self.media_DAO.get_media_item_by_id(id)
         if media_item is None:
             raise NoMediaItemException("No media item with that ID")
@@ -126,4 +126,3 @@ class MediaService:
         if file.content_type == 'image/jpeg':
             file.content_type = 'image/jpg'
         return self.upload_media_item(file, filename, description)
-

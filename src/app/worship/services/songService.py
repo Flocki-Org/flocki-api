@@ -33,3 +33,8 @@ class SongService:
         if song_entity is None:
             raise NoSongException("Song with that id does not exist")
         return self.song_factory.create_song_from_song_entity(song_entity)
+
+    def create_song(self, song: Song) -> ViewSong:
+        song_entity = self.song_factory.create_song_entity_from_song(song)
+        song_entity = self.song_DAO.create_song(song_entity)
+        return self.song_factory.create_song_from_song_entity(song_entity)

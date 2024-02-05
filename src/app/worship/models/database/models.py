@@ -27,7 +27,9 @@ class Sheet(Base):
     __tablename__ = 'sheets'
     id = Column(BigInteger, primary_key=True, index=True)
     type = Column(String)
+    sheet_key = Column(String)
     song_id = Column(Integer, ForeignKey('songs.id'))
     media_item_id = Column(Integer, ForeignKey('media_items.id'))
+    media_item = relationship("MediaItem", backref="sheets")
     # combination of type and song_id must be unique
-    __table_args__ = (UniqueConstraint('type', 'song_id', name='sheets_type_song_id_uc'),)
+    __table_args__ = (UniqueConstraint('type', 'song_id', 'sheet_key', name='sheets_type_song_id_sheet_key_uc'),)
