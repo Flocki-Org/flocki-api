@@ -12,6 +12,10 @@ class NoSongException (Exception):
     pass
 
 
+class SongWithThatCodeExists (Exception):
+    pass
+
+
 class SongService:
     def __init__(self, song_factory: SongFactory = Depends(SongFactory), song_DAO: SongDAO = Depends(SongDAO)):
         self.song_factory = song_factory
@@ -35,6 +39,9 @@ class SongService:
         return self.song_factory.create_song_from_song_entity(song_entity)
 
     def create_song(self, song: Song) -> ViewSong:
+        #check if song with that code exists and if so raise error
+        if self.song_DAO.get_song_by_code(song.code):
+            raise SongWithThatCodeExists("Song with that code already exists")
         song_entity = self.song_factory.create_song_entity_from_song(song)
         song_entity = self.song_DAO.create_song(song_entity)
         return self.song_factory.create_song_from_song_entity(song_entity)

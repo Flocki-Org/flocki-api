@@ -3,7 +3,7 @@ version: "3"
 
 services:
   flockiapi-dev-postgres:
-    image: postgres
+    image: postgres:16
     networks:
       - flocki-api-backend
     ports:
@@ -21,13 +21,27 @@ services:
     networks:
       - flocki-api-backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       FLOCKI_API_DB_USER_NAME: postgres
       FLOCKI_API_DB_PASSWORD: Pass2022!
       FLOCKI_API_DB_HOST: flockiapi-dev-postgres
       FLOCKI_API_DB_PORT: 5432
       FLOCKI_API_DB_NAME: flocki_api
+
+  flocki-web-app:
+    depends_on:
+      - flocki-api-dev
+    image: flocki-web-app
+    networks:
+      - flocki-api-backend
+    ports:
+      - "3000:80"
+    environment:
+      NODE_ENV: development
+      APP_API_PROTOCOL: http
+      APP_API_URL: localhost
+      APP_API_PORT: 8001
 
 networks:
   flocki-api-backend:

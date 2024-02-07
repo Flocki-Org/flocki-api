@@ -6,7 +6,7 @@ from fastapi_pagination import Params, Page
 from src.app.media.models.media import ViewMediaItem
 from src.app.worship.models.songs import ViewSong
 
-from src.app.worship.services.songService import SongService, NoSongException
+from src.app.worship.services.songService import SongService, NoSongException, SongWithThatCodeExists
 from src.app.worship.services.sheetService import SheetService, NoSongException as NSException
 from src.app.users.models.user import User
 from src.app.users.routers.login import get_current_user
@@ -29,7 +29,12 @@ def get_songs(page: int = 1, page_size:int = 10, song_service : SongService = De
 
 @router.post('/song', response_model=ViewSong)
 def create_song(song: ViewSong, song_service: SongService = Depends(SongService)):
-    return song_service.create_song(song)
+    try:
+        return song_service.create_song(song)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except SongWithThatCodeExists as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.put('/song_sheet', response_model=ViewSong)

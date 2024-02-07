@@ -17,6 +17,8 @@ class Song(Base):
     video_link = Column(String)
     artist = relationship("Artist", backref="songs")
     sheets = relationship("Sheet", backref="song")
+    # unique key code
+    __table_args__ = (UniqueConstraint('code', name='songs_code_uc'),)
 
 class Artist(Base):
     __tablename__ = 'artists'

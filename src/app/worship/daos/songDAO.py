@@ -5,7 +5,8 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 
 from src.app.database import SessionLocal, get_db
 from src.app.worship.models.database import models
-from sqlalchemy import func
+from sqlalchemy import func, exc
+
 
 class SongDAO:
     def __init__(self, db: SessionLocal = Depends(get_db)):
@@ -20,8 +21,12 @@ class SongDAO:
     def create_song(self, song: models.Song):
         if not song.code:
             song.code = self.get_next_code(song)
-        self.db.add(song)
-        self.db.commit()
+        try:
+            self.db.add(song)
+            self.db.commit()
+        except exc.IntegrityError:
+            self.db.rollback()
+            raise ValueError("Song with that code already exists")
         self.db.refresh(song)
         return song
 
@@ -36,7 +41,14 @@ class SongDAO:
         return f"{first_char}{int(max_code[1:]) + 1}"
 
     def create_sheet(self, sheet: models.Sheet):
-        self.db.add(sheet)
-        self.db.commit()
+        try:
+            self.db.add(sheet)
+            self.db.commit()
+        except exc.IntegrityError:
+            self.db.rollback()
+            raise ValueError("Sheet with that type and key already exists")
         self.db.refresh(sheet)
         return sheet
+
+    def get_song_by_code(self, code):
+        return self.db.query(models.Song).filter(models.Song.code == code).first()
