@@ -52,3 +52,35 @@ class SongDAO:
 
     def get_song_by_code(self, code):
         return self.db.query(models.Song).filter(models.Song.code == code).first()
+
+    def update_song(self, song_entity, update_values):
+        if 'id' in update_values:
+            del update_values['id']
+        entity_to_update = self.db.query(models.Song).filter(models.Song.id == song_entity.id)
+        entity_to_update.update(update_values)
+        self.db.commit()
+        return self.get_song_by_id(song_entity.id)
+
+    def create_artist(self, artist_entity):
+        try:
+            self.db.add(artist_entity)
+            self.db.commit()
+        except exc.IntegrityError:
+            self.db.rollback()
+            raise ValueError("Artist with that name already exists")
+        self.db.refresh(artist_entity)
+        return artist_entity
+
+    def update_artist(self, artist_entity, update_values):
+        if 'id' in update_values:
+            del update_values['id']
+        entity_to_update = self.db.query(models.Artist).filter(models.Artist.id == artist_entity.id)
+        entity_to_update.update(update_values)
+        self.db.commit()
+        return self.get_artist_by_id(artist_entity.id)
+
+    def get_all_artists(self):
+        return self.db.query(models.Artist).all()
+
+    def get_artist_by_id(self, id):
+        return self.db.query(models.Artist).filter(models.Artist.id == id).first()

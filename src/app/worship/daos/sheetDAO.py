@@ -30,3 +30,8 @@ class SheetDAO:
     def get_song_sheet(self, song_id, type, sheet_key):
         return self.db.query(models.Sheet).filter(
             models.Sheet.song_id == song_id, models.Sheet.type == type, models.Sheet.sheet_key == sheet_key).first()
+
+    def update_sheet(self, sheet_entity):
+        self.db.commit()
+        self.db.refresh(sheet_entity)
+        return sheet_entity

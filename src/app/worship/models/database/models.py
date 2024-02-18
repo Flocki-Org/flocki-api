@@ -24,6 +24,7 @@ class Artist(Base):
     __tablename__ = 'artists'
     id = Column(BigInteger, primary_key=True, index=True)
     name = Column(String)
+    __table_args__ = (UniqueConstraint('name', name='artists_name_uc'),)
 
 class Sheet(Base):
     __tablename__ = 'sheets'
