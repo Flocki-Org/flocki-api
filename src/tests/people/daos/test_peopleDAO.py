@@ -1,17 +1,15 @@
 from datetime import datetime
 from unittest import mock
 
-from fastapi_pagination import Params
 # from main import app
 import pytest
-
-from src.app.database import get_db, SessionLocal, Base
-from src.app.people.daos.peopleDAO import PeopleDAO
-from src.app.media.models.database import models as media_models
-
+from fastapi_pagination import Params
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 
+from src.app.database import Base
+from src.app.media.models.database import models as media_models
+from src.app.people.daos.peopleDAO import PeopleDAO
 # test_database.py
 from src.app.people.models.database import models
 from src.app.people.models.database.models import Person, SocialMediaLink
@@ -28,6 +26,7 @@ models.Base.metadata.create_all(engine)
 
 
 def override_get_db():
+    global db
     try:
         db = TestingSessionLocal()
         yield db
@@ -773,8 +772,6 @@ def test_find_people_with_anniversay_before_given_date_next_month_return_result(
     assert people[0].id == new_person_nov_15.id
 
 
-# #TODO change to correct test 2
-
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_anniversary_before_given_date_return_no_result(mock_get_current_datetime, test_db):
     mock_get_current_datetime.return_value = datetime(2023, 12, 1, 0, 0, 0)
@@ -797,8 +794,6 @@ def test_find_people_with_anniversary_before_given_date_return_no_result(mock_ge
 
     assert len(people) == 0
 
-
-# #TODO change to correct test 3
 
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_anniversay_before_given_date_return_both_result(mock_get_current_datetime, test_db):
@@ -825,8 +820,6 @@ def test_find_people_with_anniversay_before_given_date_return_both_result(mock_g
     assert people[1].id == new_person_nov_15.id
 
 
-# #TODO change to correct test 4
-
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_anniversary_on_given_date_return_one_result(mock_get_current_datetime, test_db):
     mock_get_current_datetime.return_value = datetime(2023, 5, 1, 0, 0, 0)
@@ -846,8 +839,6 @@ def test_find_people_with_anniversary_on_given_date_return_one_result(mock_get_c
     assert people[0].id == new_person_nov_15.id
 
 
-# #TODO change to correct test 5
-
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_anniversary_after_given_date_return_no_result(mock_get_current_datetime, test_db):
     mock_get_current_datetime.return_value = datetime(2023, 5, 1, 0, 0, 0)
@@ -865,8 +856,6 @@ def test_find_people_with_anniversary_after_given_date_return_no_result(mock_get
 
     assert len(people) == 0
 
-
-# #TODO change to correct test 5
 
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_all_people_with_anniversary_before_date_in_the_following_year(mock_get_current_datetime, test_db):
