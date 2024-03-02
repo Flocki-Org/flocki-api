@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import List
 
 from fastapi import Depends
@@ -10,7 +10,7 @@ from src.app.database import get_db, SessionLocal
 from src.app.people.models.database import models
 from src.app.people.models.database.models import PersonImage
 
-from sqlalchemy import or_, and_, extract, case
+from sqlalchemy import or_, and_, extract, case, select
 
 from src.app.utils.DateUtils import DateUtils
 
@@ -136,6 +136,55 @@ class PeopleDAO:
 
         return query.all()
 
+    def find_people_with_anniversary_before_given_date(self, date: datetime.date) -> List[models.Person]:
+        current_date = DateUtils.get_current_datetime()
+        query = self.db.query(models.Person).filter(
+            and_(
+                # ensure that date entered is more than or equal to the current year
+                date.year >= current_date.year,
+                # all people with birthdays in the next year before the date entered
+                or_(
+                    and_(
+                        date.year > current_date.year,
+                        or_(
+                            extract('month', models.Person.marriage_date) < date.month,
+                            and_(
+                                extract('month', models.Person.marriage_date) == date.month,
+                                extract('day', models.Person.marriage_date) <= date.day
+                            ),
+                            extract('month', models.Person.marriage_date) > current_date.month,
+                        )
+                    ),
+                    # all people with birthdays in the current year before the date entered
+                    and_(
+                        date.year == current_date.year,
+                        or_(
+                            and_(
+                                extract('month', models.Person.marriage_date) > current_date.month,
+                                extract('month', models.Person.marriage_date) < date.month
+                            ),
+                            and_(
+                                extract('month', models.Person.marriage_date) > current_date.month,
+                                extract('month', models.Person.marriage_date) == date.month,
+                                extract('day', models.Person.marriage_date) <= date.day
+                            ),
+                            and_(
+                                extract('month', models.Person.marriage_date) == current_date.month,
+                                extract('day', models.Person.marriage_date) > current_date.day,
+                                extract('day', models.Person.marriage_date) <= date.day
+                            ),
+                            and_(
+                                extract('month', models.Person.marriage_date) == current_date.month,
+                                extract('month', models.Person.marriage_date) < date.month
+                            )
+                        ),
+                    )
+                )
+            )
+        ).order_by(models.Person.marriage_date)
+
+        return query.all()
+
     def find_people_with_name_or_surname_starting_with(self, name, surname) -> List[models.Person]:
         # Create a case statement to calculate the sorting priority.
         surname_match = case(
@@ -154,7 +203,8 @@ class PeopleDAO:
             people_query = people_query.filter(models.Person.first_name.ilike(f"{name}%"),
                                                models.Person.last_name.ilike(f"{surname}%"))
         elif name:
-            people_query = people_query.filter(or_(models.Person.first_name.ilike(f"{name}%"), models.Person.last_name.ilike(f"{name}%")))
+            people_query = people_query.filter(
+                or_(models.Person.first_name.ilike(f"{name}%"), models.Person.last_name.ilike(f"{name}%")))
         elif surname:
             people_query = people_query.filter(models.Person.last_name.ilike(f"{surname}%"))
 
