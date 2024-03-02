@@ -136,36 +136,54 @@ class PeopleDAO:
 
         return query.all()
 
-    def find_people_with_anniversary_before_given_date(self, given_date: datetime.date) -> list[models.Person]:
-        current_date = date.today()
-        # Ensure the date entered is more than or equal to the current year
-        query = self.db.query(models.Person).filter(given_date.year >= current_date.year)
-        # Filter for people with an anniversary in the next year before the date entered
-        if given_date.year > current_date.year:
-            query = query.filter(
-                or_(
-                    extract("month", models.Person.marriage_date) < given_date.month,
-                    and_(
-                        extract("month", models.Person.marriage_date) == given_date.month,
-                        extract("day", models.Person.marriage_date) <= given_date.day
-                    )
-                )
-            )
-        elif given_date.year == current_date.year and given_date > current_date:
-            query = query.filter(
+    def find_people_with_anniversary_before_given_date(self, date: datetime.date) -> List[models.Person]:
+        current_date = DateUtils.get_current_datetime()
+        query = self.db.query(models.Person).filter(
+            and_(
+                # ensure that date entered is more than or equal to the current year
+                date.year >= current_date.year,
+                # all people with birthdays in the next year before the date entered
                 or_(
                     and_(
-                        extract("month", models.Person.marriage_date) > current_date.month,
-                        extract("month", models.Person.marriage_date) < given_date.month
+                        date.year > current_date.year,
+                        or_(
+                            extract('month', models.Person.marriage_date) < date.month,
+                            and_(
+                                extract('month', models.Person.marriage_date) == date.month,
+                                extract('day', models.Person.marriage_date) <= date.day
+                            ),
+                            extract('month', models.Person.marriage_date) > current_date.month,
+                        )
                     ),
+                    # all people with birthdays in the current year before the date entered
                     and_(
-                        extract("month", models.Person.marriage_date) == current_date.month,
-                        extract("day", models.Person.marriage_date) <= given_date.day
+                        date.year == current_date.year,
+                        or_(
+                            and_(
+                                extract('month', models.Person.marriage_date) > current_date.month,
+                                extract('month', models.Person.marriage_date) < date.month
+                            ),
+                            and_(
+                                extract('month', models.Person.marriage_date) > current_date.month,
+                                extract('month', models.Person.marriage_date) == date.month,
+                                extract('day', models.Person.marriage_date) <= date.day
+                            ),
+                            and_(
+                                extract('month', models.Person.marriage_date) == current_date.month,
+                                extract('day', models.Person.marriage_date) > current_date.day,
+                                extract('day', models.Person.marriage_date) <= date.day
+                            ),
+                            and_(
+                                extract('month', models.Person.marriage_date) == current_date.month,
+                                extract('month', models.Person.marriage_date) < date.month
+                            )
+                        ),
                     )
                 )
             )
-        # Order results by marriage date
-        return query.order_by(models.Person.marriage_date).all()
+        ).order_by(models.Person.marriage_date)
+
+        return query.all()
 
     def find_people_with_name_or_surname_starting_with(self, name, surname) -> List[models.Person]:
         # Create a case statement to calculate the sorting priority.

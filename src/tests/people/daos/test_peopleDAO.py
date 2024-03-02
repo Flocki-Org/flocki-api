@@ -99,12 +99,12 @@ def test_get_all_pagination_ordered_by_dob(test_db):
     new_person_1 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth= datetime(1984, 1, 1, 10, 10, 10),
+        date_of_birth=datetime(1984, 1, 1, 10, 10, 10),
     )
     new_person_2 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 1, 1, 10, 10, 10),
+        date_of_birth=datetime(1960, 1, 1, 10, 10, 10),
     )
     db.add(new_person_1)
     db.add(new_person_2)
@@ -124,12 +124,12 @@ def test_get_all_pagination_ordered_by_id(test_db):
     new_person_1 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth= datetime(1960, 1, 1, 10, 10, 10),
+        date_of_birth=datetime(1960, 1, 1, 10, 10, 10),
     )
     new_person_2 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 1, 1, 10, 10, 10),
+        date_of_birth=datetime(1960, 1, 1, 10, 10, 10),
     )
     db.add(new_person_1)
     db.add(new_person_2)
@@ -447,6 +447,7 @@ def test_add_person_image(test_db):
     assert person.profile_images[0] is not None
     assert person.profile_images[0].image.address == "test_image.jpg"
 
+
 def test_find_people_by_email_or_first_name_and_last_name_match_email(test_db):
     match_by_email_1 = models.Person(
         first_name="Test Name",
@@ -510,7 +511,8 @@ def test_find_people_by_email_or_first_name_and_last_name_match_name(test_db):
     db.add(not_match_by_last_name)
     db.commit()
 
-    people = peopleDAO.find_people_by_email_or_first_name_and_last_name("test@gmail.com", "Match_First_1", "Match_Last_1")
+    people = peopleDAO.find_people_by_email_or_first_name_and_last_name("test@gmail.com", "Match_First_1",
+                                                                        "Match_Last_1")
 
     assert len(people) == 2
     assert people[0].id == match_by_name_1.id
@@ -548,7 +550,7 @@ def test_find_people_by_email_or_first_name_and_last_name_match_email_and_names(
 
     people = peopleDAO.find_people_by_email_or_first_name_and_last_name("match@gmail.com", "Match_First", "Match_Last")
 
-    #people is sorted by id, so should be in order of creation
+    # people is sorted by id, so should be in order of creation
     assert len(people) == 3
     assert people[0].id == match_by_email_1.id
     assert people[0].first_name == "Test Name"
@@ -566,12 +568,12 @@ def test_find_people_with_birthday_before_given_date_return_result(mock_get_curr
     new_person_nov_15 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 11, 15, 10, 10, 10),
+        date_of_birth=datetime(1960, 11, 15, 10, 10, 10),
     )
     new_person_jun_30 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 6, 30, 10, 10, 10),
+        date_of_birth=datetime(1960, 6, 30, 10, 10, 10),
     )
     db.add(new_person_nov_15)
     db.add(new_person_jun_30)
@@ -582,6 +584,7 @@ def test_find_people_with_birthday_before_given_date_return_result(mock_get_curr
     assert len(people) == 1
     assert people[0].id == new_person_nov_15.id
 
+
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_birthday_before_given_date_next_month_return_result(mock_get_current_datetime, test_db):
     mock_get_current_datetime.return_value = datetime(2023, 11, 2, 0, 0, 0)
@@ -589,12 +592,12 @@ def test_find_people_with_birthday_before_given_date_next_month_return_result(mo
     new_person_nov_15 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 11, 15, 10, 10, 10),
+        date_of_birth=datetime(1960, 11, 15, 10, 10, 10),
     )
     new_person_jun_30 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 6, 30, 10, 10, 10),
+        date_of_birth=datetime(1960, 6, 30, 10, 10, 10),
     )
     db.add(new_person_nov_15)
     db.add(new_person_jun_30)
@@ -605,6 +608,7 @@ def test_find_people_with_birthday_before_given_date_next_month_return_result(mo
     assert len(people) == 1
     assert people[0].id == new_person_nov_15.id
 
+
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_birthday_before_given_date_return_no_result(mock_get_current_datetime, test_db):
     mock_get_current_datetime.return_value = datetime(2023, 12, 1, 0, 0, 0)
@@ -612,12 +616,12 @@ def test_find_people_with_birthday_before_given_date_return_no_result(mock_get_c
     new_person_nov_15 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 11, 15, 10, 10, 10),
+        date_of_birth=datetime(1960, 11, 15, 10, 10, 10),
     )
     new_person_jun_30 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 6, 30, 10, 10, 10),
+        date_of_birth=datetime(1960, 6, 30, 10, 10, 10),
     )
     db.add(new_person_nov_15)
     db.add(new_person_jun_30)
@@ -627,6 +631,7 @@ def test_find_people_with_birthday_before_given_date_return_no_result(mock_get_c
 
     assert len(people) == 0
 
+
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_birthday_before_given_date_return_both_result(mock_get_current_datetime, test_db):
     mock_get_current_datetime.return_value = datetime(2023, 5, 1, 0, 0, 0)
@@ -634,12 +639,12 @@ def test_find_people_with_birthday_before_given_date_return_both_result(mock_get
     new_person_nov_15 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 11, 15, 10, 10, 10),
+        date_of_birth=datetime(1960, 11, 15, 10, 10, 10),
     )
     new_person_jun_30 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 6, 30, 10, 10, 10),
+        date_of_birth=datetime(1960, 6, 30, 10, 10, 10),
     )
     db.add(new_person_nov_15)
     db.add(new_person_jun_30)
@@ -651,6 +656,7 @@ def test_find_people_with_birthday_before_given_date_return_both_result(mock_get
     assert people[0].id == new_person_jun_30.id
     assert people[1].id == new_person_nov_15.id
 
+
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_birthday_on_given_date_return_one_result(mock_get_current_datetime, test_db):
     mock_get_current_datetime.return_value = datetime(2023, 5, 1, 0, 0, 0)
@@ -658,7 +664,7 @@ def test_find_people_with_birthday_on_given_date_return_one_result(mock_get_curr
     new_person_nov_15 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 11, 15, 10, 10, 10),
+        date_of_birth=datetime(1960, 11, 15, 10, 10, 10),
     )
 
     db.add(new_person_nov_15)
@@ -669,6 +675,7 @@ def test_find_people_with_birthday_on_given_date_return_one_result(mock_get_curr
     assert len(people) == 1
     assert people[0].id == new_person_nov_15.id
 
+
 @mock.patch.object(DateUtils, 'get_current_datetime')
 def test_find_people_with_birthday_after_given_date_return_no_result(mock_get_current_datetime, test_db):
     mock_get_current_datetime.return_value = datetime(2023, 5, 1, 0, 0, 0)
@@ -676,7 +683,7 @@ def test_find_people_with_birthday_after_given_date_return_no_result(mock_get_cu
     new_person_nov_15 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 11, 15, 10, 10, 10),
+        date_of_birth=datetime(1960, 11, 15, 10, 10, 10),
     )
 
     db.add(new_person_nov_15)
@@ -694,13 +701,13 @@ def test_find_all_people_with_birthday_before_date_in_the_following_year(mock_ge
     new_person_nov_15 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1960, 11, 15, 10, 10, 10),
+        date_of_birth=datetime(1960, 11, 15, 10, 10, 10),
     )
 
     new_person_jan_23 = models.Person(
         first_name="A",
         last_name="A",
-        date_of_birth = datetime(1981, 1, 23, 10, 10, 10),
+        date_of_birth=datetime(1981, 1, 23, 10, 10, 10),
     )
 
     db.add(new_person_nov_15)
@@ -708,6 +715,180 @@ def test_find_all_people_with_birthday_before_date_in_the_following_year(mock_ge
     db.commit()
 
     people = peopleDAO.find_people_with_birthday_before_given_date(datetime(2024, 2, 1, 0, 0, 0))
+
+    assert len(people) == 2
+    assert people[0].id == new_person_nov_15.id
+    assert people[1].id == new_person_jan_23.id
+
+
+@mock.patch.object(DateUtils, 'get_current_datetime')
+def test_find_people_with_anniversary_before_given_date_return_result(mock_get_current_datetime, test_db):
+    mock_get_current_datetime.return_value = datetime(2023, 10, 25, 0, 0, 0)
+
+    new_person_dec_12 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth=datetime(1960, 11, 15, 10, 10, 10),
+        marriage_date=datetime(1980, 12, 10, 10, 10, 10),
+    )
+    new_person_jul_15 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth=datetime(1960, 6, 30, 10, 10, 10),
+        marriage_date=datetime(1980, 7, 15, 10, 10, 10),
+    )
+    db.add(new_person_dec_12)
+    db.add(new_person_jul_15)
+    db.commit()
+
+    people = peopleDAO.find_people_with_anniversary_before_given_date(datetime(2023, 12, 30, 0, 0, 0))
+
+    assert len(people) == 1
+    assert people[0].id == new_person_dec_12.id
+
+
+@mock.patch.object(DateUtils, 'get_current_datetime')
+def test_find_people_with_anniversay_before_given_date_next_month_return_result(mock_get_current_datetime, test_db):
+    mock_get_current_datetime.return_value = datetime(2023, 11, 2, 0, 0, 0)
+
+    new_person_nov_15 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth=datetime(1960, 1, 10, 10, 10, 10),
+        marriage_date=datetime(1980, 11, 15, 10, 10, 10),
+    )
+    new_person_jun_30 = models.Person(
+        first_name="A",
+        last_name="A",
+        date_of_birth=datetime(1960, 10, 8, 10, 10, 10),
+        marriage_date=datetime(1980, 6, 30, 10, 10, 10),
+    )
+    db.add(new_person_nov_15)
+    db.add(new_person_jun_30)
+    db.commit()
+
+    people = peopleDAO.find_people_with_anniversary_before_given_date(datetime(2023, 12, 2, 0, 0, 0))
+
+    assert len(people) == 1
+    assert people[0].id == new_person_nov_15.id
+
+
+# #TODO change to correct test 2
+
+@mock.patch.object(DateUtils, 'get_current_datetime')
+def test_find_people_with_anniversary_before_given_date_return_no_result(mock_get_current_datetime, test_db):
+    mock_get_current_datetime.return_value = datetime(2023, 12, 1, 0, 0, 0)
+
+    new_person_nov_15 = models.Person(
+        first_name="A",
+        last_name="A",
+        marriage_date=datetime(1960, 11, 15, 10, 10, 10),
+    )
+    new_person_jun_30 = models.Person(
+        first_name="A",
+        last_name="A",
+        marriage_date=datetime(1960, 6, 30, 10, 10, 10),
+    )
+    db.add(new_person_nov_15)
+    db.add(new_person_jun_30)
+    db.commit()
+
+    people = peopleDAO.find_people_with_anniversary_before_given_date(datetime(2023, 11, 30, 0, 0, 0))
+
+    assert len(people) == 0
+
+
+# #TODO change to correct test 3
+
+@mock.patch.object(DateUtils, 'get_current_datetime')
+def test_find_people_with_anniversay_before_given_date_return_both_result(mock_get_current_datetime, test_db):
+    mock_get_current_datetime.return_value = datetime(2023, 5, 1, 0, 0, 0)
+
+    new_person_nov_15 = models.Person(
+        first_name="A",
+        last_name="A",
+        marriage_date=datetime(1960, 11, 15, 10, 10, 10),
+    )
+    new_person_jun_30 = models.Person(
+        first_name="A",
+        last_name="A",
+        marriage_date=datetime(1960, 6, 30, 10, 10, 10),
+    )
+    db.add(new_person_nov_15)
+    db.add(new_person_jun_30)
+    db.commit()
+
+    people = peopleDAO.find_people_with_anniversary_before_given_date(datetime(2023, 11, 30, 0, 0, 0))
+
+    assert len(people) == 2
+    assert people[0].id == new_person_jun_30.id
+    assert people[1].id == new_person_nov_15.id
+
+
+# #TODO change to correct test 4
+
+@mock.patch.object(DateUtils, 'get_current_datetime')
+def test_find_people_with_anniversary_on_given_date_return_one_result(mock_get_current_datetime, test_db):
+    mock_get_current_datetime.return_value = datetime(2023, 5, 1, 0, 0, 0)
+
+    new_person_nov_15 = models.Person(
+        first_name="A",
+        last_name="A",
+        marriage_date=datetime(1960, 11, 15, 10, 10, 10),
+    )
+
+    db.add(new_person_nov_15)
+    db.commit()
+
+    people = peopleDAO.find_people_with_anniversary_before_given_date(datetime(2023, 11, 15, 0, 0, 0))
+
+    assert len(people) == 1
+    assert people[0].id == new_person_nov_15.id
+
+
+# #TODO change to correct test 5
+
+@mock.patch.object(DateUtils, 'get_current_datetime')
+def test_find_people_with_anniversary_after_given_date_return_no_result(mock_get_current_datetime, test_db):
+    mock_get_current_datetime.return_value = datetime(2023, 5, 1, 0, 0, 0)
+
+    new_person_nov_15 = models.Person(
+        first_name="A",
+        last_name="A",
+        marriage_date=datetime(1960, 11, 15, 10, 10, 10),
+    )
+
+    db.add(new_person_nov_15)
+    db.commit()
+
+    people = peopleDAO.find_people_with_anniversary_before_given_date(datetime(2023, 11, 14, 0, 0, 0))
+
+    assert len(people) == 0
+
+
+# #TODO change to correct test 5
+
+@mock.patch.object(DateUtils, 'get_current_datetime')
+def test_find_all_people_with_anniversary_before_date_in_the_following_year(mock_get_current_datetime, test_db):
+    mock_get_current_datetime.return_value = datetime(2023, 5, 1, 0, 0, 0)
+
+    new_person_nov_15 = models.Person(
+        first_name="A",
+        last_name="A",
+        marriage_date=datetime(1960, 11, 15, 10, 10, 10),
+    )
+
+    new_person_jan_23 = models.Person(
+        first_name="A",
+        last_name="A",
+        marriage_date=datetime(1981, 1, 23, 10, 10, 10),
+    )
+
+    db.add(new_person_nov_15)
+    db.add(new_person_jan_23)
+    db.commit()
+
+    people = peopleDAO.find_people_with_anniversary_before_given_date(datetime(2024, 2, 1, 0, 0, 0))
 
     assert len(people) == 2
     assert people[0].id == new_person_nov_15.id
