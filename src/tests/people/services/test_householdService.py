@@ -516,9 +516,10 @@ def test_update_household_no_image(mock_get_household_by_id, mock_get_address_by
 
 
 @mock.patch.object(PeopleFactory, 'create_basic_person_view_from_person_entity')
-@mock.patch.object(HouseholdDAO, 'get_people_not_in_household')
+@mock.patch.object(HouseholdDAO, 'find_people_not_in_household_with_name_or_surname_starting_with')
 @mock.patch.object(HouseholdDAO, 'get_household_by_id')
-def test_get_people_not_in_household(mock_get_household_by_id, mock_get_people_not_in_household,
+def test_get_people_not_in_household(mock_get_household_by_id,
+                                     mock_find_people_not_in_household_with_name_or_surname_starting_with,
                                      mock_create_basic_person_view_from_person_entity):
     household_service = HouseholdService(household_DAO=HouseholdDAO(), people_factory=PeopleFactory())
 
@@ -530,7 +531,8 @@ def test_get_people_not_in_household(mock_get_household_by_id, mock_get_people_n
     person_a = models.Person(id=2, last_name="a")
     person_same_last_name = models.Person(id=3, last_name="last_name")
     people_list = [person_b, person_a, person_same_last_name]
-    mock_get_people_not_in_household.return_value = people_list
+
+    mock_find_people_not_in_household_with_name_or_surname_starting_with.return_value = people_list
 
     def side_effect(person_entity, include_profile_image=True):
         if person_entity.id == 1:
@@ -550,7 +552,7 @@ def test_get_people_not_in_household(mock_get_household_by_id, mock_get_people_n
     )
 
     mock_get_household_by_id.assert_called_once_with(1)
-    mock_get_people_not_in_household.assert_called_once_with(1)
+    mock_find_people_not_in_household_with_name_or_surname_starting_with.assert_called_once_with(1, None, None)
     assert len(people) == 3
     assert people[0].id == 3
     assert people[1].id == 2
