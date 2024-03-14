@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import Depends
 
 from .sheetFactory import SheetFactory
@@ -10,17 +12,21 @@ class SongFactory:
     def __init__(self, sheet_factory: SheetFactory = Depends(SheetFactory)):
         self.sheet_factory = sheet_factory
 
-    def create_song_entity_from_song(self, song: CreateSong) -> models.Song:
+    def create_song_entity_from_song(self, song: CreateSong, artist_entities: List[models.Artist]) -> models.Song:
         song_entity = models.Song(
                 name=song.name,
                 code=song.code,
                 song_key=song.song_key,
                 secondary_name=song.secondary_name,
-                artist_id=song.artist_id,
                 style=song.style,
                 tempo=song.tempo,
                 ccli_number=song.ccli_number,
                 video_link=song.video_link)
+
+        if(artist_entities):
+            for artist_entity in artist_entities:
+                song_entity.artists.append(models.ArtistSong(artist=artist_entity))
+
         return song_entity
 
 
@@ -33,7 +39,9 @@ class SongFactory:
         for sheet_entity in song_entity.sheets:
             sheets.append(self.sheet_factory.create_sheet_from_sheet_entity(sheet_entity))
 
-        view_artist = self.create_artist_from_artist_entity(song_entity.artist)
+        view_artists = []
+        for artist_song in song_entity.artists:
+            view_artists.append(self.create_artist_from_artist_entity(artist_song.artist))
 
         return ViewSong(
             id=song_entity.id,
@@ -45,7 +53,7 @@ class SongFactory:
             ccli_number=song_entity.ccli_number,
             video_link=song_entity.video_link,
             sheets=sheets,
-            artist=view_artist)
+            artists=view_artists)
 
     def create_artist_entity_from_artist(self, artist: CreateArtist):
         if artist is None:

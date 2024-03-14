@@ -10,13 +10,13 @@ class Song(Base):
     name = Column(String)
     secondary_name = Column(String)
     song_key = Column(String)
-    artist_id = Column(Integer, ForeignKey('artists.id'))
     style = Column(String)
     tempo = Column(String)
     ccli_number = Column(String)
     video_link = Column(String)
-    artist = relationship("Artist", backref="songs")
     sheets = relationship("Sheet", backref="song")
+    artists = relationship("ArtistSong", back_populates="song", cascade="all, delete-orphan")
+
     # unique key code
     __table_args__ = (UniqueConstraint('code', name='songs_code_uc'),)
 
@@ -25,6 +25,15 @@ class Artist(Base):
     id = Column(BigInteger, primary_key=True, index=True)
     name = Column(String)
     __table_args__ = (UniqueConstraint('name', name='artists_name_uc'),)
+
+class ArtistSong(Base):
+    __tablename__ = 'artist_songs'
+    id = Column(Integer, primary_key=True, index=True)
+    artist_id = Column(Integer, ForeignKey('artists.id'), nullable=False)
+    song_id = Column(Integer, ForeignKey('songs.id'), nullable=False)
+    song = relationship("Song", back_populates="artists")
+    artist = relationship("Artist")
+    _table_args__ = (UniqueConstraint('artist_id', 'song_id', name='artistsong_artist_song_uc'))
 
 class Sheet(Base):
     __tablename__ = 'sheets'

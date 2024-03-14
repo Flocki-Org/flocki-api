@@ -46,7 +46,15 @@ class SongService:
         #check if song with that code exists and if so raise error
         if self.song_DAO.get_song_by_code(song.code):
             raise SongWithThatCodeExists("Song with that code already exists")
-        song_entity = self.song_factory.create_song_entity_from_song(song)
+        valid_artists = []
+        if song.artist_ids:
+            for artist_id in song.artist_ids:
+                artist = self.song_DAO.get_artist_by_id(artist_id)
+                if artist:
+                    valid_artists.append(artist)
+                else:
+                    raise NoArtistException("Artist with that id does not exist")
+        song_entity = self.song_factory.create_song_entity_from_song(song, valid_artists)
         song_entity = self.song_DAO.create_song(song_entity)
         return self.song_factory.create_song_from_song_entity(song_entity)
 
@@ -81,5 +89,25 @@ class SongService:
         if song_entity is None:
             raise NoSongException("Song with that id does not exist")
         update_values = song.dict(exclude_unset=True)
+
+        artists_ids = update_values.pop('artist_ids', song.dict())
+        #validate artist_ids
+        valid_artists = []
+        if artists_ids:
+            for artist_id in artists_ids:
+                artist = self.song_DAO.get_artist_by_id(artist_id)
+                if artist:
+                    valid_artists.append(artist)
+                else:
+                    raise NoArtistException("Artist with that id does not exist")
+
+        if artists_ids:
+            existing_artist_songs = self.song_DAO.get_existing_artists_for_song(song_entity.id)
+            for existing_artist_song in existing_artist_songs:
+                self.song_DAO.delete_artist_song(existing_artist_song.id)
+
+            for artist in valid_artists:
+                self.song_DAO.create_artist_song(song_entity, artist)
+
         song_entity = self.song_DAO.update_song(song_entity, update_values)
         return self.song_factory.create_song_from_song_entity(song_entity)

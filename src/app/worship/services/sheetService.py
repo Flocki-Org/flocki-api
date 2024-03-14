@@ -16,6 +16,8 @@ from src.app.worship.models.songs import ViewSheet, CreateSheet, SheetType
 class NoSongException (Exception):
     pass
 
+class NoSheetException (Exception):
+    pass
 
 class SheetService:
     def __init__(self, sheet_factory: SheetFactory = Depends(SheetFactory), sheet_DAO: SheetDAO = Depends(SheetDAO),
@@ -75,7 +77,7 @@ class SheetService:
         uploaded_media_item = self.media_service.upload_media_item(file, filename, "application/pdf")
         sheet_entity = self.sheet_DAO.get_song_sheet(song_id, type, sheet_key)
         if sheet_entity is None:
-            raise NoSongException("Sheet with that id does not exist")
+            raise NoSheetException("Sheet with that song id does not exist")
         sheet_entity.media_item_id = uploaded_media_item.id
         self.sheet_DAO.update_sheet(sheet_entity)
         song_entity = self.song_DAO.get_song_by_id(song_id)

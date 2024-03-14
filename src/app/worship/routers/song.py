@@ -6,8 +6,8 @@ from fastapi_pagination import Params, Page
 from src.app.media.models.media import ViewMediaItem
 from src.app.worship.models.songs import ViewSong, CreateArtist, ViewArtist, CreateSong
 
-from src.app.worship.services.songService import SongService, NoSongException, SongWithThatCodeExists
-from src.app.worship.services.sheetService import SheetService, NoSongException as NSException
+from src.app.worship.services.songService import SongService, NoSongException, SongWithThatCodeExists, NoArtistException
+from src.app.worship.services.sheetService import SheetService, NoSongException as NSException, NoSheetException
 from src.app.users.models.user import User
 from src.app.users.routers.login import get_current_user
 
@@ -35,12 +35,16 @@ def create_song(song: CreateSong, song_service: SongService = Depends(SongServic
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except SongWithThatCodeExists as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except NoArtistException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Artist with that id does not exist")
 
 @router.put('/song/{id}', response_model=ViewSong)
 def update_song(id: int, song: CreateSong, song_service: SongService = Depends(SongService),
                   current_user: User = Depends(get_current_user)):
     try:
         return song_service.update_song(id, song)
+    except NoArtistException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Artist with that id does not exist")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -60,8 +64,10 @@ def update_song_sheet(song_id: int, type: str, sheet_key: str,  file: UploadFile
     try:
         song_sheet_response = sheet_service.update_song_sheet(song_id, type, sheet_key, file);
         return song_sheet_response;
-    except NSException as e:
+    except NoSongException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Song with that id does not exist")
+    except NoSheetException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sheet with that song id does not exist. Post to create a new one")
 
 #endpoint to get a sheet by song id, for a given type and given song key unless key not provided use song_key of song
 @router.get('/song_sheet/{song_id}/{type}/{sheet_key}')

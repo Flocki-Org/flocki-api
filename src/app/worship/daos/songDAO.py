@@ -84,3 +84,18 @@ class SongDAO:
 
     def get_artist_by_id(self, id):
         return self.db.query(models.Artist).filter(models.Artist.id == id).first()
+
+    def get_artists_by_ids(self, artist_ids):
+        return self.db.query(models.Artist).filter(models.Artist.id.in_(artist_ids)).all()
+
+    def get_existing_artists_for_song(self, song_id):
+        return self.db.query(models.ArtistSong).filter(models.ArtistSong.song_id == song_id).all()
+
+    def delete_artist_song(self, id):
+        self.db.query(models.ArtistSong).filter(models.ArtistSong.id == id).delete(synchronize_session=False)
+
+    def create_artist_song(self, song_entity, artist):
+        self.db.add(models.ArtistSong(
+            song=song_entity,
+            artist=artist
+        ))
