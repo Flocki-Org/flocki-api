@@ -1,11 +1,11 @@
 from fastapi import Depends
 
 from fastapi_pagination import Page, Params
-
+from openpyxl import load_workbook
 from src.app.worship.daos.songDAO import SongDAO
 from src.app.worship.models.database.models import Song
 from src.app.worship.factories.songFactory import SongFactory
-from src.app.worship.models.songs import ViewSong, CreateArtist, ViewArtist, CreateSong
+from src.app.worship.models.songs import ViewSong, CreateAuthor, ViewAuthor, CreateSong
 
 
 class NoSongException (Exception):
@@ -16,7 +16,11 @@ class SongWithThatCodeExists (Exception):
     pass
 
 
-class NoArtistException(Exception):
+class NoAuthorException(Exception):
+    pass
+
+
+class RequiredColumnsNotPresentException(Exception):
     pass
 
 
@@ -46,43 +50,43 @@ class SongService:
         #check if song with that code exists and if so raise error
         if self.song_DAO.get_song_by_code(song.code):
             raise SongWithThatCodeExists("Song with that code already exists")
-        valid_artists = []
-        if song.artist_ids:
-            for artist_id in song.artist_ids:
-                artist = self.song_DAO.get_artist_by_id(artist_id)
-                if artist:
-                    valid_artists.append(artist)
+        valid_authors = []
+        if song.author_ids:
+            for author_id in song.author_ids:
+                author = self.song_DAO.get_author_by_id(author_id)
+                if author:
+                    valid_authors.append(author)
                 else:
-                    raise NoArtistException("Artist with that id does not exist")
-        song_entity = self.song_factory.create_song_entity_from_song(song, valid_artists)
+                    raise NoAuthorException("Author with that id does not exist")
+        song_entity = self.song_factory.create_song_entity_from_song(song, valid_authors)
         song_entity = self.song_DAO.create_song(song_entity)
         return self.song_factory.create_song_from_song_entity(song_entity)
 
-    def create_artist(self, artist: CreateArtist) -> ViewArtist:
-        artist_entity = self.song_factory.create_artist_entity_from_artist(artist)
-        artist_entity = self.song_DAO.create_artist(artist_entity)
-        return self.song_factory.create_artist_from_artist_entity(artist_entity)
+    def create_author(self, author: CreateAuthor) -> ViewAuthor:
+        author_entity = self.song_factory.create_author_entity_from_author(author)
+        author_entity = self.song_DAO.create_author(author_entity)
+        return self.song_factory.create_author_from_author_entity(author_entity)
 
-    def update_artist(self, id, artist):
-        artist_entity = self.song_DAO.get_artist_by_id(id)
-        if artist_entity is None:
-            raise NoArtistException("Artist with that id does not exist")
-        update_values = artist.dict(exclude_unset=True)
-        artist_entity = self.song_DAO.update_artist(artist_entity, update_values)
-        return self.song_factory.create_artist_from_artist_entity(artist_entity)
+    def update_author(self, id, author):
+        author_entity = self.song_DAO.get_author_by_id(id)
+        if author_entity is None:
+            raise NoAuthorException("Author with that id does not exist")
+        update_values = author.dict(exclude_unset=True)
+        author_entity = self.song_DAO.update_author(author_entity, update_values)
+        return self.song_factory.create_author_from_author_entity(author_entity)
 
-    def get_all_artists(self):
-        artist_entities = self.song_DAO.get_all_artists()
-        artists = []
-        for artist_entity in artist_entities:
-            artists.append(self.song_factory.create_artist_from_artist_entity(artist_entity))
-        return artists
+    def get_all_authors(self):
+        author_entities = self.song_DAO.get_all_authors()
+        authors = []
+        for author_entity in author_entities:
+            authors.append(self.song_factory.create_author_from_author_entity(author_entity))
+        return authors
 
-    def get_artist_by_id(self, id):
-        artist_entity = self.song_DAO.get_artist_by_id(id)
-        if artist_entity is None:
-            raise NoArtistException("Artist with that id does not exist")
-        return self.song_factory.create_artist_from_artist_entity(artist_entity)
+    def get_author_by_id(self, id):
+        author_entity = self.song_DAO.get_author_by_id(id)
+        if author_entity is None:
+            raise NoAuthorException("Author with that id does not exist")
+        return self.song_factory.create_author_from_author_entity(author_entity)
 
     def update_song(self, id, song):
         song_entity = self.song_DAO.get_song_by_id(id)
@@ -90,24 +94,24 @@ class SongService:
             raise NoSongException("Song with that id does not exist")
         update_values = song.dict(exclude_unset=True)
 
-        artists_ids = update_values.pop('artist_ids', song.dict())
-        #validate artist_ids
-        valid_artists = []
-        if artists_ids:
-            for artist_id in artists_ids:
-                artist = self.song_DAO.get_artist_by_id(artist_id)
-                if artist:
-                    valid_artists.append(artist)
+        authors_ids = update_values.pop('author_ids', song.dict())
+        #validate author_ids
+        valid_authors = []
+        if authors_ids:
+            for author_id in authors_ids:
+                author = self.song_DAO.get_author_by_id(author_id)
+                if author:
+                    valid_authors.append(author)
                 else:
-                    raise NoArtistException("Artist with that id does not exist")
+                    raise NoAuthorException("Author with that id does not exist")
 
-        if artists_ids:
-            existing_artist_songs = self.song_DAO.get_existing_artists_for_song(song_entity.id)
-            for existing_artist_song in existing_artist_songs:
-                self.song_DAO.delete_artist_song(existing_artist_song.id)
+        if authors_ids:
+            existing_author_songs = self.song_DAO.get_existing_authors_for_song(song_entity.id)
+            for existing_author_song in existing_author_songs:
+                self.song_DAO.delete_author_song(existing_author_song.id)
 
-            for artist in valid_artists:
-                self.song_DAO.create_artist_song(song_entity, artist)
+            for author in valid_authors:
+                self.song_DAO.create_author_song(song_entity, author)
 
         song_entity = self.song_DAO.update_song(song_entity, update_values)
         return self.song_factory.create_song_from_song_entity(song_entity)

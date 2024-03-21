@@ -20,7 +20,7 @@ class CreateSong(BaseModel):
     tempo: str = Field(None, title="The tempo of the song")
     ccli_number: str = Field(None, title="The ccli number of the song")
     video_link: str = Field(None, title="The video link of the song")
-    artist_ids: List[int] = Field(None, title="The list of ids of the Artists who wrote this song")
+    author_ids: List[int] = Field(None, title="The list of ids of the Authors who wrote this song")
 
 class CreateSheet(BaseModel):
     type: SheetType = Field(None, title="The type of the sheet")
@@ -35,12 +35,12 @@ class ViewSheet(BaseModel):
     song_id: int = Field(None, title="The song id of the sheet")
     media_item: ViewMediaItem = Field(None, title="The media item of the sheet")
 
-class CreateArtist(BaseModel):
-    name: str = Field(None, title="The name of the artist")
+class CreateAuthor(BaseModel):
+    name: str = Field(None, title="The name of the author")
 
-class ViewArtist(BaseModel):
-    id: int = Field(None, title="The id of the artist")
-    name: str = Field(None, title="The name of the artist")
+class ViewAuthor(BaseModel):
+    id: int = Field(None, title="The id of the author")
+    name: str = Field(None, title="The name of the author")
 
 class ViewSong(BaseModel):
     id: int = Field(None, title="The id of the song")
@@ -53,4 +53,4 @@ class ViewSong(BaseModel):
     ccli_number: str = Field(None, title="The ccli number of the song")
     video_link: str = Field(None, title="The video link of the song")
     sheets: List[ViewSheet] = Field(None, title="The sheets of the song")
-    artists: List[ViewArtist] = Field([], title="A list of artists")
+    authors: List[ViewAuthor] = Field([], title="A list of authors")

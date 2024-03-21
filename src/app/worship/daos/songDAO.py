@@ -61,41 +61,41 @@ class SongDAO:
         self.db.commit()
         return self.get_song_by_id(song_entity.id)
 
-    def create_artist(self, artist_entity):
+    def create_author(self, author_entity):
         try:
-            self.db.add(artist_entity)
+            self.db.add(author_entity)
             self.db.commit()
         except exc.IntegrityError:
             self.db.rollback()
-            raise ValueError("Artist with that name already exists")
-        self.db.refresh(artist_entity)
-        return artist_entity
+            raise ValueError("Author with that name already exists")
+        self.db.refresh(author_entity)
+        return author_entity
 
-    def update_artist(self, artist_entity, update_values):
+    def update_author(self, author_entity, update_values):
         if 'id' in update_values:
             del update_values['id']
-        entity_to_update = self.db.query(models.Artist).filter(models.Artist.id == artist_entity.id)
+        entity_to_update = self.db.query(models.Author).filter(models.Author.id == author_entity.id)
         entity_to_update.update(update_values)
         self.db.commit()
-        return self.get_artist_by_id(artist_entity.id)
+        return self.get_author_by_id(author_entity.id)
 
-    def get_all_artists(self):
-        return self.db.query(models.Artist).all()
+    def get_all_authors(self):
+        return self.db.query(models.Author).all()
 
-    def get_artist_by_id(self, id):
-        return self.db.query(models.Artist).filter(models.Artist.id == id).first()
+    def get_author_by_id(self, id):
+        return self.db.query(models.Author).filter(models.Author.id == id).first()
 
-    def get_artists_by_ids(self, artist_ids):
-        return self.db.query(models.Artist).filter(models.Artist.id.in_(artist_ids)).all()
+    def get_authors_by_ids(self, author_ids):
+        return self.db.query(models.Author).filter(models.Author.id.in_(author_ids)).all()
 
-    def get_existing_artists_for_song(self, song_id):
-        return self.db.query(models.ArtistSong).filter(models.ArtistSong.song_id == song_id).all()
+    def get_existing_authors_for_song(self, song_id):
+        return self.db.query(models.AuthorSong).filter(models.AuthorSong.song_id == song_id).all()
 
-    def delete_artist_song(self, id):
-        self.db.query(models.ArtistSong).filter(models.ArtistSong.id == id).delete(synchronize_session=False)
+    def delete_author_song(self, id):
+        self.db.query(models.AuthorSong).filter(models.AuthorSong.id == id).delete(synchronize_session=False)
 
-    def create_artist_song(self, song_entity, artist):
-        self.db.add(models.ArtistSong(
+    def create_author_song(self, song_entity, author):
+        self.db.add(models.AuthorSong(
             song=song_entity,
-            artist=artist
+            author=author
         ))
