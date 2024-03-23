@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import Depends
 
 from fastapi_pagination import Page, Params
@@ -13,7 +15,11 @@ class SongDAO:
         self.db = db
 
     def get_all_songs(self, params: Params = Params(page=1, size=100)) -> Page[models.Song]:
-        return paginate(self.db.query(models.Song), params)
+        #order by code
+        return paginate(self.db.query(models.Song).order_by(models.Song.code), params)
+
+    def get_all_songs_without_pagination(self) -> List[models.Song]:
+        return self.db.query(models.Song).order_by(models.Song.code)
 
     def get_song_by_id(self, id) -> models.Song:
         return self.db.query(models.Song).filter(models.Song.id == id).first()
@@ -99,3 +105,11 @@ class SongDAO:
             song=song_entity,
             author=author
         ))
+
+    def get_author_by_name(self, author_name):
+        # ignore case
+        return self.db.query(models.Author).filter(func.lower(models.Author.name) == func.lower(author_name)).first()
+
+    def get_song_by_name(self, param):
+        # ignore case
+        return self.db.query(models.Song).filter(func.lower(models.Song.name) == func.lower(param)).first()

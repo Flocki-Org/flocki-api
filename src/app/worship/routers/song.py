@@ -127,3 +127,18 @@ def get_author(id: int, song_service: SongService = Depends(SongService)):
 @router.get('/authors', response_model=List[ViewAuthor])
 def get_authors(song_service: SongService = Depends(SongService)):
     return song_service.get_all_authors()
+
+#upload songs from
+@router.post('/upload_songs', response_model=str)
+def upload_songs(file: UploadFile, song_service: SongService = Depends(SongService),
+                  current_user: User = Depends(get_current_user)):
+    try:
+        return song_service.upload_songs(file, False)
+    except RequiredColumnsNotPresentException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+#export songs to excel
+@router.get('/export_songs')
+def export_songs(song_service: SongService = Depends(SongService),
+                 current_user: User = Depends(get_current_user)):
+    return song_service.export_songs_as_xlsx()
