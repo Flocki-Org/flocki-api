@@ -42,7 +42,7 @@ class AddressService:
         # For update requests the model is not expected to come in with an ID since it is passed in the URL.
         address.id = address_entity.id
 
-        update_values = address.dict()
+        update_values = address.model_dump()
 
         self.addressDAO.update_address(address.id, update_values)
         return self.addressFactory.create_address_from_address_entity(self.addressDAO.get_address_by_id(id))

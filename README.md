@@ -3,7 +3,7 @@
 This is the backend service for the Flocki church management system. 
 
 ## Run app locally
-Ensure that you are setup with a Python 3.6+ environment. 
+Ensure that you are setup with a Python 3.15 environment. 
 It is recommended to use a virtual environment. To do this, run 
 the following command inside this directory:
 ```

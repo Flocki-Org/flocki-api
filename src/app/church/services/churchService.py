@@ -49,7 +49,7 @@ class ChurchService:
         return self.church_factory.create_church_from_church_entity(self.church_dao.create_church(church_entity))
 
     def update_church(self, update_church: UpdateChurch):
-        update_values = update_church.dict()
+        update_values = update_church.model_dump()
         try:
             update_values.pop('id')
         except:

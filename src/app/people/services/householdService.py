@@ -103,8 +103,7 @@ class HouseholdService:
             raise NoHouseholdException(f"No household with the following ID: {id}")
 
         if file is not None:
-            if file.content_type == 'image/jpeg':
-                file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
+            FileUtils.use_jpg_content_type(file)  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
 
             filename = 'household_' + str(household_entity.id) + '_' + str(uuid.uuid4()) + '.' +FileUtils.get_file_extension(file)
             description = f"Profile image for household with ID: {household_entity.id}"
@@ -138,8 +137,8 @@ class HouseholdService:
         if address_entity is None:
             raise NoAddressException(f"No address with the following ID: {household.address_id}")
 
-        update_values = household.dict()
-        update_people_ids = update_values.pop('people_ids', household.dict())
+        update_values = household.model_dump()
+        update_people_ids = update_values.pop('people_ids', household.model_dump())
         people_entities = []
         for person_id in update_people_ids:
             person_entity = self.people_DAO.get_person_by_id(person_id)

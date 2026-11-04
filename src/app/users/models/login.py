@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 from src.app.people.models.people import BasicViewPerson
 from src.app.users.models.user import DisplayUser
 
@@ -10,20 +10,20 @@ class Login(BaseModel):
     username: str
     password: str
 
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "username": "joe@test.com",
                 "password": "password"
             }
         }
+    )
 
 
 class DisplayLogin(BaseModel):
     username: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):
@@ -39,4 +39,4 @@ class AuthResponse(BaseModel):
     access_token: str
     token_type: str
     user: DisplayUser
-    person: BasicViewPerson = Field(None)
+    person: Optional[BasicViewPerson] = None

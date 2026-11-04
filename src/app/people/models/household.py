@@ -1,30 +1,26 @@
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from .people import ViewAddress, BasicViewPerson
 
-from typing import List
+from typing import List, Optional
 
 from ...media.models.media import CreateMediaItem, ViewMediaItem
 
 
 class CreateHousehold(BaseModel):
-    id: int = Field(None)
-    address_id: int = Field(None)
+    id: Optional[int] = None
+    address_id: Optional[int] = None
     people_ids: List[int] = Field(title="A list of IDs of the people to be added to the household")
-    household_image_id: int = Field(None, title="The ID of the image of this household")
+    household_image_id: Optional[int] = Field(None, title="The ID of the image of this household")
     leader_id: int = Field(title="The ID of the leader of the household")
 
-    @root_validator
-    def validate_leader(cls, values):
-        if 'leader_id' not in values:
-            raise ValueError("Leader must have an id")
-        if 'people_ids' not in values:
-            raise ValueError("Household must have people")
-        if values['leader_id'] not in values['people_ids']:
+    @model_validator(mode='after')
+    def validate_leader(self):
+        if self.leader_id not in self.people_ids:
             raise ValueError("Leader must be a member of the household")
-        return values
+        return self
 
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "leader_id": 1,
                 "address_id": 1,
@@ -32,26 +28,25 @@ class CreateHousehold(BaseModel):
                 "people_ids": [1, 4, 5]
             }
         }
+    )
 
 
 class UpdateHousehold(BaseModel):
     id: int
     address_id: int = Field("An address")
     people_ids: List[int] = Field(title="A list of IDs of the people to be added to the household")
-    household_image_id: int = Field(None, title="The ID of the image of this household")
+    household_image_id: Optional[int] = Field(None, title="The ID of the image of this household")
     leader_id: int = Field(
         title="The ID of the leader of the household. If not specified, the leader will be the first person in the household")
 
-    @root_validator
-    def validate_leader(cls, values):
-        if 'leader_id' not in values:
-            raise ValueError("Leader must have an id")
-        if values['leader_id'] not in values['people_ids']:
+    @model_validator(mode='after')
+    def validate_leader(self):
+        if self.leader_id not in self.people_ids:
             raise ValueError("Leader must be a member of the household")
-        return values
+        return self
 
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "leader_id": 1,
                 "address_id": 1,
@@ -59,16 +54,21 @@ class UpdateHousehold(BaseModel):
                 "people_ids": [1, 4, 5]
             }
         }
+    )
 
 
 class ViewHousehold(BaseModel):
     def __eq__(self, other):
         return self.id == other.id
 
-    id: int = Field(None)
+    id: Optional[int] = None
     leader: BasicViewPerson = Field(title="The designated leader of the household")
     address: ViewAddress = Field(title="An addresses")
-    household_image: ViewMediaItem = Field(None, title="The image of this household")
+    household_image: Optional[ViewMediaItem] = Field(None, title="The image of this household")
     people: List[BasicViewPerson] = Field([], title="A list of people belonging to the household")
 
 
+import src.app.people.models.people as people_models
+
+people_models.ViewHousehold = ViewHousehold
+people_models.FullViewPerson.model_rebuild()

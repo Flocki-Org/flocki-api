@@ -1,8 +1,11 @@
 import datetime
 
 import pytest
+from io import BytesIO
+
 from fastapi import UploadFile
 from fastapi.responses import FileResponse
+from starlette.datastructures import Headers
 
 from fastapi_pagination import Page, Params
 
@@ -306,7 +309,7 @@ def test_update_person(mock_get_person_by_id, mock_validate_households, mock_val
     mock_create_social_media_link.assert_has_calls([call(1, "facebook", "http://facebook.com/john")])
     mock_delete_address.assert_has_calls([call(1), call(2)])
     mock_create_address_linked_to_person.assert_has_calls([call(new_address, existing_person)])
-    update_values = update_person.dict()
+    update_values = update_person.model_dump()
     update_values.pop('household_ids')
     update_values.pop('social_media_links')
     update_values.pop('addresses')
@@ -656,8 +659,7 @@ def test_upload_profile_image(mock_get_person_by_id, mock_upload_image, mock_add
     people_service = PeopleService(peopleDAO=PeopleDAO(), media_DAO=MediaDAO(), media_service=MediaService(), media_factory=MediaFactory())
     person = models.Person(id=1, first_name="John", last_name="Smith")
     mock_get_person_by_id.return_value = person
-    file = UploadFile(filename="test.jpg", content_type="image/jpeg")
-    file.content_type = "image/jpeg"
+    file = UploadFile(BytesIO(b""), filename="test.jpg", headers=Headers({"content-type": "image/jpeg"}))
 
     mock_upload_image.return_value = media_models.MediaItem(id=1, description=f"Profile image for user: {person.first_name}  {person.last_name}  with ID: {person.id}")
 
@@ -673,8 +675,7 @@ def test_upload_profile_image(mock_get_person_by_id, mock_upload_image, mock_add
 def test_upload_profile_image(mock_get_person_by_id):
     people_service = PeopleService(peopleDAO=PeopleDAO())
     mock_get_person_by_id.return_value = None
-    file = UploadFile(filename="test.jpg", content_type="image/jpeg")
-    file.content_type = "image/jpeg"
+    file = UploadFile(BytesIO(b""), filename="test.jpg", headers=Headers({"content-type": "image/jpeg"}))
 
     with(pytest.raises(NoPersonException)):
         people_service.upload_profile_image(1, file)

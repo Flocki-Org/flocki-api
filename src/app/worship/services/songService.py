@@ -80,7 +80,7 @@ class SongService:
         author_entity = self.song_DAO.get_author_by_id(id)
         if author_entity is None:
             raise NoAuthorException("Author with that id does not exist")
-        update_values = author.dict(exclude_unset=True)
+        update_values = author.model_dump(exclude_unset=True)
         author_entity = self.song_DAO.update_author(author_entity, update_values)
         return self.song_factory.create_author_from_author_entity(author_entity)
 
@@ -101,9 +101,9 @@ class SongService:
         song_entity = self.song_DAO.get_song_by_id(id)
         if song_entity is None:
             raise NoSongException("Song with that id does not exist")
-        update_values = song.dict(exclude_unset=True)
+        update_values = song.model_dump(exclude_unset=True)
 
-        authors_ids = update_values.pop('author_ids', song.dict())
+        authors_ids = update_values.pop('author_ids', song.model_dump())
         #validate author_ids
         valid_authors = []
         if authors_ids:
@@ -194,7 +194,7 @@ class SongService:
                     print(f"Updating song {song.name}")
                     # create the CreateSong object but only specify columns if they exist in the spreadsheet
                     create_song = self.create_song_from_row(column_indexes, row)
-                    print(create_song.dict())
+                    print(create_song.model_dump())
                     self.update_song(song.id, create_song)
                     songs_updated += 1
                 else:
@@ -202,7 +202,7 @@ class SongService:
                     print(f"Creating song {row[column_indexes['NAME']]}")
                     create_song = self.create_song_from_row(column_indexes, row)
 
-                    print(create_song.dict())
+                    print(create_song.model_dump())
                     self.create_song(create_song)
                     songs_created += 1
             else:
@@ -218,7 +218,7 @@ class SongService:
                 if create_new_song:
                     print(f"Creating new song {row[column_indexes['NAME']]}")
 
-                    print(create_song.dict())
+                    print(create_song.model_dump())
                     self.create_song(create_song)
                     songs_created += 1
                 else:
@@ -226,7 +226,7 @@ class SongService:
                     print(f"Updating song {song.name}")
                     # create the CreateSong object but only specify columns if they exist in the spreadsheet
                     create_song = self.create_song_from_row(column_indexes, row)
-                    print(create_song.dict())
+                    print(create_song.model_dump())
                     song = self.song_DAO.get_song_by_name(row[column_indexes['NAME']])
                     self.update_song(song.id, create_song)
                     songs_updated += 1

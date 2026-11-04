@@ -1,12 +1,16 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, Integer, String, Date, UniqueConstraint, ForeignKey, DECIMAL, DateTime, Table, TIMESTAMP
 from src.app.database import Base
 from sqlalchemy.orm import relationship
 
+def _naive_utcnow():
+    # Same naive UTC timestamp datetime.utcnow() returned. utcnow() is deprecated on Python 3.15.
+    return datetime.now(UTC).replace(tzinfo=None)
+
 HouseholdPerson = Table('household_people', Base.metadata,
                         Column('id', Integer, primary_key=True),
-                        Column('created', TIMESTAMP, default=datetime.utcnow, nullable=False),
+                        Column('created', TIMESTAMP, default=_naive_utcnow, nullable=False),
                         Column('household_id', Integer, ForeignKey('households.id'), nullable=False),
                         Column('person_id', Integer, ForeignKey('people.id'), nullable=False))
 

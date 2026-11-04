@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from src.app.config import settings
-from jose import jwt, JWTError
+import jwt
 
 ALGORITHM = "HS256"
 
@@ -10,9 +10,9 @@ class TokenUtil:
 
     def generate_token(self, data: dict):
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(minutes = settings.flocki_token_expiry_minutes)
+        expire = datetime.now(UTC) + timedelta(minutes = settings.flocki_token_expiry_minutes)
         to_encode.update({"exp":expire})
-        encoded_jwt = jwt.encode(to_encode, settings.flocki_secret_key, ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, settings.flocki_secret_key, algorithm=ALGORITHM)
         return encoded_jwt
 
     def decode_token(self, token: str):

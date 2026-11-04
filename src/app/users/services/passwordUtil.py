@@ -1,14 +1,19 @@
-from passlib.context import CryptContext
+import bcrypt
 
 ALGORITHM = "HS256"
 
 class PasswordUtil:
     def __init__(self):
-        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         pass
 
-    def hash_pwd(self,pwd):
-        return self.pwd_context.hash(pwd)
+    def hash_pwd(self, pwd):
+        if isinstance(pwd, str):
+            pwd = pwd.encode("utf-8")
+        return bcrypt.hashpw(pwd, bcrypt.gensalt()).decode("utf-8")
 
     def verify_pwd(self, pwd, db_pwd_hash):
-        return self.pwd_context.verify(pwd, db_pwd_hash)
+        if isinstance(pwd, str):
+            pwd = pwd.encode("utf-8")
+        if isinstance(db_pwd_hash, str):
+            db_pwd_hash = db_pwd_hash.encode("utf-8")
+        return bcrypt.checkpw(pwd, db_pwd_hash)
