@@ -1,0 +1,33 @@
+# Render Blueprint: keeps the API and Postgres in the same region so the
+# internal DB hostname resolves on the private network.
+# https://render.com/docs/infrastructure-as-code
+previewsEnabled: false
+
+databases:
+  - name: flocki-api-db
+    plan: basic_256mb
+    region: oregon
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: flocki-api
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      - key: FLOCKI_API_DATABASE_URL
+        fromDatabase:
+          name: flocki-api-db
+          property: connectionString
+      - key: FLOCKI_API_DB_SSLMODE
+        value: require
+      - key: FLOCKI_SECRET_KEY
+        generateValue: true
+      - key: FLOCKI_CORS_ORIGINS
+        sync: false
+      - key: FLOCKI_MEDIA_STORE
+        value: local
