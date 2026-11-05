@@ -12,6 +12,7 @@ import os.path
 from src.app.media.factories.mediaFactory import MediaFactory
 from src.app.media.models.database import models
 from src.app.media.models.media import CreateMediaItem
+from src.app.utils.fileUtils import FileUtils
 from src.app.utils.s3Utils import S3Utils
 
 
@@ -123,6 +124,5 @@ class MediaService:
 
     def upload_image(self, file, filename, description):
         # TODO this is a bit of hack to make sure the extension is .jpg and not .jpeg
-        if file.content_type == 'image/jpeg':
-            file.content_type = 'image/jpg'
+        FileUtils.use_jpg_content_type(file)
         return self.upload_media_item(file, filename, description)

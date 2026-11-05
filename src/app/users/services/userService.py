@@ -76,7 +76,7 @@ class UserService:
         if userToUpdate is None:
             raise NoUserException("User with that id does not exist")
         # For update requests the model is not expected to come in with an ID since it is passed in the URL.
-        update_values = update_user.dict()
+        update_values = update_user.model_dump()
         if 'password' in update_values:
             update_values['password'] = self.password_utils.hash_pwd(update_values['password'])
 

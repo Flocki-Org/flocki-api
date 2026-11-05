@@ -3,8 +3,11 @@ from unittest import mock
 from unittest.mock import call, ANY
 
 import pytest
+from io import BytesIO
+
 from fastapi import UploadFile
 from fastapi_pagination import Page, Params
+from starlette.datastructures import Headers
 from starlette.responses import FileResponse
 
 from src.app.media.daos.mediaDAO import MediaDAO
@@ -226,8 +229,7 @@ def test_upload_household_image(mock_get_household_by_id, mock_upload_image, moc
     household_entity = models.Household(id=1, leader_id=1, address_id=1)
 
     mock_get_household_by_id.return_value = household_entity
-    file = UploadFile(filename="test.jpg", content_type="image/jpeg")
-    file.content_type = "image/jpeg"
+    file = UploadFile(BytesIO(b""), filename="test.jpg", headers=Headers({"content-type": "image/jpeg"}))
     description = f"Profile image for household with ID: {household_entity.id}"
     image_entity = media_models.MediaItem(id=1, description=description, created=datetime.datetime.now(), address="./.", store="local", filename="test.jpg")
     mock_upload_image.return_value = image_entity
@@ -253,7 +255,7 @@ def test_upload_household_image_no_household(mock_get_household_by_id):
 
     mock_get_household_by_id.return_value = None
     with pytest.raises(NoHouseholdException) as e:
-        household_service.upload_household_image(1, UploadFile(filename="test.jpg", content_type="image/jpeg"))
+        household_service.upload_household_image(1, UploadFile(BytesIO(b""), filename="test.jpg", headers=Headers({"content-type": "image/jpeg"})))
 
     assert e.value.args[0] == 'No household with the following ID: 1'
 

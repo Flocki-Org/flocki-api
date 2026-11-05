@@ -105,10 +105,10 @@ class PeopleService:
                 "No person with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
         # For update requests the model is not expected to come in with an ID since it is passed in the URL.
         person.id = person_entity.id
-        update_values = person.dict()
+        update_values = person.model_dump()
 
         # validate that households are correct.
-        household_ids = update_values.pop('household_ids', person.dict())
+        household_ids = update_values.pop('household_ids', person.model_dump())
         self.validate_households(household_ids)
         # validate potential removal of persons
         self.validate_household_remove_person(household_ids, person_entity)
@@ -118,7 +118,7 @@ class PeopleService:
         self.validate_image_id(person.profile_image_id)
 
         # start updating record
-        smls = update_values.pop('social_media_links', person.dict())
+        smls = update_values.pop('social_media_links', person.model_dump())
         if smls is not None:
             existing_social_media_links = self.peopleDAO.get_existing_social_media_links(person.id)
             if existing_social_media_links:
@@ -128,7 +128,7 @@ class PeopleService:
             for sml in smls:
                 self.peopleDAO.create_social_media_link(person.id, sml['type'], sml['url'])
 
-        addresses = update_values.pop('addresses', person.dict())
+        addresses = update_values.pop('addresses', person.model_dump())
         if addresses is not None:
             existing_people_addresses = self.addressDAO.get_existing_addresses_for_person(person.id)
             if existing_people_addresses is not None:
@@ -142,7 +142,7 @@ class PeopleService:
                 self.addressDAO.create_address_linked_to_person(address, person_entity)
 
         image_entity = None
-        profile_image_id = update_values.pop('profile_image_id', person.dict())
+        profile_image_id = update_values.pop('profile_image_id', person.model_dump())
         if profile_image_id is not None:
             image_entity = self.media_DAO.get_media_item_by_id(profile_image_id)
 
@@ -234,8 +234,7 @@ class PeopleService:
             raise NoPersonException(
                 "No person with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
         if file is not None:
-            if file.content_type == 'image/jpeg':
-                file.content_type = 'image/jpg'  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
+            FileUtils.use_jpg_content_type(file)  # TODO this is a bit of hack to make sure the extension is .jpg and not .jpe
             filename = str(personToUpdate.id) + '_' + str(uuid.uuid4()) + "." + FileUtils.get_file_extension(file)
             description = f"Profile image for user: {personToUpdate.first_name}  {personToUpdate.last_name}  with ID: {personToUpdate.id}"
             image_entity = self.media_service.upload_image(file, filename, description)
@@ -272,7 +271,7 @@ class PeopleService:
             person_response = self.peopleFactory.create_person_from_person_entity(person, include_households=False,
                                                                                   include_profile_image=True)
             # remove household field from person_response because it is not needed in this context
-            people_list_response.append(person_response.dict(exclude={'households'}))
+            people_list_response.append(person_response.model_dump(exclude={'households'}))
 
         return people_list_response
 

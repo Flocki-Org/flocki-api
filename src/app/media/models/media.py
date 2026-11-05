@@ -1,18 +1,20 @@
-from pydantic import HttpUrl, BaseModel
+from typing import Optional
+
+from pydantic import BaseModel
 import datetime
 
 class CreateMediaItem(BaseModel):
-    id: int = None
+    id: Optional[int] = None
     created: datetime.datetime
     store: str
     address: str
-    filename: str = None
-    description: str = None
-    content_type: str = None
-    tags: str = None
+    filename: Optional[str] = None
+    description: Optional[str] = None
+    content_type: Optional[str] = None
+    tags: Optional[str] = None
 
 class ViewMediaItem(BaseModel):
-    id: int = None
-    created: datetime.datetime = None
-    description: str = None
-    tags: str = None
+    id: Optional[int] = None
+    created: Optional[datetime.datetime] = None
+    description: Optional[str] = None
+    tags: Optional[str] = None

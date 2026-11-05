@@ -1,13 +1,22 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, EmailStr, Field, field_validator
 import datetime
 from enum import Enum
-from typing import List, ForwardRef, Optional
+from typing import Annotated, List, ForwardRef, Optional
+
+def _coerce_date(value):
+    # Pydantic v1 turned a datetime into its date. v2 rejects a datetime that has a time.
+    if isinstance(value, datetime.datetime):
+        return value.date()
+    return value
+
+CoercedDate = Annotated[datetime.date, BeforeValidator(_coerce_date)]
 
 # from src.app.people.models.household import Household
 from src.app.media.models.media import CreateMediaItem, ViewMediaItem
 from src.app.users.models.user import DisplayUser
+from src.app.utils.httpUrl import HttpUrl
 
 Household = ForwardRef('Household')
 FullViewPerson = ForwardRef('FullViewPerson')
@@ -52,12 +61,12 @@ class CreateAddress(BaseModel):
     city: str
     province: str
     country: str
-    postal_code: str = Field(None)
-    latitude: float = Field(None)
-    longitude: float = Field(None)
+    postal_code: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
               "type": "home",
               "street_number": "21",
@@ -69,59 +78,61 @@ class CreateAddress(BaseModel):
               "postal_code": "1685"
             }
         }
+    )
 
 class UpdateAddress(BaseModel):
     id: int
-    type: AddressType = Field(None)
-    street_number: str = Field(None)
-    street: str = Field(None)
-    suburb: str = Field(None)
-    city: str = Field(None)
-    province: str = Field(None)
-    country: str = Field(None)
-    postal_code: str = Field(None)
-    latitude: float = Field(None)
-    longitude: float = Field(None)
+    type: Optional[AddressType] = None
+    street_number: Optional[str] = None
+    street: Optional[str] = None
+    suburb: Optional[str] = None
+    city: Optional[str] = None
+    province: Optional[str] = None
+    country: Optional[str] = None
+    postal_code: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class ViewAddress(BaseModel):
     id: int
-    type: AddressType = Field(None)
-    street_number: str = Field(None)
-    street: str = Field(None)
-    suburb: str = Field(None)
-    city: str = Field(None)
-    province: str = Field(None)
-    country: str = Field(None)
-    postal_code: str = Field(None)
-    latitude: float = Field(None)
-    longitude: float = Field(None)
+    type: Optional[AddressType] = None
+    street_number: Optional[str] = None
+    street: Optional[str] = None
+    suburb: Optional[str] = None
+    city: Optional[str] = None
+    province: Optional[str] = None
+    country: Optional[str] = None
+    postal_code: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class CreatePerson(BaseModel):
-    id: int = Field(None)
+    id: Optional[int] = None
     first_name: str
     last_name: str
-    email: EmailStr = Field(None)
+    email: Optional[EmailStr] = None
     mobile_number: str
-    date_of_birth: datetime.date = Field(None)
-    gender: Gender = Field(None)
-    marriage_date: datetime.date = Field(None)
-    marital_status: MaritalStatus = Field(None)
-    registered_date: datetime.date = Field(None)
+    date_of_birth: Optional[CoercedDate] = None
+    gender: Optional[Gender] = None
+    marriage_date: Optional[CoercedDate] = None
+    marital_status: Optional[MaritalStatus] = None
+    registered_date: Optional[CoercedDate] = None
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[int] = Field([], title="A list of address IDs (normally just one home address)")
-    household_ids: List[int] = Field(None, title="The list pf ids of the households this person belongs to")
-    profile_image_id: int = Field(None, title="The profile image of this person")
+    household_ids: Optional[List[int]] = Field(None, title="The list pf ids of the households this person belongs to")
+    profile_image_id: Optional[int] = Field(None, title="The profile image of this person")
 
-    @validator('date_of_birth','registered_date','marriage_date')
+    @field_validator('date_of_birth','registered_date','marriage_date')
+    @classmethod
     def validate_date_in_past(cls, v):
-        if v > datetime.date.today():
+        if v is not None and v > datetime.date.today():
             raise ValueError("Date must be in the past")
         return v
 
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "first_name": "Joe",
                 "last_name": "Soap",
@@ -147,27 +158,28 @@ class CreatePerson(BaseModel):
                 "addresses": [1, 2]
             }
         }
+    )
 
 
 # TODO Investigate if all fields should be optional for the update person model
 class UpdatePerson(BaseModel):
     id: int
-    first_name: str = Field(None)
-    last_name: str = Field(None)
-    email: EmailStr = Field(None)
-    mobile_number: str = Field(None)
-    date_of_birth: datetime.date = Field(None)
-    gender: Gender = Field(None)
-    marriage_date: datetime.date = Field(None)
-    marital_status: MaritalStatus = Field(None)
-    registered_date: datetime.date = Field(None)
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    mobile_number: Optional[str] = None
+    date_of_birth: Optional[CoercedDate] = None
+    gender: Optional[Gender] = None
+    marriage_date: Optional[CoercedDate] = None
+    marital_status: Optional[MaritalStatus] = None
+    registered_date: Optional[CoercedDate] = None
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[int] = Field([], title="A list of address IDs (normally just one home address)")
-    household_ids: List[int] = Field(None, title="The list of ids of the households this person belongs to")
-    profile_image_id: int = Field(None)
+    household_ids: Optional[List[int]] = Field(None, title="The list of ids of the households this person belongs to")
+    profile_image_id: Optional[int] = None
 
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "first_name": "Joe",
                 "last_name": "Soap",
@@ -193,35 +205,39 @@ class UpdatePerson(BaseModel):
                 "addresses": [1, 2]
             }
         }
+    )
 
 
 class BasicViewPerson(BaseModel):
-    id: int = Field(None)
-    first_name: str = Field(None)
-    last_name: str = Field(None)
-    email: EmailStr = Field(None)
-    mobile_number: str = Field(None)
-    profile_image: ViewMediaItem = Field(None)
-    date_of_birth: datetime.date = Field(None)
-    gender: Gender = Field(None)
+    id: Optional[int] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    mobile_number: Optional[str] = None
+    profile_image: Optional[ViewMediaItem] = None
+    date_of_birth: Optional[CoercedDate] = None
+    gender: Optional[Gender] = None
 
 
 class FullViewPerson(BasicViewPerson):
-    email: EmailStr = Field(None)
-    mobile_number: str = Field(None)
-    date_of_birth: datetime.date = Field(None)
-    gender: Gender = Field(None)
-    marriage_date: datetime.date = Field(None)
-    marital_status: MaritalStatus = Field(None)
-    registered_date: datetime.date = Field(None)
+    email: Optional[EmailStr] = None
+    mobile_number: Optional[str] = None
+    date_of_birth: Optional[CoercedDate] = None
+    gender: Optional[Gender] = None
+    marriage_date: Optional[CoercedDate] = None
+    marital_status: Optional[MaritalStatus] = None
+    registered_date: Optional[CoercedDate] = None
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[ViewAddress] = Field([], title="A list of addresses (normally just one home address)")
-    households: List[ViewHousehold] = Field(None)
-    profile_image: ViewMediaItem = Field(None)
-    user: DisplayUser = Field(None)
-    class Config:
-        orm_mode = True
+    households: Optional[List[ViewHousehold]] = None
+    profile_image: Optional[ViewMediaItem] = None
+    user: Optional[DisplayUser] = None
+    model_config = ConfigDict(from_attributes=True)
 
 
-from src.app.people.models.household import ViewHousehold
-FullViewPerson.update_forward_refs(household=ViewHousehold)
+try:
+    # Importing household first re-enters this module before ViewHousehold exists.
+    from src.app.people.models.household import ViewHousehold
+    FullViewPerson.model_rebuild()
+except ImportError:
+    pass
