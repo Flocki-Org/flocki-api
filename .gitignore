@@ -129,7 +129,8 @@ dmypy.json
 .pyre/
 
 /.idea
-media/
+# Uploaded local media files for the running app (repo root only)
+/media/
 ./images/
 
 test_db.db
