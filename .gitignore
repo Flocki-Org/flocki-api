@@ -129,10 +129,14 @@ dmypy.json
 .pyre/
 
 /.idea
-media/
+# Uploaded local media files for the running app (repo root only)
+/media/
 ./images/
 
 test_db.db
 test_db.db-journal
 
 .pf.swp
+# Local pytest sqlite DBs
+test_*.db
+test_db.db

@@ -21,7 +21,7 @@ class SheetFactory:
             if sheet_entity is None:
                 return None
 
-            media_item = self.media_factory.create_media_item_from_media_item_entity(sheet_entity.media_item)
+            media_item = self.media_factory.create_view_media_item_from_media_item_entity(sheet_entity.media_item)
 
             return ViewSheet(
                 id=sheet_entity.id,
