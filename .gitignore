@@ -136,3 +136,6 @@ test_db.db
 test_db.db-journal
 
 .pf.swp
+# Local pytest sqlite DBs
+test_*.db
+test_db.db
