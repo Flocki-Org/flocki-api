@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     flocki_api_db_host: str = "localhost"
 
     flocki_app_port: int = 8000
-    flocki_secret_key: str = "secret_key"
+    flocki_secret_key: str = "gmWtYRS6i4D9Uh8okfsYy4u_qacpz09vlIOQzWTpQgk"
     flocki_token_expiry_minutes: int = 20
     flocki_media_store: str = "local" # local or s3 (aws)
     flocki_media_base_path: str = "./media"
