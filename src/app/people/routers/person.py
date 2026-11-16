@@ -6,10 +6,14 @@ from fastapi_pagination import Params, Page
 
 from ..services.addressService import NoAddressException
 from ..services.peopleService import PeopleService, NoPersonException, NoHouseholdExceptionForPersonCreation, \
-    UnableToRemoveLeaderFromHouseholdException
+    UnableToRemoveLeaderFromHouseholdException, DuplicateRelationshipException
 from ...media.models.media import ViewMediaItem
 from ...media.services.mediaService import NoMediaItemException
+from ...groups.services.groupService import GroupService
+from ...people.models.contacts import RelationshipInput, RelationshipView, StatusHistoryView
 from ...people.models.people import CreatePerson, FullViewPerson, UpdatePerson, BasicViewPerson
+from ...people.routers.catalogue import build_people_filters
+from ...people.services.categoryService import NoCategoryException
 from fastapi import APIRouter
 from typing import List, Union
 from ...users.models.user import User
@@ -19,10 +23,12 @@ router = APIRouter(tags=['People'])
 
 
 @router.get('/people', response_model=Page[FullViewPerson])
-def get_people(page: int = 1, page_size: int = 10, people_service: PeopleService = Depends(PeopleService),
+def get_people(page: int = 1, page_size: int = 10,
+               filters=Depends(build_people_filters),
+               people_service: PeopleService = Depends(PeopleService),
                current_user: User = Depends(get_current_user)):
     params: Params = Params(page=page, size=page_size)
-    people_response = people_service.get_all(params)
+    people_response = people_service.get_all(params, filters)
     return people_response
 
 
@@ -64,8 +70,94 @@ def update_person(id: int, person: UpdatePerson, people_service: PeopleService =
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
     except (NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException, NoAddressException,
-            NoMediaItemException) as e:
+            NoMediaItemException, NoCategoryException) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
+
+
+@router.put('/people/{person_id}', response_model=FullViewPerson)
+@router.patch('/people/{person_id}', response_model=FullViewPerson)
+def update_person_by_path(person_id: int, person: UpdatePerson, people_service: PeopleService = Depends(PeopleService),
+                          current_user: User = Depends(get_current_user)):
+    return update_person(person_id, person, people_service, current_user)
+
+
+@router.post('/people/{person_id}/archive', response_model=FullViewPerson)
+def archive_person(person_id: int, reason: Union[str, None] = None, people_service: PeopleService = Depends(PeopleService),
+                   current_user: User = Depends(get_current_user)):
+    try:
+        return people_service.archive_person(person_id, reason, getattr(current_user, "id", None))
+    except NoPersonException:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+
+
+@router.post('/people/{person_id}/restore', response_model=FullViewPerson)
+def restore_person(person_id: int, people_service: PeopleService = Depends(PeopleService),
+                   current_user: User = Depends(get_current_user)):
+    try:
+        return people_service.restore_person(person_id, getattr(current_user, "id", None))
+    except NoPersonException:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+
+
+@router.get('/people/{person_id}/relationships', response_model=List[RelationshipView])
+def list_relationships(person_id: int, people_service: PeopleService = Depends(PeopleService),
+                       current_user: User = Depends(get_current_user)):
+    try:
+        return people_service.relationships(person_id)
+    except NoPersonException:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+
+
+@router.post('/people/{person_id}/relationships', status_code=status.HTTP_201_CREATED, response_model=List[RelationshipView])
+def add_relationship(person_id: int, payload: RelationshipInput, people_service: PeopleService = Depends(PeopleService),
+                     current_user: User = Depends(get_current_user)):
+    try:
+        people_service.add_relationship(
+            person_id, payload.related_person_id, payload.relationship_type, payload.notes,
+            getattr(current_user, "id", None),
+        )
+        return people_service.relationships(person_id)
+    except DuplicateRelationshipException as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except NoPersonException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.delete('/people/{person_id}/relationships/{relationship_id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_relationship(person_id: int, relationship_id: int, people_service: PeopleService = Depends(PeopleService),
+                        current_user: User = Depends(get_current_user)):
+    try:
+        people_service.delete_relationship(person_id, relationship_id)
+    except NoPersonException:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Relationship does not exist")
+
+
+@router.get('/people/{person_id}/status-history', response_model=List[StatusHistoryView])
+def status_history(person_id: int, people_service: PeopleService = Depends(PeopleService),
+                   current_user: User = Depends(get_current_user)):
+    if people_service.get_by_id(person_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+    return [
+        StatusHistoryView(
+            id=row.id,
+            field_name=row.field_name,
+            previous_value=row.previous_value,
+            new_value=row.new_value,
+            reason=row.reason,
+            changed_at=row.changed_at.isoformat() if row.changed_at else None,
+            changed_by_user_id=row.changed_by_user_id,
+        )
+        for row in people_service.peopleDAO.status_history(person_id)
+    ]
+
+
+@router.get('/people/{person_id}/groups')
+def person_groups(person_id: int, group_service: GroupService = Depends(GroupService),
+                  current_user: User = Depends(get_current_user)):
+    try:
+        return group_service.groups_for_person(person_id)
+    except NoPersonException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
 
 @router.get('/people/{id}/profile_image')

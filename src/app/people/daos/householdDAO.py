@@ -48,7 +48,7 @@ class HouseholdDAO:
         household_entity.people.remove(person)
         self.db.commit()
 
-    def update_household(self, household_entity: models.Household, update_leader_id: int, update_address_id: int, image_entity=None):
+    def update_household(self, household_entity: models.Household, update_leader_id: int, update_address_id: int, image_entity=None, name=None, notes=None, update_name=False, update_notes=False):
         if image_entity is not None:
             household_image = HouseholdImage(
                 household=household_entity,
@@ -58,6 +58,14 @@ class HouseholdDAO:
             self.db.add(household_image)
         household_entity.leader_id = update_leader_id
         household_entity.address_id = update_address_id
+        if update_name:
+            household_entity.name = name
+        if update_notes:
+            household_entity.notes = notes
+        self.db.commit()
+
+    def set_leader(self, household_entity, leader_id):
+        household_entity.leader_id = leader_id
         self.db.commit()
 
     def get_people_not_in_household(self, household_id):

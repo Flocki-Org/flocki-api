@@ -7,6 +7,8 @@ class AddressFactory:
     def create_address_entity_from_address(self, address):
         address_entity = models.Address(
             type=address.type,
+            building=getattr(address, "building", None),
+            unit=getattr(address, "unit", None),
             street_number=address.street_number,
             street=address.street,
             suburb=address.suburb,
@@ -23,6 +25,8 @@ class AddressFactory:
         return ViewAddress(
             id=address_entity.id,
             type=address_entity.type,
+            building=address_entity.building,
+            unit=address_entity.unit,
             street_number=address_entity.street_number,
             street=address_entity.street,
             suburb=address_entity.suburb,

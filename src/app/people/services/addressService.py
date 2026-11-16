@@ -28,8 +28,8 @@ class AddressService:
             raise NoAddressException("No address with that Id")
         return self.addressFactory.create_address_from_address_entity(address_entity)
 
-    def find_address(self, type: str, street_number:str, street: str, suburb:str, city: str, province: str, country:str, postal_code: str):
-        address_entity = self.addressDAO.find_address(type, street_number, street, suburb, city, province, country, postal_code)
+    def find_address(self, type: str, street_number:str, street: str, suburb:str, city: str, province: str, country:str, postal_code: str, building=None, unit=None):
+        address_entity = self.addressDAO.find_address(type, street_number, street, suburb, city, province, country, postal_code, building, unit)
         if address_entity is None:
             return None
         return self.addressFactory.create_address_from_address_entity(address_entity)
@@ -48,7 +48,11 @@ class AddressService:
         return self.addressFactory.create_address_from_address_entity(self.addressDAO.get_address_by_id(id))
 
     def create_address(self, address: CreateAddress):
-        existing_address = self.addressDAO.find_address(address.type, address.street_number, address.street, address.suburb, address.city, address.province, address.country, address.postal_code)
+        existing_address = self.addressDAO.find_address(
+            address.type, address.street_number, address.street, address.suburb, address.city,
+            address.province, address.country, address.postal_code,
+            getattr(address, "building", None), getattr(address, "unit", None),
+        )
         if(existing_address is not None):
             raise AddressAlreadyExists(self.addressFactory.create_address_from_address_entity(existing_address))
 

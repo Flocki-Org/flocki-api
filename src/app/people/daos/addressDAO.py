@@ -38,8 +38,8 @@ class AddressDAO:
     def get_all_addresses(self):
         return self.db.query(models.Address).order_by(models.Address.city, models.Address.suburb, models.Address.street).all()
 
-    def find_address(self, type, street_number, street, suburb, city, province, country, postal_code):
-        return self.db.query(models.Address).filter(
+    def find_address(self, type, street_number, street, suburb, city, province, country, postal_code, building=None, unit=None):
+        query = self.db.query(models.Address).filter(
             models.Address.type == type,
             models.Address.street_number == street_number,
             models.Address.street == street,
@@ -47,5 +47,14 @@ class AddressDAO:
             models.Address.city == city,
             models.Address.province == province if province is not None else True,
             models.Address.country == country if country is not None else True,
-            models.Address.postal_code == postal_code if postal_code is not None else True).first()
+            models.Address.postal_code == postal_code if postal_code is not None else True)
+        if building is not None:
+            query = query.filter(models.Address.building == building)
+        else:
+            query = query.filter(models.Address.building.is_(None))
+        if unit is not None:
+            query = query.filter(models.Address.unit == unit)
+        else:
+            query = query.filter(models.Address.unit.is_(None))
+        return query.first()
 

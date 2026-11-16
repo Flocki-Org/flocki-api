@@ -11,7 +11,11 @@ from src.app.config import settings
 from src.app.database import SessionLocal, init_db, running_on_render
 from src.app.images.routers import image
 from src.app.media.routers import media
-from src.app.people.routers import address, household, person
+from src.app.customfields.routers import customField
+from src.app.departments.routers import department
+from src.app.groups.routers import group
+from src.app.imports.routers import importer
+from src.app.people.routers import address, catalogue, household, person
 from src.app.users.daos.userDAO import UserDAO
 from src.app.users.factories.userFactory import UserFactory
 from src.app.users.models.database.models import User
@@ -23,6 +27,11 @@ from src.app.worship.routers import song
 # Ensure every SQLAlchemy model is registered on Base before init_db().
 from src.app.church.models.database import models as church_models  # noqa: F401
 from src.app.media.models.database import models as media_models  # noqa: F401
+from src.app.groups.models.database import models as group_models  # noqa: F401
+from src.app.customfields.models.database import models as custom_field_models  # noqa: F401
+from src.app.departments.models.database import models as department_models  # noqa: F401
+from src.app.imports.models.database import models as import_models  # noqa: F401
+from src.app.audit.models.database import models as audit_models  # noqa: F401
 from src.app.people.models.database import models as people_models  # noqa: F401
 from src.app.users.models.database import models as user_models  # noqa: F401
 from src.app.worship.models.database import models as worship_models  # noqa: F401
@@ -69,7 +78,18 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Flocki API",
+    description=(
+        "Church management API. People profiles cover contact details, households, "
+        "family relationships, categories, custom fields, membership and archiving. "
+        "Groups cover categories, configurable roles and memberships. "
+        "Departments are a hierarchy that can link people and groups. "
+        "POST /imports/elvanto loads an Elvanto-shaped export idempotently."
+    ),
+    lifespan=lifespan,
+)
+app.include_router(catalogue.router)
 app.include_router(person.router)
 app.include_router(user.router)
 app.include_router(login.router)
@@ -79,6 +99,10 @@ app.include_router(image.router)
 app.include_router(address.router)
 app.include_router(church.router)
 app.include_router(song.router)
+app.include_router(customField.router)
+app.include_router(group.router)
+app.include_router(department.router)
+app.include_router(importer.router)
 
 app.add_middleware(
     CORSMiddleware,

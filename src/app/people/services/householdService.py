@@ -18,7 +18,7 @@ from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.household import CreateHousehold, UpdateHousehold, ViewHousehold
 from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.householdUtils import HouseholdUtils
-from src.app.people.services.peopleService import NoPersonException
+from src.app.people.services.peopleService import NoPersonException, UnableToRemoveLeaderFromHouseholdException
 
 from src.app.utils.fileUtils import FileUtils
 class NoHouseholdException(Exception):
@@ -26,6 +26,10 @@ class NoHouseholdException(Exception):
 
 
 class LeaderMustBeMemberOfHouseholdException(Exception):
+    pass
+
+
+class HouseholdMembershipException(Exception):
     pass
 
 
@@ -154,7 +158,24 @@ class HouseholdService:
             if not image_entity:
                 raise NoMediaItemException(f"No image with the following ID: {household.household_image_id}")
 
-        self.household_DAO.update_household(household_entity, household.leader_id, household.address_id, image_entity)
+        if "name" in household.model_fields_set or "notes" in household.model_fields_set:
+            self.household_DAO.update_household(
+                household_entity,
+                household.leader_id,
+                household.address_id,
+                image_entity,
+                name=household.name,
+                notes=household.notes,
+                update_name="name" in household.model_fields_set,
+                update_notes="notes" in household.model_fields_set,
+            )
+        else:
+            self.household_DAO.update_household(
+                household_entity,
+                household.leader_id,
+                household.address_id,
+                image_entity,
+            )
 
         existing_people_ids = self.household_utils.get_existing_people_ids(household_entity)
         people_ids_to_add = self.household_utils.get_people_ids_to_add(existing_people_ids, update_people_ids)
@@ -187,3 +208,43 @@ class HouseholdService:
             people_response.append(self.people_factory.create_basic_person_view_from_person_entity(person_entity, include_profile_image=True))
 
         return people_response
+
+    def add_member(self, household_id, person_id):
+        household_entity = self._require_household(household_id)
+        person_entity = self._require_person(person_id)
+        if any(person.id == person_id for person in household_entity.people):
+            raise HouseholdMembershipException("That person is already in this household")
+        self.household_DAO.add_person_to_household(household_entity, person_entity)
+        return self.get_household_by_id(household_id)
+
+    def remove_member(self, household_id, person_id):
+        household_entity = self._require_household(household_id)
+        person_entity = self._require_person(person_id)
+        if household_entity.leader_id == person_id:
+            raise UnableToRemoveLeaderFromHouseholdException(
+                f"You cannot remove a leader [id='{person_id}'] from a household [id='{household_id}']. You must first assign a new leader to the household."
+            )
+        if not any(person.id == person_id for person in household_entity.people):
+            raise NoPersonException(f"Person {person_id} is not in household {household_id}")
+        self.household_DAO.remove_person_from_household(household_entity, person_entity)
+        return self.get_household_by_id(household_id)
+
+    def set_leader(self, household_id, person_id):
+        household_entity = self._require_household(household_id)
+        self._require_person(person_id)
+        if not any(person.id == person_id for person in household_entity.people):
+            raise LeaderMustBeMemberOfHouseholdException("The household leader must be a member of the household")
+        self.household_DAO.set_leader(household_entity, person_id)
+        return self.get_household_by_id(household_id)
+
+    def _require_household(self, household_id):
+        household_entity = self.household_DAO.get_household_by_id(household_id)
+        if household_entity is None:
+            raise NoHouseholdException(f"No household with the following ID: {household_id}")
+        return household_entity
+
+    def _require_person(self, person_id):
+        person_entity = self.people_DAO.get_person_by_id(person_id)
+        if person_entity is None:
+            raise NoPersonException(f"No person with the following ID: {person_id}")
+        return person_entity

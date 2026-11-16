@@ -165,7 +165,11 @@ def init_db(retries: int = 8, delay_seconds: float = 2.0) -> None:
         try:
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-            Base.metadata.create_all(bind=engine)
+            from src.app.schema_updates import apply_schema_updates
+            from src.app.seed import seed_reference_data
+
+            apply_schema_updates(engine)
+            seed_reference_data()
             logger.info("Database schema ready (attempt %s/%s)", attempt, retries)
             return
         except Exception as exc:  # noqa: BLE001 - surface final error after retries
