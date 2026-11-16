@@ -12,7 +12,7 @@ class GroupDAO:
         self.db = db
 
     def _group_options(self, include_members=False):
-        options = [joinedload(models.Group.category), joinedload(models.Group.meeting_address)]
+        options = [joinedload(models.Group.category)]
         if include_members:
             options.append(
                 selectinload(models.Group.memberships).selectinload(models.GroupMembership.person)

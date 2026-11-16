@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import status, Depends, HTTPException, UploadFile, APIRouter
 from fastapi_pagination import Params, Page
@@ -25,8 +25,11 @@ def get_song(id: int, song_service: SongService = Depends(SongService)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Song with that id does not exist")
 
 @router.get('/songs', response_model=Page[ViewSong])
-def get_songs(page: int = 1, page_size:int = 10, song_service : SongService = Depends(SongService)):
-    return song_service.get_all_songs()
+def get_songs(page: int = 1, page_size: int = 10, search: Optional[str] = None,
+              song_service: SongService = Depends(SongService)):
+    """Songs ordered by code. `search` matches the name, secondary name, code or CCLI number."""
+    params = Params(page=max(page, 1), size=min(max(page_size, 1), 100))
+    return song_service.get_all_songs(params, search=search)
 
 @router.post('/song', response_model=ViewSong)
 def create_song(song: CreateSong, song_service: SongService = Depends(SongService)):

@@ -1,8 +1,8 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.pool import StaticPool
 
 from src.app.model_registry import import_all_models
-from src.app.schema_updates import REVISION, apply_schema_updates
+from src.app.schema_updates import REVISIONS, apply_schema_updates
 
 
 def _engine():
@@ -16,6 +16,11 @@ def _engine():
 def _people_columns(engine):
     with engine.connect() as connection:
         return [row[1] for row in connection.execute(text("PRAGMA table_info(people)"))]
+
+
+def _versions(engine):
+    with engine.connect() as connection:
+        return connection.execute(text("SELECT version FROM schema_migrations ORDER BY version")).scalars().all()
 
 
 def test_column_sync_preserves_existing_rows_and_transaction_rolls_back():
@@ -45,9 +50,20 @@ def test_column_sync_preserves_existing_rows_and_transaction_rolls_back():
     assert "lifecycle_status" in columns
     with engine.connect() as connection:
         assert connection.execute(text("SELECT first_name, last_name FROM people WHERE id = 1")).one() == ("Ada", "Lovelace")
-        assert connection.execute(text("SELECT version FROM schema_migrations")).scalar() == REVISION
+    assert _versions(engine) == list(REVISIONS)
 
     apply_schema_updates(engine)
-    with engine.connect() as connection:
-        versions = connection.execute(text("SELECT version FROM schema_migrations")).scalars().all()
-    assert versions == [REVISION]
+    assert _versions(engine) == list(REVISIONS)
+
+
+def test_events_revision_applies_on_top_of_revision_001():
+    import_all_models()
+    engine = _engine()
+    with engine.begin() as connection:
+        connection.execute(text("CREATE TABLE schema_migrations (version VARCHAR PRIMARY KEY, applied_at TIMESTAMP)"))
+        connection.execute(text("INSERT INTO schema_migrations (version) VALUES ('001_people_groups_expansion')"))
+
+    apply_schema_updates(engine)
+    tables = set(inspect(engine).get_table_names())
+    assert {"event_types", "event_series", "event_occurrences", "service_plan_items", "dashboard_layouts"} <= tables
+    assert _versions(engine) == list(REVISIONS)

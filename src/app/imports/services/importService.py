@@ -212,9 +212,6 @@ class ImportService:
             group.description = record.description
             group.category_id = category_id
             group.status = record.status
-            group.meeting_day = record.meeting_day
-            group.meeting_frequency = record.meeting_frequency
-            group.meeting_location = record.meeting_location
             self.import_dao.save_reference(source, "group", group.id, record.external_id, self._raw(record))
             return "updated"
         group = Group(
@@ -222,9 +219,6 @@ class ImportService:
             description=record.description,
             category_id=category_id,
             status=record.status or "active",
-            meeting_day=record.meeting_day,
-            meeting_frequency=record.meeting_frequency,
-            meeting_location=record.meeting_location,
         )
         self.db.add(group)
         self.db.flush()

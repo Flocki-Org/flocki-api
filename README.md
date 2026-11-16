@@ -82,12 +82,28 @@ Households keep a required address and a designated leader. A person can belong 
 
 Categories (`/people/categories`), reference values (`/reference-data`), service types (`/service-types`) and custom fields (`/custom-fields`) are configurable. Custom field definitions apply to an entity type, so the same tables can later hold group fields. Deleting a custom field that already has values deactivates it.
 
-Groups (`/groups`) have categories, a meeting description that can be left empty, and memberships with configurable roles. `GET /people/{id}/groups` lists a person's groups. Deleting a group that still has memberships returns 409 unless `force=true`. Archive and restore are `POST /groups/{id}/archive` and `POST /groups/{id}/restore`.
+Groups (`/groups`) have categories and memberships with configurable roles. A group's meeting schedule is an event series linked to it (`POST /events` with `group_id`); the older meeting columns stay in the database unused. `GET /people/{id}/groups` lists a person's groups. Deleting a group that still has memberships returns 409 unless `force=true`. Archive and restore are `POST /groups/{id}/archive` and `POST /groups/{id}/restore`.
 
 Departments (`/departments`) are a parent/child tree. People and groups can be linked to a department without the department owning the group.
 
 `POST /imports/elvanto` upserts people, categories, custom fields, households, groups, memberships and custom field values using `external_references`. The same external id updates the existing row. Unknown source fields are stored on the reference. Failures are listed by `GET /imports/errors`. There is no live Elvanto synchronisation.
 
-Schema changes are applied on startup. Revision `001_people_groups_expansion` adds columns and indexes to existing tables and creates the new tables. It does not drop existing people, households or addresses. The recorded version is `schema_migrations`.
+Schema changes are applied on startup. Revision `001_people_groups_expansion` adds columns and indexes to existing tables and creates the new tables. Revision `002_events_services_dashboard` creates the events, order-of-service and dashboard tables. Neither drops existing data. Applied revisions are recorded in `schema_migrations`.
+
+# Events, services and worship
+
+Event types (`/events/types`) are configurable. Each has two flags: `has_order_of_service` (worship services) and `tracks_attendance` (ready for attendance later). Eight types are seeded on first start; deleting a type that is in use deactivates it.
+
+An event is a series: once-off, weekly on chosen days, every N weeks, monthly on the nth weekday (several positions allowed, `-1` is the last), monthly on a date, or yearly, with an optional end date. `GET /events?start=&end=` returns the occurrences in a window (at most 400 days), filtered by `type_id` and `group_id`. An occurrence is addressed by its series and original date: `/events/occurrences/{series_id}/{YYYY-MM-DD}`. It is only stored once it differs from the series.
+
+`PATCH` on an occurrence takes a `scope`: `this` overrides title, description, times, location or date for that day; `following` ends the series the day before and continues as a new series with the change; `all` changes the series and clears the same overrides on individual dates. Cancelled dates stay on the calendar with an optional reason (`POST .../cancel`, `POST .../restore`, or `POST /events/series/{id}/cancel-range`). `POST .../duplicate` copies a single date (or a whole series) to another date, which covers moveable feasts.
+
+Worship services have an order of service. `PUT /events/series/{id}/template` sets the default items; `GET .../plan` shows the template until `PUT .../plan` saves a plan for that date with status `draft` or `final`. Items are songs from the library (with a key), readings, sermons, prayers, communion, offering, notices, baptism or custom, each with an optional person (from the directory or free text) and a duration that gives planned start times.
+
+Song usage comes from saved plans on dates that were not cancelled: `GET /songs/usage`, `GET /song/{id}/usage` and a CCLI CSV at `GET /songs/ccli-report?start=&end=`. `GET /songs` takes `page`, `page_size` and `search`.
+
+# Dashboard
+
+`GET /dashboard/summary` returns people and group counts. `GET`, `PUT` and `DELETE /dashboard/layout` read, save and reset the signed-in staff member's widget order and visibility; unknown widgets are dropped and new ones are appended.
 
 OpenAPI examples are on the request models at `/docs`.

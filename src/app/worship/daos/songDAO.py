@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import Depends
 
@@ -7,16 +7,25 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 
 from src.app.database import SessionLocal, get_db
 from src.app.worship.models.database import models
-from sqlalchemy import func, exc
+from sqlalchemy import func, exc, or_
 
 
 class SongDAO:
     def __init__(self, db: SessionLocal = Depends(get_db)):
         self.db = db
 
-    def get_all_songs(self, params: Params = Params(page=1, size=100)) -> Page[models.Song]:
-        #order by code
-        return paginate(self.db.query(models.Song).order_by(models.Song.code), params)
+    def get_all_songs(self, params: Params = Params(page=1, size=100), search: Optional[str] = None) -> Page[models.Song]:
+        query = self.db.query(models.Song)
+        term = (search or "").strip()
+        if term:
+            pattern = f"%{term}%"
+            query = query.filter(or_(
+                models.Song.name.ilike(pattern),
+                models.Song.secondary_name.ilike(pattern),
+                models.Song.code.ilike(pattern),
+                models.Song.ccli_number.ilike(pattern),
+            ))
+        return paginate(query.order_by(models.Song.code), params)
 
     def get_all_songs_without_pagination(self) -> List[models.Song]:
         return self.db.query(models.Song).order_by(models.Song.code)

@@ -9,8 +9,7 @@ from src.app.groups.models.database import models
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
-from src.app.people.models.people import BasicViewPerson, ViewAddress
-from src.app.people.services.addressService import NoAddressException
+from src.app.people.models.people import BasicViewPerson
 from src.app.people.services.peopleService import NoPersonException
 
 
@@ -80,17 +79,12 @@ class GroupRoleView(BaseModel):
 
 
 class CreateGroup(BaseModel):
+    """A group's meeting schedule is an event series linked to the group (POST /events with group_id)."""
+
     name: str
     description: Optional[str] = None
     category_id: Optional[int] = None
     status: str = "active"
-    meeting_location: Optional[str] = None
-    meeting_address_id: Optional[int] = None
-    meeting_day: Optional[str] = None
-    meeting_start_time: Optional[datetime.time] = None
-    meeting_end_time: Optional[datetime.time] = None
-    meeting_frequency: Optional[str] = None
-    meeting_notes: Optional[str] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
     leader_person_id: Optional[int] = None
@@ -100,9 +94,6 @@ class CreateGroup(BaseModel):
             "example": {
                 "name": "Tuesday Bible study",
                 "category_id": 1,
-                "meeting_day": "Tuesday",
-                "meeting_frequency": "weekly",
-                "meeting_start_time": "19:00:00",
                 "leader_person_id": 1,
             }
         }
@@ -114,13 +105,6 @@ class UpdateGroup(BaseModel):
     description: Optional[str] = None
     category_id: Optional[int] = None
     status: Optional[str] = None
-    meeting_location: Optional[str] = None
-    meeting_address_id: Optional[int] = None
-    meeting_day: Optional[str] = None
-    meeting_start_time: Optional[datetime.time] = None
-    meeting_end_time: Optional[datetime.time] = None
-    meeting_frequency: Optional[str] = None
-    meeting_notes: Optional[str] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
 
@@ -158,13 +142,6 @@ class GroupView(BaseModel):
     description: Optional[str] = None
     category: Optional[GroupCategoryView] = None
     status: str
-    meeting_location: Optional[str] = None
-    meeting_address: Optional[ViewAddress] = None
-    meeting_day: Optional[str] = None
-    meeting_start_time: Optional[datetime.time] = None
-    meeting_end_time: Optional[datetime.time] = None
-    meeting_frequency: Optional[str] = None
-    meeting_notes: Optional[str] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
     created_at: Optional[datetime.datetime] = None
@@ -179,13 +156,6 @@ GROUP_COLUMNS = (
     "description",
     "category_id",
     "status",
-    "meeting_location",
-    "meeting_address_id",
-    "meeting_day",
-    "meeting_start_time",
-    "meeting_end_time",
-    "meeting_frequency",
-    "meeting_notes",
     "contact_email",
     "contact_phone",
 )
@@ -215,7 +185,6 @@ class GroupService:
 
     def create(self, payload: CreateGroup):
         self._require_category(payload.category_id)
-        self._require_address(payload.meeting_address_id)
         data = payload.model_dump(exclude={"leader_person_id"})
         group = models.Group(**data)
         created = self.group_dao.add(group)
@@ -229,8 +198,6 @@ class GroupService:
         data = payload.model_dump(exclude_unset=True)
         if "category_id" in data:
             self._require_category(data["category_id"])
-        if "meeting_address_id" in data:
-            self._require_address(data["meeting_address_id"])
         for key, value in data.items():
             if key in GROUP_COLUMNS:
                 setattr(group, key, value)
@@ -387,36 +354,12 @@ class GroupService:
         if include_members:
             members = [self._member(row) for row in loaded_members if row.status == "active"]
             leaders = [member for member in members if member.role and member.role.is_leader]
-        address = None
-        if group.meeting_address is not None:
-            address = ViewAddress(
-                id=group.meeting_address.id,
-                type=group.meeting_address.type,
-                building=group.meeting_address.building,
-                unit=group.meeting_address.unit,
-                street_number=group.meeting_address.street_number,
-                street=group.meeting_address.street,
-                suburb=group.meeting_address.suburb,
-                city=group.meeting_address.city,
-                province=group.meeting_address.province,
-                country=group.meeting_address.country,
-                postal_code=group.meeting_address.postal_code,
-                latitude=group.meeting_address.latitude,
-                longitude=group.meeting_address.longitude,
-            )
         return GroupView(
             id=group.id,
             name=group.name,
             description=group.description,
             category=self._category(group.category) if group.category else None,
             status=group.status,
-            meeting_location=group.meeting_location,
-            meeting_address=address,
-            meeting_day=group.meeting_day,
-            meeting_start_time=group.meeting_start_time,
-            meeting_end_time=group.meeting_end_time,
-            meeting_frequency=group.meeting_frequency,
-            meeting_notes=group.meeting_notes,
             contact_email=group.contact_email,
             contact_phone=group.contact_phone,
             created_at=group.created_at,
@@ -479,9 +422,3 @@ class GroupService:
             return
         if self.group_dao.get_category(category_id) is None:
             raise NoGroupException("Group category does not exist")
-
-    def _require_address(self, address_id):
-        if address_id is None or not hasattr(self.address_dao, "get_address_by_id"):
-            return
-        if self.address_dao.get_address_by_id(address_id) is None:
-            raise NoAddressException(f"No address with the following ID: {address_id}")
