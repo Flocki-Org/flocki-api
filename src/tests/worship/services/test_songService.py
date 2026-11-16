@@ -217,6 +217,25 @@ def test_update_song_replaces_authors(
     mock_create_author_song.assert_called_once_with(song_entity, author)
 
 
+@mock.patch.object(SongFactory, "create_song_from_song_entity")
+@mock.patch.object(SongDAO, "update_song")
+@mock.patch.object(SongDAO, "delete_author_song")
+@mock.patch.object(SongDAO, "get_song_by_id")
+def test_update_song_keeps_authors_when_omitted(mock_get_song, mock_delete, mock_update_song, mock_create_view):
+    service = _build_service()
+    song_entity = models.Song(id=1, code="A1", name="Song")
+    mock_get_song.return_value = song_entity
+    mock_update_song.return_value = song_entity
+    mock_create_view.return_value = ViewSong(id=1, code="A1", name="Renamed", authors=[])
+
+    service.update_song(1, CreateSong(name="Renamed"))
+
+    mock_delete.assert_not_called()
+    saved = mock_update_song.call_args.args[1]
+    assert "author_ids" not in saved
+    assert saved["name"] == "Renamed"
+
+
 @mock.patch.object(SongDAO, "get_song_by_id")
 def test_update_song_missing(mock_get_song):
     service = _build_service()

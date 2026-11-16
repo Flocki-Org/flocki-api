@@ -30,6 +30,13 @@ class NoMediaItemException(Exception):
         return self.message
 
 
+def display_media_type(content_type):
+    # image/jpg is not a real media type, so browsers refuse to paint it.
+    if content_type == "image/jpg":
+        return "image/jpeg"
+    return content_type
+
+
 class MediaService:
     def __init__(self, media_DAO: MediaDAO = Depends(MediaDAO), media_factory: MediaFactory = Depends(MediaFactory)):
         self.media_DAO = media_DAO
@@ -46,7 +53,7 @@ class MediaService:
         if media_item.store == 'local':
             if not os.path.isfile(media_item.address):
                 raise NoMediaItemException(f"No media item the filename stored for the provided ID: {id}")
-            file_rsp = FileResponse(media_item.address, media_type=media_item.content_type, filename=media_item.filename)
+            file_rsp = FileResponse(media_item.address, media_type=display_media_type(media_item.content_type), filename=media_item.filename)
             if as_attachment:
                 file_rsp.headers['Content-Disposition'] = f'attachment; filename="{media_item.filename}"'
             else:
@@ -61,7 +68,7 @@ class MediaService:
             #file_obj = io.BytesIO(obj['Body'].read())
 
             # Get the content type of the object
-            content_type = media_item.content_type
+            content_type = display_media_type(media_item.content_type)
 
             # Set the Content-Disposition header to force download with the original filename
             if 'Key' in obj:
@@ -80,12 +87,11 @@ class MediaService:
     def upload_media_item(self, file, filename, description=None) -> models.MediaItem:
         file.file.seek(0)
         if settings.flocki_media_store == 'local':
-            os.makedirs(os.path.dirname(settings.flocki_media_base_path), exist_ok=True)
-
-            if not settings.flocki_media_base_path.endswith('/'):
-                settings.flocki_media_base_path += '/'
-
-            file_path = settings.flocki_media_base_path + filename
+            # Create the store itself. dirname() only created the parent, so
+            # the default ./media directory was never made and the write failed.
+            base_path = os.path.abspath(settings.flocki_media_base_path)
+            os.makedirs(base_path, exist_ok=True)
+            file_path = os.path.join(base_path, filename)
             with open(file_path, 'wb') as f:
                 f.write(file.file.read())
 
