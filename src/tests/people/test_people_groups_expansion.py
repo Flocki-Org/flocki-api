@@ -244,8 +244,6 @@ def test_groups_membership_roles_archive_and_departments(services):
     group = groups.create(CreateGroup(
         name="Tuesday study",
         category_id=category.id,
-        meeting_day="Tuesday",
-        meeting_frequency="weekly",
         leader_person_id=person.id,
     ))
     assert group.leaders[0].person.id == person.id

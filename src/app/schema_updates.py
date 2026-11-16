@@ -1,8 +1,10 @@
 """Versioned, idempotent schema updates for databases that already have data.
 
 `Base.metadata.create_all` creates missing tables and is not enough on its own:
-it does not add columns to tables that already exist. Revision 001 adds those
-columns and indexes without dropping anything.
+it does not add columns to tables that already exist. Each revision adds those
+columns and indexes without dropping anything. Revision 002 adds the events,
+order-of-service and dashboard tables; the group meeting columns it replaces
+are left in place, unused.
 
 PostgreSQL DDL runs inside a transaction, so a failure rolls the revision back.
 """
@@ -20,7 +22,11 @@ from src.app.model_registry import import_all_models
 
 logger = logging.getLogger(__name__)
 
-REVISION = "001_people_groups_expansion"
+REVISIONS = (
+    "001_people_groups_expansion",
+    "002_events_services_dashboard",
+)
+REVISION = REVISIONS[-1]
 SQL_DIR = Path(__file__).resolve().parents[2] / "sql" / "migrations"
 
 
@@ -31,16 +37,18 @@ def apply_schema_updates(bound_engine: Engine | None = None) -> None:
     with db_engine.begin() as connection:
         _ensure_migrations_table(connection)
         applied = _applied_versions(connection)
-        if REVISION not in applied and connection.dialect.name == "postgresql":
-            _apply_sql_file(connection, SQL_DIR / f"{REVISION}.sql")
+        pending = [revision for revision in REVISIONS if revision not in applied]
+        if connection.dialect.name == "postgresql":
+            for revision in pending:
+                _apply_sql_file(connection, SQL_DIR / f"{revision}.sql")
         _sync_missing_columns(connection)
         _sync_missing_indexes(connection)
-        if REVISION not in applied:
+        for revision in pending:
             connection.execute(
                 text("INSERT INTO schema_migrations (version) VALUES (:version)"),
-                {"version": REVISION},
+                {"version": revision},
             )
-            logger.info("Applied schema revision %s", REVISION)
+            logger.info("Applied schema revision %s", revision)
 
 
 def _ensure_migrations_table(connection: Connection) -> None:

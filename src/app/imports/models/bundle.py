@@ -37,6 +37,7 @@ class ImportGroup(ImportRecord):
     description: Optional[str] = None
     category_external_id: Optional[str] = None
     status: str = "active"
+    # Kept on the external reference only; a group's schedule lives on its event series.
     meeting_day: Optional[str] = None
     meeting_frequency: Optional[str] = None
     meeting_location: Optional[str] = None

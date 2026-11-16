@@ -100,7 +100,9 @@ pytest-mock==3.17.0
 pytest-unordered==0.8.0
     # via -r requirements.in
 python-dateutil==2.9.0.post0
-    # via botocore
+    # via
+    #   -r requirements.in
+    #   botocore
 python-dotenv==1.2.4
     # via
     #   -r requirements.in

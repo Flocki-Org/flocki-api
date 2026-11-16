@@ -1,7 +1,7 @@
 import tempfile
 from datetime import datetime
 from io import BytesIO
-from typing import List
+from typing import List, Optional
 
 from fastapi import Depends
 
@@ -38,9 +38,9 @@ class SongService:
         self.song_factory = song_factory
         self.song_DAO = song_DAO
 
-    def get_all_songs(self, params: Params = Params(page=1, size=100)) -> Page[ViewSong]:
+    def get_all_songs(self, params: Params = Params(page=1, size=100), search: Optional[str] = None) -> Page[ViewSong]:
         song_entities = []
-        song_entities_page = self.song_DAO.get_all_songs(params)
+        song_entities_page = self.song_DAO.get_all_songs(params, search=search)
         if song_entities_page:
             for song_entity in song_entities_page.items:
                 song_entities.append(self.song_factory.create_song_from_song_entity(song_entity))

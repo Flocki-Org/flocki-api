@@ -12,7 +12,9 @@ from src.app.database import SessionLocal, init_db, running_on_render
 from src.app.images.routers import image
 from src.app.media.routers import media
 from src.app.customfields.routers import customField
+from src.app.dashboard.routers import dashboard
 from src.app.departments.routers import department
+from src.app.events.routers import event
 from src.app.groups.routers import group
 from src.app.imports.routers import importer
 from src.app.people.routers import address, catalogue, household, person
@@ -30,6 +32,8 @@ from src.app.media.models.database import models as media_models  # noqa: F401
 from src.app.groups.models.database import models as group_models  # noqa: F401
 from src.app.customfields.models.database import models as custom_field_models  # noqa: F401
 from src.app.departments.models.database import models as department_models  # noqa: F401
+from src.app.events.models.database import models as event_models  # noqa: F401
+from src.app.dashboard.models.database import models as dashboard_models  # noqa: F401
 from src.app.imports.models.database import models as import_models  # noqa: F401
 from src.app.audit.models.database import models as audit_models  # noqa: F401
 from src.app.people.models.database import models as people_models  # noqa: F401
@@ -85,6 +89,9 @@ app = FastAPI(
         "family relationships, categories, custom fields, membership and archiving. "
         "Groups cover categories, configurable roles and memberships. "
         "Departments are a hierarchy that can link people and groups. "
+        "Events cover configurable types, once-off and recurring schedules, per-date overrides "
+        "and cancellations, and an order of service for worship services that feeds song usage "
+        "and CCLI reporting. "
         "POST /imports/elvanto loads an Elvanto-shaped export idempotently."
     ),
     lifespan=lifespan,
@@ -98,7 +105,9 @@ app.include_router(media.router)
 app.include_router(image.router)
 app.include_router(address.router)
 app.include_router(church.router)
+app.include_router(event.router)
 app.include_router(song.router)
+app.include_router(dashboard.router)
 app.include_router(customField.router)
 app.include_router(group.router)
 app.include_router(department.router)

@@ -8,6 +8,7 @@ psycopg2-binary
 boto3
 openpyxl
 python-multipart
+python-dateutil
 python-dotenv
 google-auth[requests]
 bcrypt
