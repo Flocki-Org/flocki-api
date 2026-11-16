@@ -120,7 +120,7 @@ def test_upload_media_item_local(tmp_path):
             mock.patch.object(MediaFactory, "create_media_item_entity_from_media_item", return_value=entity) as mock_create_entity, \
             mock.patch.object(MediaDAO, "add_media_item", return_value=entity) as mock_add_media:
         mock_settings.flocki_media_store = "local"
-        mock_settings.flocki_media_base_path = str(tmp_path)
+        mock_settings.flocki_media_base_path = str(tmp_path / "media")
         mock_settings.flocki_s3_region_name = "eu-west-1"
         mock_settings.flocki_s3_bucket_name = "bucket"
         mock_settings.flocki_s3_access_key = ""
@@ -129,7 +129,7 @@ def test_upload_media_item_local(tmp_path):
         result = service.upload_media_item(file, "photo.jpg", "desc")
 
     assert result.id == 1
-    assert (tmp_path / "photo.jpg").read_bytes() == b"bytes"
+    assert (tmp_path / "media" / "photo.jpg").read_bytes() == b"bytes"
     mock_add_media.assert_called_once()
     create_arg = mock_create_entity.call_args[0][0]
     assert create_arg.store == "local"

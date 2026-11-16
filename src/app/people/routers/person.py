@@ -74,6 +74,20 @@ def update_person(id: int, person: UpdatePerson, people_service: PeopleService =
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
 
 
+@router.put('/people/profile_image', response_model=ViewMediaItem)
+def update_person_with_profile_image(id: int, file: UploadFile, people_service: PeopleService = Depends(PeopleService),
+                                     current_user: User = Depends(get_current_user)):
+    try:
+        person_response = people_service.upload_profile_image(id, file)
+        if person_response is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+        return person_response
+    except NoPersonException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+    except NoHouseholdExceptionForPersonCreation as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
+
+
 @router.put('/people/{person_id}', response_model=FullViewPerson)
 @router.patch('/people/{person_id}', response_model=FullViewPerson)
 def update_person_by_path(person_id: int, person: UpdatePerson, people_service: PeopleService = Depends(PeopleService),
@@ -184,20 +198,6 @@ def get_person_profile_images(id: int, people_service: PeopleService = Depends(P
         return profile_image_responses
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
-
-
-@router.put('/people/profile_image', response_model=ViewMediaItem)
-def update_person_with_profile_image(id: int, file: UploadFile, people_service: PeopleService = Depends(PeopleService),
-                                     current_user: User = Depends(get_current_user)):
-    try:
-        person_response = people_service.upload_profile_image(id, file)
-        if person_response is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
-        return person_response
-    except NoPersonException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
-    except NoHouseholdExceptionForPersonCreation as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.args[0])
 
 
 @router.post('/people/add_people_from_spreadsheet', response_model=List[ViewMediaItem])

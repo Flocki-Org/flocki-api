@@ -103,8 +103,7 @@ class SongService:
             raise NoSongException("Song with that id does not exist")
         update_values = song.model_dump(exclude_unset=True)
 
-        authors_ids = update_values.pop('author_ids', song.model_dump())
-        #validate author_ids
+        authors_ids = update_values.pop("author_ids", None)
         valid_authors = []
         if authors_ids:
             for author_id in authors_ids:
