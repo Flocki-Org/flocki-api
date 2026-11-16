@@ -12,6 +12,8 @@ class CreateHousehold(BaseModel):
     people_ids: List[int] = Field(title="A list of IDs of the people to be added to the household")
     household_image_id: Optional[int] = Field(None, title="The ID of the image of this household")
     leader_id: int = Field(title="The ID of the leader of the household")
+    name: Optional[str] = None
+    notes: Optional[str] = None
 
     @model_validator(mode='after')
     def validate_leader(self):
@@ -38,6 +40,8 @@ class UpdateHousehold(BaseModel):
     household_image_id: Optional[int] = Field(None, title="The ID of the image of this household")
     leader_id: int = Field(
         title="The ID of the leader of the household. If not specified, the leader will be the first person in the household")
+    name: Optional[str] = None
+    notes: Optional[str] = None
 
     @model_validator(mode='after')
     def validate_leader(self):
@@ -66,6 +70,8 @@ class ViewHousehold(BaseModel):
     address: ViewAddress = Field(title="An addresses")
     household_image: Optional[ViewMediaItem] = Field(None, title="The image of this household")
     people: List[BasicViewPerson] = Field([], title="A list of people belonging to the household")
+    name: Optional[str] = None
+    notes: Optional[str] = None
 
 
 import src.app.people.models.people as people_models

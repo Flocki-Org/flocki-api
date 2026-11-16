@@ -10,9 +10,17 @@ from src.app.media.daos.mediaDAO import MediaDAO
 from src.app.media.factories.mediaFactory import MediaFactory
 from src.app.media.services.mediaService import MediaService, NoMediaItemException
 from src.app.people.daos.addressDAO import AddressDAO
+from src.app.people.daos.categoryDAO import CategoryDAO, ServiceTypeDAO
 from src.app.people.daos.peopleDAO import PeopleDAO
 from src.app.people.factories.peopleFactory import PeopleFactory
+from src.app.people.models.contacts import RelationshipView
+from src.app.people.models.database import models as people_models
 from src.app.people.models.people import CreatePerson, UpdatePerson, BasicViewPerson
+from src.app.people.models.search import PeopleSearchFilters
+from src.app.people.personFields import INVERSE_RELATIONSHIP, writable_person_updates
+from src.app.audit.daos.auditDAO import AuditDAO
+from src.app.customfields.services.customFieldService import CustomFieldService
+from src.app.customfields.validation import CustomFieldValidationError
 from src.app.users.models.user import DisplayUser
 from src.app.users.services.userService import UserService
 from src.app.utils.fileUtils import FileUtils
@@ -37,6 +45,10 @@ class UnableToRemoveLeaderFromHouseholdException(Exception):
     pass
 
 
+class DuplicateRelationshipException(Exception):
+    pass
+
+
 class PeopleService:
     def __init__(self, peopleDAO: PeopleDAO = Depends(PeopleDAO), addressDAO: AddressDAO = Depends(AddressDAO),
                  media_DAO: MediaDAO = Depends(MediaDAO),
@@ -45,7 +57,11 @@ class PeopleService:
                  media_factory: MediaFactory = Depends(MediaFactory),
                  household_DAO: HouseholdDAO = Depends(HouseholdDAO),
                  household_utils: HouseholdUtils = Depends(HouseholdUtils),
-                 user_service: UserService = Depends(UserService)):
+                 user_service: UserService = Depends(UserService),
+                 category_dao: CategoryDAO = Depends(CategoryDAO),
+                 service_type_dao: ServiceTypeDAO = Depends(ServiceTypeDAO),
+                 custom_field_service: CustomFieldService = Depends(CustomFieldService),
+                 audit_dao: AuditDAO = Depends(AuditDAO)):
         self.peopleDAO = peopleDAO
         self.peopleFactory = people_factory
         self.addressDAO = addressDAO
@@ -55,10 +71,17 @@ class PeopleService:
         self.household_DAO = household_DAO
         self.household_utils = household_utils
         self.user_service = user_service
+        self.category_dao = category_dao
+        self.service_type_dao = service_type_dao
+        self.custom_field_service = custom_field_service
+        self.audit_dao = audit_dao
 
-    def get_all(self, params: Params = Params(page=1, size=100)):
+    def get_all(self, params: Params = Params(page=1, size=100), filters: PeopleSearchFilters = None):
         people_response = []
-        people_page = self.peopleDAO.get_all(params)
+        if filters is not None and not filters.is_empty():
+            people_page = self.peopleDAO.search(filters, params)
+        else:
+            people_page = self.peopleDAO.get_all(params)
 
         for person in people_page.items:
             people_response.append(
@@ -71,8 +94,8 @@ class PeopleService:
         person_entity = self.peopleDAO.get_person_by_id(id)
         if person_entity is None:
             return None
-        return self.peopleFactory.create_person_from_person_entity(person_entity, include_households=True,
-                                                                   include_profile_image=True)
+        return self._attach_custom_fields(self.peopleFactory.create_person_from_person_entity(
+            person_entity, include_households=True, include_profile_image=True))
 
     # TODO refactor this code a bit so that the local vs s3 logic can be centralized
     def get_profile_image_by_person_id(self, id):
@@ -98,60 +121,78 @@ class PeopleService:
             return None
 
     # TODO fis this code for new address int array on person
-    def update_person(self, id: int, person: UpdatePerson):
+    def update_person(self, id: int, person: UpdatePerson, actor_user_id=None):
         person_entity = self.peopleDAO.get_person_by_id(id)
         if person_entity is None:
-            raise NoPersonException(
-                "No person with that Id")  # HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
-        # For update requests the model is not expected to come in with an ID since it is passed in the URL.
+            raise NoPersonException("No person with that Id")
         person.id = person_entity.id
-        update_values = person.model_dump()
+        fields_set = set(person.model_fields_set)
+        update_values = writable_person_updates(person)
 
-        # validate that households are correct.
-        household_ids = update_values.pop('household_ids', person.model_dump())
-        self.validate_households(household_ids)
-        # validate potential removal of persons
-        self.validate_household_remove_person(household_ids, person_entity)
-        # validate address ids
+        household_ids = person.household_ids if "household_ids" in fields_set else None
+        self.validate_households(household_ids if "household_ids" in fields_set else person.household_ids)
+        self.validate_household_remove_person(person.household_ids, person_entity)
         self.validate_addresses(person.addresses)
-        # validate image id
         self.validate_image_id(person.profile_image_id)
+        self._validate_related_ids(person, fields_set)
 
-        # start updating record
-        smls = update_values.pop('social_media_links', person.model_dump())
-        if smls is not None:
+        if "social_media_links" in fields_set:
             existing_social_media_links = self.peopleDAO.get_existing_social_media_links(person.id)
             if existing_social_media_links:
                 for existing_sml in existing_social_media_links:
                     self.peopleDAO.delete_social_media_link(existing_sml.id)
+            for sml in person.model_dump().get("social_media_links", []):
+                self.peopleDAO.create_social_media_link(person.id, sml["type"], sml["url"])
 
-            for sml in smls:
-                self.peopleDAO.create_social_media_link(person.id, sml['type'], sml['url'])
-
-        addresses = update_values.pop('addresses', person.model_dump())
-        if addresses is not None:
+        if "addresses" in fields_set:
             existing_people_addresses = self.addressDAO.get_existing_addresses_for_person(person.id)
             if existing_people_addresses is not None:
                 for existing_people_address in existing_people_addresses:
                     self.addressDAO.delete_address(existing_people_address.id)
-
-            # TODO consider querying DB if an address already exists with the given values. otherwise you will end up with
-            # multiple rows in the DB for the same address
-            for address_id in addresses:
+            for address_id in person.addresses:
                 address = self.addressDAO.get_address_by_id(address_id)
                 self.addressDAO.create_address_linked_to_person(address, person_entity)
 
-        image_entity = None
-        profile_image_id = update_values.pop('profile_image_id', person.model_dump())
-        if profile_image_id is not None:
-            image_entity = self.media_DAO.get_media_item_by_id(profile_image_id)
+        if "emails" in fields_set and hasattr(self.peopleDAO, "replace_emails"):
+            self.peopleDAO.replace_emails(person_entity, self._email_rows(person.emails or []))
+            if person.emails:
+                primary = next((item for item in person.emails if item.is_primary), person.emails[0])
+                update_values["email"] = str(primary.email)
+            else:
+                update_values["email"] = None
+        if "phones" in fields_set and hasattr(self.peopleDAO, "replace_phones"):
+            self.peopleDAO.replace_phones(person_entity, self._phone_rows(person.phones or []))
+            if person.phones:
+                primary = next((item for item in person.phones if item.is_primary), person.phones[0])
+                if primary.phone_type == "mobile":
+                    update_values["mobile_number"] = primary.number
+            elif "mobile_number" not in fields_set:
+                update_values["mobile_number"] = None
+        if "emergency_contacts" in fields_set and hasattr(self.peopleDAO, "replace_emergency_contacts"):
+            self.peopleDAO.replace_emergency_contacts(person_entity, self._emergency_rows(person.emergency_contacts or []))
+        if "category_ids" in fields_set and hasattr(self.category_dao, "replace_for_person"):
+            self.category_dao.replace_for_person(person_entity, person.category_ids or [])
+        if "service_type_ids" in fields_set and hasattr(self.service_type_dao, "replace_for_person"):
+            self.service_type_dao.replace_for_person(person_entity, person.service_type_ids or [])
+        if "custom_fields" in fields_set and hasattr(self.custom_field_service, "set_values"):
+            self.custom_field_service.set_values("person", person_entity.id, person.custom_fields or [])
 
+        self._record_status_change(person_entity, update_values, actor_user_id)
+        if update_values.get("lifecycle_status") == "archived":
+            update_values["archived_at"] = datetime.datetime.now()
+        elif "lifecycle_status" in update_values and person_entity.lifecycle_status == "archived":
+            update_values["archived_at"] = None
+
+        image_entity = None
+        if person.profile_image_id is not None:
+            image_entity = self.media_DAO.get_media_item_by_id(person.profile_image_id)
+
+        self._audit("person", person_entity.id, "update", update_values, actor_user_id)
         self.peopleDAO.update_person(person_entity.id, update_values, image_entity)
         if household_ids is not None:
             self.update_households_for_person(household_ids, person_entity)
 
-        return self.peopleFactory.create_person_from_person_entity(self.peopleDAO.get_person_by_id(id),
-                                                                   include_households=True, include_profile_image=True)
+        return self.get_by_id(id)
 
     def validate_image_id(self, profile_image_id):
         if profile_image_id is not None:
@@ -201,16 +242,20 @@ class PeopleService:
         created_person = self.peopleDAO.create_person(new_person, image_entity)
         if person.household_ids is not None:
             self.add_person_to_households(created_person, person.household_ids)
+        self._apply_new_person_links(created_person, person)
 
         created_user: DisplayUser = None
         if create_login is not None and create_login is True:
             created_user = self.create_login_for_person(created_person)
 
-        return self.peopleFactory.create_person_from_person_entity(self.peopleDAO.get_person_by_id(created_person.id),
-                                                                   include_households=True, include_profile_image=True,
-                                                                   user=created_user)
+        return self._attach_custom_fields(self.peopleFactory.create_person_from_person_entity(
+            self.peopleDAO.get_person_by_id(created_person.id),
+            include_households=True, include_profile_image=True,
+            user=created_user))
 
     def validate_household_remove_person(self, new_household_ids, personToUpdate):
+        if new_household_ids is None:
+            return
         existing_household_ids = self.household_utils.get_existing_household_ids(personToUpdate)
         household_ids_to_remove = self.household_utils.get_household_ids_to_remove(existing_household_ids,
                                                                                    new_household_ids)
@@ -281,6 +326,177 @@ class PeopleService:
         except:
             # TODO log warning and somehow include warning to the frontend.
             return None;
+
+        return self.peopleFactory.create_person_from_person_entity(person_entity, include_households=True,
+                                                                   include_profile_image=True)
+
+    def report(self, kind: str, days: int = 30):
+        people = self.peopleDAO.find_by_report(kind, days)
+        return [
+            self.peopleFactory.create_person_from_person_entity(person, include_households=False, include_profile_image=True)
+            for person in people
+        ]
+
+    def archive_person(self, person_id, reason=None, actor_user_id=None):
+        return self._set_lifecycle(person_id, "archived", reason, actor_user_id, archive=True)
+
+    def restore_person(self, person_id, actor_user_id=None):
+        person = self.peopleDAO.get_person_by_id(person_id)
+        if person is None:
+            raise NoPersonException("No person with that Id")
+        restored = "member"
+        if hasattr(self.peopleDAO, "status_history"):
+            for row in self.peopleDAO.status_history(person_id):
+                if row.field_name == "lifecycle_status" and row.previous_value and row.previous_value != "archived":
+                    restored = row.previous_value
+                    break
+        return self._set_lifecycle(person_id, restored, None, actor_user_id, archive=False)
+
+    def _set_lifecycle(self, person_id, status, reason, actor_user_id, archive):
+        person = self.peopleDAO.get_person_by_id(person_id)
+        if person is None:
+            raise NoPersonException("No person with that Id")
+        previous = person.lifecycle_status
+        person.lifecycle_status = status
+        person.archived_at = datetime.datetime.now() if archive else None
+        if hasattr(self.peopleDAO, "add_status_history"):
+            self.peopleDAO.add_status_history(person_id, "lifecycle_status", previous, status, reason, actor_user_id)
+        self._audit("person", person_id, "archive" if archive else "restore", {"lifecycle_status": status}, actor_user_id)
+        self.peopleDAO.db.commit()
+        return self.get_by_id(person_id)
+
+    def relationships(self, person_id):
+        if self.peopleDAO.get_person_by_id(person_id) is None:
+            raise NoPersonException("No person with that Id")
+        views = []
+        for row in self.peopleDAO.list_relationships(person_id):
+            outgoing = row.person_id == person_id
+            related = row.related_person if outgoing else row.person
+            relationship_type = row.relationship_type if outgoing else INVERSE_RELATIONSHIP.get(row.relationship_type, "other")
+            views.append(RelationshipView(
+                id=row.id,
+                person_id=person_id,
+                related_person_id=related.id if related is not None else (row.related_person_id if outgoing else row.person_id),
+                relationship_type=relationship_type,
+                direction="outgoing" if outgoing else "incoming",
+                notes=row.notes,
+                related_first_name=getattr(related, "first_name", None),
+                related_last_name=getattr(related, "last_name", None),
+            ))
+        return views
+
+    def add_relationship(self, person_id, related_person_id, relationship_type, notes=None, actor_user_id=None):
+        if person_id == related_person_id:
+            raise DuplicateRelationshipException("A person cannot be related to themselves")
+        if self.peopleDAO.get_person_by_id(person_id) is None or self.peopleDAO.get_person_by_id(related_person_id) is None:
+            raise NoPersonException("Both people must exist")
+        inverse = INVERSE_RELATIONSHIP.get(relationship_type, "other")
+        if self.peopleDAO.find_relationship(person_id, related_person_id, relationship_type, inverse):
+            raise DuplicateRelationshipException("That relationship already exists")
+        created = self.peopleDAO.add_relationship(people_models.PersonRelationship(
+            person_id=person_id,
+            related_person_id=related_person_id,
+            relationship_type=relationship_type,
+            notes=notes,
+        ))
+        self._audit("person_relationship", created.id, "create", {
+            "person_id": person_id,
+            "related_person_id": related_person_id,
+            "relationship_type": relationship_type,
+        }, actor_user_id)
+        self.peopleDAO.db.commit()
+        return created
+
+    def delete_relationship(self, person_id, relationship_id):
+        row = self.peopleDAO.get_relationship(relationship_id)
+        if row is None or person_id not in {row.person_id, row.related_person_id}:
+            raise NoPersonException("Relationship does not exist")
+        self.peopleDAO.delete_relationship(row)
+
+    def _attach_custom_fields(self, person):
+        if person is None or not hasattr(self.custom_field_service, "values_for"):
+            return person
+        person.custom_fields = self.custom_field_service.values_for("person", person.id)
+        return person
+
+    def _apply_new_person_links(self, created_person, person: CreatePerson):
+        if person.category_ids and hasattr(self.category_dao, "replace_for_person"):
+            self._ensure_categories(person.category_ids)
+            self.category_dao.replace_for_person(created_person, person.category_ids)
+            self.peopleDAO.db.commit()
+        if person.service_type_ids and hasattr(self.service_type_dao, "replace_for_person"):
+            self.service_type_dao.replace_for_person(created_person, person.service_type_ids)
+            self.peopleDAO.db.commit()
+        if person.custom_fields and hasattr(self.custom_field_service, "set_values"):
+            self.custom_field_service.set_values("person", created_person.id, person.custom_fields)
+
+    def _validate_related_ids(self, person, fields_set):
+        if "category_ids" in fields_set:
+            self._ensure_categories(person.category_ids or [])
+        if "service_type_ids" in fields_set and hasattr(self.service_type_dao, "get"):
+            for service_type_id in person.service_type_ids or []:
+                if self.service_type_dao.get(service_type_id) is None:
+                    raise NoPersonException(f"Service type {service_type_id} does not exist")
+
+    def _ensure_categories(self, category_ids):
+        if not hasattr(self.category_dao, "get"):
+            return
+        for category_id in category_ids:
+            if self.category_dao.get(category_id) is None:
+                from src.app.people.services.categoryService import NoCategoryException
+                raise NoCategoryException(f"People category {category_id} does not exist")
+
+    def _record_status_change(self, person_entity, update_values, actor_user_id):
+        if not hasattr(self.peopleDAO, "add_status_history"):
+            return
+        for field_name in ("lifecycle_status", "membership_status"):
+            if field_name in update_values and update_values[field_name] != getattr(person_entity, field_name):
+                self.peopleDAO.add_status_history(
+                    person_entity.id,
+                    field_name,
+                    getattr(person_entity, field_name),
+                    update_values[field_name],
+                    actor_user_id=actor_user_id,
+                )
+
+    def _audit(self, entity_type, entity_id, action, summary, actor_user_id):
+        if hasattr(self.audit_dao, "record"):
+            self.audit_dao.record(entity_type, entity_id, action, summary, actor_user_id)
+
+    def _email_rows(self, emails):
+        rows = [people_models.PersonEmail(email=str(item.email), is_primary=item.is_primary, label=item.label) for item in emails]
+        self._mark_one_primary(rows)
+        return rows
+
+    def _phone_rows(self, phones):
+        rows = [
+            people_models.PersonPhone(number=item.number, phone_type=item.phone_type or "mobile", is_primary=item.is_primary, label=item.label)
+            for item in phones
+        ]
+        self._mark_one_primary(rows)
+        return rows
+
+    def _emergency_rows(self, contacts):
+        return [
+            people_models.EmergencyContact(
+                name=item.name,
+                relationship_label=item.relationship_label,
+                phone=item.phone,
+                email=str(item.email) if item.email else None,
+                notes=item.notes,
+            )
+            for item in contacts
+        ]
+
+    def _mark_one_primary(self, rows):
+        if not rows:
+            return
+        primaries = [row for row in rows if row.is_primary]
+        if not primaries:
+            rows[0].is_primary = True
+        else:
+            for extra in primaries[1:]:
+                extra.is_primary = False
 
     def find_people_with_birthday_before_given_date(self, date: datetime.date):
         people = self.peopleDAO.find_people_with_birthday_before_given_date(date)

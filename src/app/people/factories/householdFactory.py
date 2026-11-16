@@ -31,6 +31,8 @@ class HouseholdFactory:
             province=household_entity.address.province,
             country=household_entity.address.country,
             postal_code=household_entity.address.postal_code,
+            building=household_entity.address.building,
+            unit=household_entity.address.unit,
             latitude=household_entity.address.latitude,
             longitude=household_entity.address.longitude)
 
@@ -44,7 +46,9 @@ class HouseholdFactory:
             id=household_entity.id,
             leader=leader_response,
             address=address_response,
-            people = people
+            people = people,
+            name=household_entity.name,
+            notes=household_entity.notes,
         )
 
         if include_household_image and household_entity.household_images:
@@ -61,6 +65,8 @@ class HouseholdFactory:
         new_household = models.Household(
             leader_id=household.leader_id,
             address_id=household.address_id,
+            name=household.name,
+            notes=household.notes,
         )
         for person in people_models:
             new_household.people.append(person)

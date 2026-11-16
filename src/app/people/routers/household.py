@@ -6,8 +6,8 @@ from fastapi import APIRouter
 from typing import List, Union
 
 from ..models.people import BasicViewPerson
-from ..services.householdService import HouseholdService, NoHouseholdException
-from ..services.peopleService import NoPersonException
+from ..services.householdService import HouseholdService, NoHouseholdException, HouseholdMembershipException, LeaderMustBeMemberOfHouseholdException
+from ..services.peopleService import NoPersonException, UnableToRemoveLeaderFromHouseholdException
 from ...media.models.media import ViewMediaItem
 from ...media.services.mediaService import NoMediaItemException
 from ...users.models.user import User
@@ -61,6 +61,45 @@ def update_household(id: int, household: UpdateHousehold, household_service: Hou
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household with that id does not exist")
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")
+
+
+@router.post('/households/{household_id}/members', response_model=ViewHousehold)
+def add_household_member(household_id: int, person_id: int, household_service: HouseholdService = Depends(HouseholdService),
+                         current_user: User = Depends(get_current_user)):
+    try:
+        return household_service.add_member(household_id, person_id)
+    except NoHouseholdException:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household with that id does not exist")
+    except NoPersonException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except HouseholdMembershipException as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+
+
+@router.delete('/households/{household_id}/members/{person_id}', response_model=ViewHousehold)
+def remove_household_member(household_id: int, person_id: int, household_service: HouseholdService = Depends(HouseholdService),
+                            current_user: User = Depends(get_current_user)):
+    try:
+        return household_service.remove_member(household_id, person_id)
+    except NoHouseholdException:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household with that id does not exist")
+    except UnableToRemoveLeaderFromHouseholdException as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except NoPersonException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.put('/households/{household_id}/leader', response_model=ViewHousehold)
+def set_household_leader(household_id: int, person_id: int, household_service: HouseholdService = Depends(HouseholdService),
+                         current_user: User = Depends(get_current_user)):
+    try:
+        return household_service.set_leader(household_id, person_id)
+    except NoHouseholdException:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household with that id does not exist")
+    except LeaderMustBeMemberOfHouseholdException as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except NoPersonException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
 @router.get('/households/{id}/household_image')
 def get_household_image(id: int, household_service: HouseholdService = Depends(HouseholdService)):

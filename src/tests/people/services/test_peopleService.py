@@ -25,6 +25,7 @@ from src.app.people.models.people import FullViewPerson, UpdatePerson, SocialMed
     MaritalStatus, ViewAddress, BasicViewPerson
 from src.app.people.services.addressService import NoAddressException
 from src.app.people.services.householdUtils import HouseholdUtils
+from src.app.people.personFields import writable_person_updates
 from src.app.people.services.peopleService import PeopleService, NoPersonException, \
     NoHouseholdExceptionForPersonCreation, UnableToRemoveLeaderFromHouseholdException
 from src.app.people.models.database import models
@@ -309,13 +310,7 @@ def test_update_person(mock_get_person_by_id, mock_validate_households, mock_val
     mock_create_social_media_link.assert_has_calls([call(1, "facebook", "http://facebook.com/john")])
     mock_delete_address.assert_has_calls([call(1), call(2)])
     mock_create_address_linked_to_person.assert_has_calls([call(new_address, existing_person)])
-    update_values = update_person.model_dump()
-    update_values.pop('household_ids')
-    update_values.pop('social_media_links')
-    update_values.pop('addresses')
-    update_values.pop('profile_image_id')
-
-    mock_update_person.assert_called_with(1, update_values, image_entity)
+    mock_update_person.assert_called_with(1, writable_person_updates(update_person), image_entity)
     mock_update_households_for_person.assert_has_calls([call(updated_household_ids, existing_person)])
     mock_create_person_from_person_entity.call_count == 1
 

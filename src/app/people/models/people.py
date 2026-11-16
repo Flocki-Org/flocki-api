@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, EmailStr, Field, field_validator, model_validator
 import datetime
 from enum import Enum
 from typing import Annotated, List, ForwardRef, Optional
@@ -14,7 +14,21 @@ def _coerce_date(value):
 CoercedDate = Annotated[datetime.date, BeforeValidator(_coerce_date)]
 
 # from src.app.people.models.household import Household
+from src.app.customfields.models.fields import CustomFieldValueInput, CustomFieldValueView
 from src.app.media.models.media import CreateMediaItem, ViewMediaItem
+from src.app.people.models.contacts import (
+    CategoryView,
+    EmergencyContactInput,
+    EmergencyContactView,
+    PersonDepartmentLink,
+    PersonEmailInput,
+    PersonEmailView,
+    PersonGroupLink,
+    PersonPhoneInput,
+    PersonPhoneView,
+    RelationshipView,
+    ServiceTypeView,
+)
 from src.app.users.models.user import DisplayUser
 from src.app.utils.httpUrl import HttpUrl
 
@@ -43,9 +57,11 @@ class SocialMediaType(str, Enum):
 
 class AddressType(str, Enum):
     home = 'home'
+    postal = 'postal'
     business = 'business'
     student_accommodation = 'student_accommodation'
     church = 'church'
+    other = 'other'
 
 
 class SocialMediaLink(BaseModel):
@@ -54,7 +70,9 @@ class SocialMediaLink(BaseModel):
 
 
 class CreateAddress(BaseModel):
-    type: AddressType
+    type: str
+    building: Optional[str] = None
+    unit: Optional[str] = None
     street_number: str
     street: str
     suburb: str
@@ -82,7 +100,9 @@ class CreateAddress(BaseModel):
 
 class UpdateAddress(BaseModel):
     id: int
-    type: Optional[AddressType] = None
+    type: Optional[str] = None
+    building: Optional[str] = None
+    unit: Optional[str] = None
     street_number: Optional[str] = None
     street: Optional[str] = None
     suburb: Optional[str] = None
@@ -96,7 +116,9 @@ class UpdateAddress(BaseModel):
 
 class ViewAddress(BaseModel):
     id: int
-    type: Optional[AddressType] = None
+    type: Optional[str] = None
+    building: Optional[str] = None
+    unit: Optional[str] = None
     street_number: Optional[str] = None
     street: Optional[str] = None
     suburb: Optional[str] = None
@@ -108,17 +130,60 @@ class ViewAddress(BaseModel):
     longitude: Optional[float] = None
 
 
-class CreatePerson(BaseModel):
+class PersonProfileFields(BaseModel):
+    preferred_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    title: Optional[str] = None
+    biography: Optional[str] = None
+    preferred_contact_method: Optional[str] = None
+    contact_preferences: Optional[str] = None
+    membership_status: Optional[str] = None
+    member_since: Optional[CoercedDate] = None
+    date_first_attended: Optional[CoercedDate] = None
+    baptism_status: Optional[str] = None
+    baptism_date: Optional[CoercedDate] = None
+    baptism_location: Optional[str] = None
+    confirmation_date: Optional[CoercedDate] = None
+    previous_church: Optional[str] = None
+    membership_transfer_notes: Optional[str] = None
+    date_joined: Optional[CoercedDate] = None
+    date_membership_ended: Optional[CoercedDate] = None
+    reason_for_leaving: Optional[str] = None
+    ministry_involvement: Optional[str] = None
+    pastoral_notes: Optional[str] = None
+    lifecycle_status: Optional[str] = None
+    school_grade: Optional[str] = None
+    school_name: Optional[str] = None
+    occupation: Optional[str] = None
+    employer: Optional[str] = None
+    nationality: Optional[str] = None
+    preferred_language: Optional[str] = None
+    timezone: Optional[str] = None
+    volunteer_status: Optional[str] = None
+    skills: Optional[str] = None
+    interests: Optional[str] = None
+    allergies: Optional[str] = None
+    special_requirements: Optional[str] = None
+    emergency_notes: Optional[str] = None
+
+
+class CreatePerson(PersonProfileFields):
     id: Optional[int] = None
-    first_name: str
-    last_name: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     email: Optional[EmailStr] = None
-    mobile_number: str
+    mobile_number: Optional[str] = None
     date_of_birth: Optional[CoercedDate] = None
-    gender: Optional[Gender] = None
+    gender: Optional[str] = None
     marriage_date: Optional[CoercedDate] = None
-    marital_status: Optional[MaritalStatus] = None
+    marital_status: Optional[str] = None
     registered_date: Optional[CoercedDate] = None
+    emails: List[PersonEmailInput] = Field(default_factory=list)
+    phones: List[PersonPhoneInput] = Field(default_factory=list)
+    emergency_contacts: List[EmergencyContactInput] = Field(default_factory=list)
+    category_ids: List[int] = Field(default_factory=list)
+    service_type_ids: List[int] = Field(default_factory=list)
+    custom_fields: List[CustomFieldValueInput] = Field(default_factory=list)
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[int] = Field([], title="A list of address IDs (normally just one home address)")
     household_ids: Optional[List[int]] = Field(None, title="The list pf ids of the households this person belongs to")
@@ -130,6 +195,13 @@ class CreatePerson(BaseModel):
         if v is not None and v > datetime.date.today():
             raise ValueError("Date must be in the past")
         return v
+
+    @model_validator(mode="after")
+    def require_a_name(self):
+        names = [self.first_name, self.last_name, self.preferred_name]
+        if not any(name and str(name).strip() for name in names):
+            raise ValueError("Provide a first name, preferred name, or last name")
+        return self
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -162,17 +234,23 @@ class CreatePerson(BaseModel):
 
 
 # TODO Investigate if all fields should be optional for the update person model
-class UpdatePerson(BaseModel):
+class UpdatePerson(PersonProfileFields):
     id: int
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[EmailStr] = None
     mobile_number: Optional[str] = None
     date_of_birth: Optional[CoercedDate] = None
-    gender: Optional[Gender] = None
+    gender: Optional[str] = None
     marriage_date: Optional[CoercedDate] = None
-    marital_status: Optional[MaritalStatus] = None
+    marital_status: Optional[str] = None
     registered_date: Optional[CoercedDate] = None
+    emails: Optional[List[PersonEmailInput]] = None
+    phones: Optional[List[PersonPhoneInput]] = None
+    emergency_contacts: Optional[List[EmergencyContactInput]] = None
+    category_ids: Optional[List[int]] = None
+    service_type_ids: Optional[List[int]] = None
+    custom_fields: Optional[List[CustomFieldValueInput]] = None
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[int] = Field([], title="A list of address IDs (normally just one home address)")
     household_ids: Optional[List[int]] = Field(None, title="The list of ids of the households this person belongs to")
@@ -216,17 +294,28 @@ class BasicViewPerson(BaseModel):
     mobile_number: Optional[str] = None
     profile_image: Optional[ViewMediaItem] = None
     date_of_birth: Optional[CoercedDate] = None
-    gender: Optional[Gender] = None
+    gender: Optional[str] = None
 
 
-class FullViewPerson(BasicViewPerson):
+class FullViewPerson(PersonProfileFields, BasicViewPerson):
     email: Optional[EmailStr] = None
     mobile_number: Optional[str] = None
     date_of_birth: Optional[CoercedDate] = None
-    gender: Optional[Gender] = None
+    gender: Optional[str] = None
     marriage_date: Optional[CoercedDate] = None
-    marital_status: Optional[MaritalStatus] = None
+    marital_status: Optional[str] = None
     registered_date: Optional[CoercedDate] = None
+    archived_at: Optional[datetime.datetime] = None
+    has_account: bool = False
+    emails: List[PersonEmailView] = Field(default_factory=list)
+    phones: List[PersonPhoneView] = Field(default_factory=list)
+    emergency_contacts: List[EmergencyContactView] = Field(default_factory=list)
+    categories: List[CategoryView] = Field(default_factory=list)
+    service_types: List[ServiceTypeView] = Field(default_factory=list)
+    custom_fields: List[CustomFieldValueView] = Field(default_factory=list)
+    relationships: List[RelationshipView] = Field(default_factory=list)
+    groups: List[PersonGroupLink] = Field(default_factory=list)
+    departments: List[PersonDepartmentLink] = Field(default_factory=list)
     social_media_links: List[SocialMediaLink] = Field([], title="A list of social media URLs")
     addresses: List[ViewAddress] = Field([], title="A list of addresses (normally just one home address)")
     households: Optional[List[ViewHousehold]] = None
