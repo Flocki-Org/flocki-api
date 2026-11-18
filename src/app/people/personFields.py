@@ -47,6 +47,7 @@ PROFILE_PERSON_FIELDS = (
     "allergies",
     "special_requirements",
     "emergency_notes",
+    "external_image_url",
 )
 
 WRITABLE_PERSON_COLUMNS = LEGACY_PERSON_FIELDS + PROFILE_PERSON_FIELDS

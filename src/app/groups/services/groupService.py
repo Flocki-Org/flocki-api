@@ -4,6 +4,9 @@ from typing import Optional
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.app.departments.daos.departmentDAO import DepartmentDAO
+from src.app.departments.daos.roleDAO import RoleDAO
+from src.app.departments.models.database.models import AppRole, RoleAssignment
 from src.app.groups.daos.groupDAO import GroupDAO
 from src.app.groups.models.database import models
 from src.app.people.daos.addressDAO import AddressDAO
@@ -78,12 +81,18 @@ class GroupRoleView(BaseModel):
     display_order: int = 0
 
 
+class MinistryRef(BaseModel):
+    id: int
+    name: str
+
+
 class CreateGroup(BaseModel):
     """A group's meeting schedule is an event series linked to the group (POST /events with group_id)."""
 
     name: str
     description: Optional[str] = None
     category_id: Optional[int] = None
+    department_id: Optional[int] = None
     status: str = "active"
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
@@ -104,6 +113,7 @@ class UpdateGroup(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     category_id: Optional[int] = None
+    department_id: Optional[int] = None
     status: Optional[str] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
@@ -136,11 +146,17 @@ class GroupMemberView(BaseModel):
     notes: Optional[str] = None
 
 
+class GroupAdministratorView(BaseModel):
+    person: BasicViewPerson
+    role_name: str
+
+
 class GroupView(BaseModel):
     id: int
     name: str
     description: Optional[str] = None
     category: Optional[GroupCategoryView] = None
+    ministry: Optional[MinistryRef] = None
     status: str
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
@@ -149,12 +165,19 @@ class GroupView(BaseModel):
     archived_at: Optional[datetime.datetime] = None
     members: Optional[list[GroupMemberView]] = None
     leaders: list[GroupMemberView] = Field(default_factory=list)
+    administrator_role_name: str = "Group Administrator"
+    administrators: list[GroupAdministratorView] = Field(default_factory=list)
+
+
+class RenameAdministratorRole(BaseModel):
+    name: str
 
 
 GROUP_COLUMNS = (
     "name",
     "description",
     "category_id",
+    "department_id",
     "status",
     "contact_email",
     "contact_phone",
@@ -163,14 +186,21 @@ GROUP_COLUMNS = (
 
 class GroupService:
     def __init__(self, group_dao: GroupDAO = Depends(GroupDAO), people_dao: PeopleDAO = Depends(PeopleDAO),
-                 people_factory: PeopleFactory = Depends(PeopleFactory), address_dao: AddressDAO = Depends(AddressDAO)):
+                 people_factory: PeopleFactory = Depends(PeopleFactory), address_dao: AddressDAO = Depends(AddressDAO),
+                 role_dao: RoleDAO = Depends(RoleDAO), department_dao: DepartmentDAO = Depends(DepartmentDAO)):
         self.group_dao = group_dao
         self.people_dao = people_dao
         self.people_factory = people_factory
         self.address_dao = address_dao
+        self.role_dao = role_dao
+        self.department_dao = department_dao
 
-    def search(self, params, name=None, category_id=None, status=None, include_members=False):
-        page = self.group_dao.search(params, name, category_id, status, include_members)
+    def search(self, params, name=None, category_id=None, status=None, include_members=False,
+               department_id=None, unassigned=False):
+        page = self.group_dao.search(
+            params, name, category_id, status, include_members,
+            department_id=department_id, unassigned=unassigned,
+        )
         return page.__class__.create(
             items=[self.to_view(group, include_members=include_members) for group in page.items],
             params=params,
@@ -185,6 +215,7 @@ class GroupService:
 
     def create(self, payload: CreateGroup):
         self._require_category(payload.category_id)
+        self._require_ministry(payload.department_id)
         data = payload.model_dump(exclude={"leader_person_id"})
         group = models.Group(**data)
         created = self.group_dao.add(group)
@@ -198,6 +229,8 @@ class GroupService:
         data = payload.model_dump(exclude_unset=True)
         if "category_id" in data:
             self._require_category(data["category_id"])
+        if "department_id" in data:
+            self._require_ministry(data["department_id"])
         for key, value in data.items():
             if key in GROUP_COLUMNS:
                 setattr(group, key, value)
@@ -224,6 +257,7 @@ class GroupService:
         memberships = self.group_dao.memberships_for_group(group_id, include_inactive=True)
         if memberships and not force:
             raise GroupInUseException("Remove members or archive the group before deleting it")
+        self.role_dao.delete_for_group(group_id)
         self.group_dao.delete(group)
 
     def add_member(self, group_id, payload: AddGroupMember):
@@ -282,6 +316,47 @@ class GroupService:
     def leaders(self, group_id):
         self._require_group(group_id)
         return [self._member(row) for row in self.group_dao.leaders(group_id)]
+
+    def administrators(self, group_id):
+        self._require_group(group_id)
+        return [self._administrator(row) for row in self.role_dao.assignments_for_group(group_id)]
+
+    def add_administrator(self, group_id, person_id):
+        self._require_group(group_id)
+        if self.people_dao.get_person_by_id(person_id) is None:
+            raise NoPersonException(f"No person with the following ID: {person_id}")
+        role = self._ensure_administrator_role()
+        scope = f"group:{group_id}"
+        if self.role_dao.assignment(role.id, person_id, scope):
+            raise GroupInUseException("That person is already an administrator of this group")
+        self.role_dao.add_assignment(RoleAssignment(
+            role_id=role.id,
+            person_id=person_id,
+            group_id=group_id,
+            scope_key=scope,
+        ))
+        return self.administrators(group_id)
+
+    def remove_administrator(self, group_id, person_id):
+        self._require_group(group_id)
+        role = self.role_dao.get_by_kind("group_administrator")
+        link = self.role_dao.assignment(role.id, person_id, f"group:{group_id}") if role else None
+        if link is None:
+            raise NoPersonException("That person is not an administrator of this group")
+        self.role_dao.delete_assignment(link)
+        return self.administrators(group_id)
+
+    def rename_administrator_role(self, name):
+        cleaned = (name or "").strip()
+        if not cleaned:
+            raise GroupInUseException("A role needs a name")
+        role = self._ensure_administrator_role()
+        other = self.role_dao.get_role_by_name(cleaned)
+        if other is not None and other.id != role.id:
+            raise GroupInUseException("A role with that name already exists")
+        role.name = cleaned
+        self.role_dao.save_role(role)
+        return {"id": role.id, "name": role.name}
 
     def groups_for_person(self, person_id):
         if self.people_dao.get_person_by_id(person_id) is None:
@@ -354,11 +429,13 @@ class GroupService:
         if include_members:
             members = [self._member(row) for row in loaded_members if row.status == "active"]
             leaders = [member for member in members if member.role and member.role.is_leader]
+        admin_role = self.role_dao.get_by_kind("group_administrator")
         return GroupView(
             id=group.id,
             name=group.name,
             description=group.description,
             category=self._category(group.category) if group.category else None,
+            ministry=MinistryRef(id=group.department.id, name=group.department.name) if group.department else None,
             status=group.status,
             contact_email=group.contact_email,
             contact_phone=group.contact_phone,
@@ -367,6 +444,12 @@ class GroupService:
             archived_at=group.archived_at,
             members=members,
             leaders=leaders,
+            administrator_role_name=admin_role.name if admin_role else "Group Administrator",
+            administrators=[
+                self._administrator(row)
+                for row in self.role_dao.assignments_for_group(group.id)
+                if row.role and row.role.kind == "group_administrator"
+            ],
         )
 
     def _member(self, membership):
@@ -416,6 +499,25 @@ class GroupService:
         if group is None:
             raise NoGroupException("Group does not exist")
         return group
+
+    def _administrator(self, assignment):
+        person = assignment.person
+        return GroupAdministratorView(
+            person=self.people_factory.create_basic_person_view_from_person_entity(person) if person else BasicViewPerson(id=assignment.person_id),
+            role_name=assignment.role.name if assignment.role else "Group Administrator",
+        )
+
+    def _ensure_administrator_role(self):
+        existing = self.role_dao.get_by_kind("group_administrator")
+        if existing is not None:
+            return existing
+        return self.role_dao.add_role(AppRole(name="Group Administrator", kind="group_administrator"))
+
+    def _require_ministry(self, department_id):
+        if department_id is None:
+            return
+        if self.department_dao.get(department_id) is None:
+            raise NoGroupException("Ministry does not exist")
 
     def _require_category(self, category_id):
         if category_id is None:

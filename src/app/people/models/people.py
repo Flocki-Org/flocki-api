@@ -165,6 +165,7 @@ class PersonProfileFields(BaseModel):
     allergies: Optional[str] = None
     special_requirements: Optional[str] = None
     emergency_notes: Optional[str] = None
+    external_image_url: Optional[str] = None
 
 
 class CreatePerson(PersonProfileFields):
@@ -293,6 +294,7 @@ class BasicViewPerson(BaseModel):
     email: Optional[EmailStr] = None
     mobile_number: Optional[str] = None
     profile_image: Optional[ViewMediaItem] = None
+    external_image_url: Optional[str] = None
     date_of_birth: Optional[CoercedDate] = None
     gender: Optional[str] = None
 

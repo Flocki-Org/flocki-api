@@ -13,8 +13,10 @@ from src.app.customfields.services.customFieldService import CustomFieldService
 from src.app.customfields.validation import CustomFieldValidationError, normalise_custom_value
 from src.app.database import Base
 from src.app.departments.daos.departmentDAO import DepartmentDAO
+from src.app.departments.daos.roleDAO import RoleDAO
 from src.app.departments.services.departmentService import (
     DepartmentCycleException,
+    DepartmentGroupInput,
     DepartmentInput,
     DepartmentPersonInput,
     DepartmentService,
@@ -87,16 +89,22 @@ def services():
         household_utils=HouseholdUtils(),
         media_factory=MediaFactory(),
     )
+    role_dao = RoleDAO(db)
+    department_dao = DepartmentDAO(db)
+    group_dao = GroupDAO(db)
     groups = GroupService(
-        group_dao=GroupDAO(db),
+        group_dao=group_dao,
         people_dao=people_dao,
         people_factory=people_factory,
         address_dao=address_dao,
+        role_dao=role_dao,
+        department_dao=department_dao,
     )
     departments = DepartmentService(
-        department_dao=DepartmentDAO(db),
+        department_dao=department_dao,
         people_dao=people_dao,
-        group_dao=GroupDAO(db),
+        group_dao=group_dao,
+        role_dao=role_dao,
     )
     importer = ImportService(
         db=db,
@@ -267,11 +275,59 @@ def test_groups_membership_roles_archive_and_departments(services):
         departments.update(parent.id, DepartmentUpdate(parent_id=child.id))
 
 
+def test_ministry_leader_role_is_separate_from_group_membership(services):
+    people = services["people"]
+    groups = services["groups"]
+    departments = services["departments"]
+    jane = people.create_person(CreatePerson(first_name="Jane", last_name="Leader"))
+    ministry = departments.create(DepartmentInput(
+        name="Worship Ministry",
+        leader_person_id=jane.id,
+        group_names=["Band"],
+    ))
+    assert ministry.leader_role.name == "Worship Ministry Leader"
+    assert ministry.leaders[0].person_id == jane.id
+    assert [group.name for group in ministry.groups] == ["Band"]
+
+    departments.update(ministry.id, DepartmentUpdate(name="Worship"))
+    renamed_ministry = departments.rename_leader_role(ministry.id, "Worship Lead")
+    assert renamed_ministry.name == "Worship"
+    assert renamed_ministry.leader_role.name == "Worship Lead"
+
+    loose = groups.create(CreateGroup(name="Unassigned team"))
+    assert loose.ministry is None
+    assigned = departments.add_group(ministry.id, DepartmentGroupInput(group_id=loose.id))
+    assert {group.name for group in assigned.groups} == {"Band", "Unassigned team"}
+    assert groups.members(loose.id) == []
+
+    groups.add_administrator(loose.id, jane.id)
+    assert groups.members(loose.id) == []
+    band = next(group for group in departments.get(ministry.id).groups if group.name == "Band")
+    assert band.members == []
+    assigned_group = next(group for group in departments.get(ministry.id).groups if group.name == "Unassigned team")
+    assert assigned_group.members == []
+    groups.add_member(loose.id, AddGroupMember(person_id=jane.id, role_name="Member"))
+    with_member = next(group for group in departments.get(ministry.id).groups if group.name == "Unassigned team")
+    assert with_member.members[0].person_id == jane.id
+    assert with_member.members[0].role == "Member"
+    assert groups.administrators(loose.id)[0].person.id == jane.id
+    involvement = departments.ministries_for_person(jane.id)
+    assert involvement.ministries[0].role_name == "Worship Lead"
+    assert involvement.group_administrations[0].group_name == "Unassigned team"
+
+
 def test_import_is_idempotent(services):
     importer = services["importer"]
     db = services["db"]
     bundle = ImportBundle(people=[
-        ImportPerson(external_id="elv-1", first_name="Ada", last_name="Lovelace", email="ada@example.com", unknown_note="keep me"),
+        ImportPerson(
+            external_id="elv-1",
+            first_name="Ada",
+            last_name="Lovelace",
+            email="ada@example.com",
+            external_image_url="https://cdn.example/ada.jpg",
+            unknown_note="keep me",
+        ),
     ])
     first = importer.import_bundle(bundle)
     second = importer.import_bundle(bundle)
@@ -279,3 +335,8 @@ def test_import_is_idempotent(services):
     assert second["people"]["updated"] == 1
     assert second["people"]["created"] == 0
     assert db.query(Person).count() == 1
+    imported = db.query(Person).one()
+    assert imported.external_image_url == "https://cdn.example/ada.jpg"
+    view = services["people"].get_by_id(imported.id)
+    assert view.external_image_url == "https://cdn.example/ada.jpg"
+    assert view.profile_image is None
