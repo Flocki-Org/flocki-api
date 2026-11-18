@@ -40,6 +40,7 @@ class PeopleFactory:
             mobile_number=person_entity.mobile_number,
             date_of_birth=person_entity.date_of_birth,
             gender=person_entity.gender,
+            external_image_url=getattr(person_entity, "external_image_url", None),
         )
         if include_profile_image and person_entity.profile_images:
             images = sorted(person_entity.profile_images, key=lambda x: x.id, reverse=True)

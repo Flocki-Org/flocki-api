@@ -22,6 +22,7 @@ class ImportPerson(ImportRecord):
     marriage_date: Optional[str] = None
     lifecycle_status: Optional[str] = None
     membership_status: Optional[str] = None
+    external_image_url: Optional[str] = None
 
 
 class ImportHousehold(ImportRecord):

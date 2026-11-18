@@ -85,6 +85,7 @@ class Person(Base):
     allergies = Column(Text)
     special_requirements = Column(Text)
     emergency_notes = Column(Text)
+    external_image_url = Column(String)
     created_at = Column(DateTime, default=_naive_utcnow)
     updated_at = Column(DateTime, default=_naive_utcnow, onupdate=_naive_utcnow)
     social_media_links = relationship("SocialMediaLink", cascade="all, delete-orphan")

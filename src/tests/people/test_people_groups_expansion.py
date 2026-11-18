@@ -320,7 +320,14 @@ def test_import_is_idempotent(services):
     importer = services["importer"]
     db = services["db"]
     bundle = ImportBundle(people=[
-        ImportPerson(external_id="elv-1", first_name="Ada", last_name="Lovelace", email="ada@example.com", unknown_note="keep me"),
+        ImportPerson(
+            external_id="elv-1",
+            first_name="Ada",
+            last_name="Lovelace",
+            email="ada@example.com",
+            external_image_url="https://cdn.example/ada.jpg",
+            unknown_note="keep me",
+        ),
     ])
     first = importer.import_bundle(bundle)
     second = importer.import_bundle(bundle)
@@ -328,3 +335,8 @@ def test_import_is_idempotent(services):
     assert second["people"]["updated"] == 1
     assert second["people"]["created"] == 0
     assert db.query(Person).count() == 1
+    imported = db.query(Person).one()
+    assert imported.external_image_url == "https://cdn.example/ada.jpg"
+    view = services["people"].get_by_id(imported.id)
+    assert view.external_image_url == "https://cdn.example/ada.jpg"
+    assert view.profile_image is None
