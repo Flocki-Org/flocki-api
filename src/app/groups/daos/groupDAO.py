@@ -12,7 +12,7 @@ class GroupDAO:
         self.db = db
 
     def _group_options(self, include_members=False):
-        options = [joinedload(models.Group.category)]
+        options = [joinedload(models.Group.category), joinedload(models.Group.department)]
         if include_members:
             options.append(
                 selectinload(models.Group.memberships).selectinload(models.GroupMembership.person)
@@ -22,7 +22,8 @@ class GroupDAO:
             )
         return options
 
-    def search(self, params, name=None, category_id=None, status=None, include_members=False):
+    def search(self, params, name=None, category_id=None, status=None, include_members=False,
+               department_id=None, unassigned=False):
         from fastapi_pagination.ext.sqlalchemy import paginate
 
         query = self.db.query(models.Group).options(*self._group_options(include_members))
@@ -32,6 +33,10 @@ class GroupDAO:
             query = query.filter(models.Group.category_id == category_id)
         if status:
             query = query.filter(models.Group.status == status)
+        if unassigned:
+            query = query.filter(models.Group.department_id.is_(None))
+        elif department_id:
+            query = query.filter(models.Group.department_id == department_id)
         query = query.order_by(models.Group.name.asc(), models.Group.id.asc())
         return paginate(query, params)
 

@@ -12,6 +12,7 @@ from src.app.groups.services.groupService import (
     GroupCategoryView,
     GroupInUseException,
     GroupMemberView,
+    RenameAdministratorRole,
     GroupRoleInput,
     GroupRoleUpdate,
     GroupRoleView,
@@ -101,11 +102,24 @@ def delete_group_role(role_id: int, service: GroupService = Depends(GroupService
     return role
 
 
+@router.patch("/groups/administrator-role")
+def rename_group_administrator_role(payload: RenameAdministratorRole, service: GroupService = Depends(GroupService),
+                                    current_user: User = Depends(get_current_user)):
+    try:
+        return service.rename_administrator_role(payload.name)
+    except GroupInUseException as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+
+
 @router.get("/groups", response_model=Page[GroupView])
 def list_groups(page: int = 1, page_size: int = 10, name: Optional[str] = None, category_id: Optional[int] = None,
                 group_status: Optional[str] = Query(None, alias="status"), include_members: bool = False,
+                department_id: Optional[int] = None, unassigned: bool = False,
                 service: GroupService = Depends(GroupService), current_user: User = Depends(get_current_user)):
-    return service.search(Params(page=page, size=page_size), name, category_id, group_status, include_members)
+    return service.search(
+        Params(page=page, size=page_size), name, category_id, group_status, include_members,
+        department_id=department_id, unassigned=unassigned,
+    )
 
 
 @router.post("/groups", status_code=status.HTTP_201_CREATED, response_model=GroupView)
@@ -214,4 +228,26 @@ def remove_member(group_id: int, person_id: int, service: GroupService = Depends
     try:
         return service.remove_member(group_id, person_id)
     except NoPersonException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.post("/groups/{group_id}/administrators", response_model=GroupView)
+def add_group_administrator(group_id: int, payload: AddGroupMember, service: GroupService = Depends(GroupService),
+                            current_user: User = Depends(get_current_user)):
+    try:
+        service.add_administrator(group_id, payload.person_id)
+        return service.get(group_id, include_members=True)
+    except GroupInUseException as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except (NoGroupException, NoPersonException) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.delete("/groups/{group_id}/administrators/{person_id}", response_model=GroupView)
+def remove_group_administrator(group_id: int, person_id: int, service: GroupService = Depends(GroupService),
+                               current_user: User = Depends(get_current_user)):
+    try:
+        service.remove_administrator(group_id, person_id)
+        return service.get(group_id, include_members=True)
+    except (NoGroupException, NoPersonException) as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))

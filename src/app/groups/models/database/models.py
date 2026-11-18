@@ -43,6 +43,7 @@ class Group(Base):
     name = Column(String, nullable=False)
     description = Column(Text)
     category_id = Column(Integer, ForeignKey("group_categories.id"))
+    department_id = Column(Integer, ForeignKey("departments.id"))
     status = Column(String, nullable=False, default="active")
     meeting_location = Column(String)
     meeting_address_id = Column(Integer, ForeignKey("addresses.id"))
@@ -57,6 +58,7 @@ class Group(Base):
     updated_at = Column(DateTime, default=_naive_utcnow, onupdate=_naive_utcnow, nullable=False)
     archived_at = Column(DateTime)
     category = relationship("GroupCategory")
+    department = relationship("Department")
     meeting_address = relationship("Address")
     memberships = relationship("GroupMembership", back_populates="group", cascade="all, delete-orphan")
     images = relationship("GroupImage", back_populates="group", cascade="all, delete-orphan")
@@ -64,6 +66,7 @@ class Group(Base):
         Index("ix_groups_name", "name"),
         Index("ix_groups_status", "status"),
         Index("ix_groups_category", "category_id"),
+        Index("ix_groups_department", "department_id"),
     )
 
 

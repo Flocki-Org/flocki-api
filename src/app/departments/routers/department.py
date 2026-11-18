@@ -12,6 +12,8 @@ from src.app.departments.services.departmentService import (
     DepartmentUpdate,
     DepartmentView,
     NoDepartmentException,
+    PersonMinistryInvolvement,
+    RenameRoleInput,
 )
 from src.app.people.services.peopleService import NoPersonException
 from src.app.users.models.user import User
@@ -31,6 +33,10 @@ def create_department(payload: DepartmentInput, service: DepartmentService = Dep
                       current_user: User = Depends(get_current_user)):
     try:
         return service.create(payload)
+    except NoPersonException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except DepartmentInUseException as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
     except (NoDepartmentException, DepartmentCycleException) as exc:
         code = status.HTTP_400_BAD_REQUEST if isinstance(exc, DepartmentCycleException) else status.HTTP_404_NOT_FOUND
         raise HTTPException(status_code=code, detail=str(exc))
@@ -87,6 +93,50 @@ def remove_department_person(department_id: int, person_id: int, service: Depart
     try:
         return service.remove_person(department_id, person_id)
     except (NoPersonException, NoDepartmentException) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.post("/departments/{department_id}/leaders", response_model=DepartmentView)
+def add_ministry_leader(department_id: int, payload: DepartmentPersonInput,
+                        service: DepartmentService = Depends(DepartmentService),
+                        current_user: User = Depends(get_current_user)):
+    try:
+        return service.add_leader(department_id, payload)
+    except NoPersonException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except DepartmentInUseException as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except NoDepartmentException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.delete("/departments/{department_id}/leaders/{person_id}", response_model=DepartmentView)
+def remove_ministry_leader(department_id: int, person_id: int, service: DepartmentService = Depends(DepartmentService),
+                           current_user: User = Depends(get_current_user)):
+    try:
+        return service.remove_leader(department_id, person_id)
+    except (NoPersonException, NoDepartmentException) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.patch("/departments/{department_id}/leader-role", response_model=DepartmentView)
+def rename_ministry_leader_role(department_id: int, payload: RenameRoleInput,
+                                service: DepartmentService = Depends(DepartmentService),
+                                current_user: User = Depends(get_current_user)):
+    try:
+        return service.rename_leader_role(department_id, payload.name)
+    except NoDepartmentException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except DepartmentInUseException as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+
+
+@router.get("/people/{person_id}/ministries", response_model=PersonMinistryInvolvement)
+def person_ministries(person_id: int, service: DepartmentService = Depends(DepartmentService),
+                      current_user: User = Depends(get_current_user)):
+    try:
+        return service.ministries_for_person(person_id)
+    except NoPersonException as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
 
