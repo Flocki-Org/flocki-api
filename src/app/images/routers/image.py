@@ -21,7 +21,7 @@ def get_image_by_id(id: int, media_service: MediaService = Depends(MediaService)
         if image is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No image with that ID")
 
-        image.headers['cache-control'] = 'max-age=20'
+        image.headers['cache-control'] = 'public, max-age=31536000, immutable'
 
         return image
     except NoMediaItemException as e:
