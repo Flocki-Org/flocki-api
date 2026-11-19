@@ -455,7 +455,7 @@ class GroupService:
     def _member(self, membership):
         person = membership.person
         return GroupMemberView(
-            person=self.people_factory.create_basic_person_view_from_person_entity(person) if person else BasicViewPerson(id=membership.person_id),
+            person=self.people_factory.create_basic_person_view_from_person_entity(person, include_profile_image=True) if person else BasicViewPerson(id=membership.person_id),
             role=self._role(membership.role) if membership.role else None,
             status=membership.status,
             date_joined=membership.date_joined,
@@ -503,7 +503,7 @@ class GroupService:
     def _administrator(self, assignment):
         person = assignment.person
         return GroupAdministratorView(
-            person=self.people_factory.create_basic_person_view_from_person_entity(person) if person else BasicViewPerson(id=assignment.person_id),
+            person=self.people_factory.create_basic_person_view_from_person_entity(person, include_profile_image=True) if person else BasicViewPerson(id=assignment.person_id),
             role_name=assignment.role.name if assignment.role else "Group Administrator",
         )
 
