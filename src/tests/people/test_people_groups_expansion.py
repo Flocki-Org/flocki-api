@@ -31,7 +31,7 @@ from src.app.groups.services.groupService import (
     GroupInUseException,
     GroupService,
 )
-from src.app.imports.models.bundle import ImportBundle, ImportPerson
+from src.app.imports.models.bundle import ImportBundle, ImportHousehold, ImportPerson
 from src.app.imports.services.importService import ImportService
 from src.app.media.factories.mediaFactory import MediaFactory
 from src.app.model_registry import import_all_models
@@ -340,3 +340,52 @@ def test_import_is_idempotent(services):
     view = services["people"].get_by_id(imported.id)
     assert view.external_image_url == "https://cdn.example/ada.jpg"
     assert view.profile_image is None
+
+
+def test_elvanto_household_address_imports_and_updates(services):
+    importer = services["importer"]
+    db = services["db"]
+    people = [ImportPerson(external_id="p1", first_name="Ada", last_name="Lovelace")]
+    importer.import_bundle(ImportBundle(people=people, households=[
+        ImportHousehold(
+            external_id="h1",
+            name="Lovelace household",
+            leader_external_id="p1",
+            address={
+                "address": "12 Church Street",
+                "address2": "Unit 3",
+                "city": "Cape Town",
+                "state": "Western Cape",
+                "postcode": "8001",
+                "country": "South Africa",
+                "lat": -33.92,
+                "lng": 18.42,
+            },
+        ),
+    ]))
+    address = db.query(Address).one()
+    assert address.street_number == "12"
+    assert address.street == "Church Street"
+    assert address.unit == "Unit 3"
+    assert address.city == "Cape Town"
+    assert address.province == "Western Cape"
+    assert float(address.latitude) == pytest.approx(-33.92)
+
+    importer.import_bundle(ImportBundle(people=people, households=[
+        ImportHousehold(
+            external_id="h1",
+            name="Lovelace household",
+            leader_external_id="p1",
+            address={
+                "address": "14 Church Street",
+                "city": "Cape Town",
+                "state": "Western Cape",
+                "postcode": "8001",
+                "country": "South Africa",
+            },
+        ),
+    ]))
+    db.refresh(address)
+    assert db.query(Address).count() == 1
+    assert address.street_number == "14"
+    assert float(address.latitude) == pytest.approx(-33.92)

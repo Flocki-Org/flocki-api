@@ -6,7 +6,8 @@ from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.factories.addressFactory import AddressFactory
 from src.app.people.models.database import models
 from src.app.people.models.people import AddressType, CreateAddress, UpdateAddress, ViewAddress
-from src.app.people.services.addressService import AddressAlreadyExists, AddressService, NoAddressException
+from src.app.config import settings
+from src.app.people.services.addressService import AddressAlreadyExists, AddressSearchUnavailable, AddressService, NoAddressException
 
 
 def _build_service():
@@ -169,3 +170,34 @@ def test_create_address_already_exists(mock_find, mock_create_address):
         )
 
     assert exc.value.existing_address.id == 5
+
+
+def test_suggest_requires_an_api_key(monkeypatch):
+    monkeypatch.setattr(settings, "flocki_geoapify_api_key", "")
+    with pytest.raises(AddressSearchUnavailable):
+        _build_service().suggest("12 Church Street")
+
+
+@mock.patch("src.app.people.services.addressService.requests.get")
+def test_suggest_maps_geoapify_results(mock_get, monkeypatch):
+    monkeypatch.setattr(settings, "flocki_geoapify_api_key", "test-key")
+    monkeypatch.setattr(settings, "flocki_address_country_code", "za")
+    mock_get.return_value.json.return_value = {"results": [{
+        "housenumber": "12",
+        "street": "Church Street",
+        "city": "Cape Town",
+        "state": "Western Cape",
+        "postcode": "8001",
+        "country": "South Africa",
+        "lat": -33.9,
+        "lon": 18.4,
+        "formatted": "12 Church Street, Cape Town, 8001, South Africa",
+    }]}
+    mock_get.return_value.raise_for_status.return_value = None
+
+    suggestions = _build_service().suggest("12 Church")
+
+    assert suggestions[0]["street_number"] == "12"
+    assert suggestions[0]["province"] == "Western Cape"
+    assert mock_get.call_args.kwargs["params"]["filter"] == "countrycode:za"
+    assert mock_get.call_args.kwargs["params"]["apiKey"] == "test-key"

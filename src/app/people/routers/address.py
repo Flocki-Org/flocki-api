@@ -1,12 +1,39 @@
-from fastapi import status, Depends, HTTPException, Response
-from ..services.addressService import AddressService, NoAddressException, AddressAlreadyExists
+from fastapi import status, Depends, HTTPException, Response, Query
+from ..services.addressService import AddressService, NoAddressException, AddressAlreadyExists, IncompleteAddress, AddressSearchUnavailable
 from ...people.models.people import ViewAddress, UpdateAddress, CreateAddress
 from fastapi import APIRouter
-from typing import List
+from typing import List, Optional
+from pydantic import BaseModel
 from ...users.models.user import User
 from ...users.routers.login import get_current_user
 
+
+class AddressSuggestion(BaseModel):
+    label: str
+    street_number: str = ""
+    street: str = ""
+    suburb: str = ""
+    city: str = ""
+    province: str = ""
+    country: str = ""
+    postal_code: str = ""
+    building: Optional[str] = None
+    unit: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
 router = APIRouter(tags=['Address'])
+
+
+@router.get('/addresses/suggest', response_model=List[AddressSuggestion])
+def suggest_addresses(q: str = Query("", max_length=120), address_service: AddressService = Depends(AddressService),
+                      current_user: User = Depends(get_current_user)):
+    try:
+        return address_service.suggest(q)
+    except AddressSearchUnavailable as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Address search is unavailable")
 
 
 @router.get('/addresses', response_model=List[ViewAddress])
@@ -44,6 +71,8 @@ def add_address(address: CreateAddress, response: Response, address_service: Add
                current_user: User = Depends(get_current_user)):
     try:
         return address_service.create_address(address)
+    except IncompleteAddress as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
     except AddressAlreadyExists as e:
         response.status_code = status.HTTP_409_CONFLICT
         return e.existing_address
