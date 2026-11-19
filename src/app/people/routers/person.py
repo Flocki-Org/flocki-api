@@ -181,7 +181,7 @@ def get_person_profile_image(id: int, people_service: PeopleService = Depends(Pe
         if profile_image_response is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile image")
 
-        profile_image_response.headers['cache-control'] = 'max-age=20'
+        profile_image_response.headers['cache-control'] = 'public, max-age=31536000, immutable'
         return profile_image_response
     except NoPersonException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person with that id does not exist")

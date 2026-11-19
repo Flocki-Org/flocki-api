@@ -4,6 +4,11 @@ from sqlalchemy.orm import joinedload
 from src.app.database import SessionLocal, get_db
 from src.app.departments.models.database import models
 from src.app.groups.models.database.models import Group, GroupMembership
+from src.app.people.models.database.models import Person, PersonImage
+
+
+def _with_photo(person_loader):
+    return person_loader.selectinload(Person.profile_images).joinedload(PersonImage.image)
 
 
 class RoleDAO:
@@ -55,7 +60,7 @@ class RoleDAO:
     def assignments_for_role(self, role_id):
         return (
             self.db.query(models.RoleAssignment)
-            .options(joinedload(models.RoleAssignment.person))
+            .options(_with_photo(joinedload(models.RoleAssignment.person)))
             .filter(models.RoleAssignment.role_id == role_id)
             .all()
         )
@@ -63,7 +68,7 @@ class RoleDAO:
     def assignments_for_group(self, group_id):
         return (
             self.db.query(models.RoleAssignment)
-            .options(joinedload(models.RoleAssignment.person), joinedload(models.RoleAssignment.role))
+            .options(_with_photo(joinedload(models.RoleAssignment.person)), joinedload(models.RoleAssignment.role))
             .filter(models.RoleAssignment.group_id == group_id)
             .all()
         )
@@ -107,7 +112,7 @@ class RoleDAO:
             return []
         return (
             self.db.query(GroupMembership)
-            .options(joinedload(GroupMembership.person), joinedload(GroupMembership.role))
+            .options(_with_photo(joinedload(GroupMembership.person)), joinedload(GroupMembership.role))
             .filter(GroupMembership.group_id.in_(group_ids), GroupMembership.status == "active")
             .all()
         )

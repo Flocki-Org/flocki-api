@@ -64,10 +64,16 @@ class MinistryRoleView(BaseModel):
     name: str
 
 
+class MinistryImageRef(BaseModel):
+    id: int
+
+
 class MinistryPersonView(BaseModel):
     person_id: int
     first_name: str
     last_name: str
+    external_image_url: Optional[str] = None
+    profile_image: Optional[MinistryImageRef] = None
 
 
 class MinistryGroupMemberView(BaseModel):
@@ -75,6 +81,8 @@ class MinistryGroupMemberView(BaseModel):
     first_name: str
     last_name: str
     role: Optional[str] = None
+    external_image_url: Optional[str] = None
+    profile_image: Optional[MinistryImageRef] = None
 
 
 class MinistryGroupView(BaseModel):
@@ -113,6 +121,17 @@ class PersonGroupAdminLink(BaseModel):
 class PersonMinistryInvolvement(BaseModel):
     ministries: list[PersonMinistryLink] = Field(default_factory=list)
     group_administrations: list[PersonGroupAdminLink] = Field(default_factory=list)
+
+
+def _person_photo(person):
+    images = list(getattr(person, "profile_images", None) or [])
+    latest = max(images, key=lambda row: row.id or 0, default=None)
+    image = getattr(latest, "image", None) if latest is not None else None
+    profile_image = MinistryImageRef(id=image.id) if image is not None and getattr(image, "id", None) is not None else None
+    return {
+        "external_image_url": getattr(person, "external_image_url", None),
+        "profile_image": profile_image,
+    }
 
 
 class DepartmentService:
@@ -363,6 +382,7 @@ class DepartmentService:
                     person_id=person.id,
                     first_name=person.first_name or "",
                     last_name=person.last_name or "",
+                    **_person_photo(person),
                 ))
         groups = self.role_dao.groups_for_department(department.id)
         members_by_group: dict[int, list[MinistryGroupMemberView]] = {}
@@ -375,6 +395,7 @@ class DepartmentService:
                 first_name=person.first_name or "",
                 last_name=person.last_name or "",
                 role=membership.role.name if membership.role else None,
+                **_person_photo(person),
             ))
         for people in members_by_group.values():
             people.sort(key=lambda member: (member.last_name.lower(), member.first_name.lower()))

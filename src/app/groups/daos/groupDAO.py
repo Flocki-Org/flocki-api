@@ -5,6 +5,7 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from src.app.database import SessionLocal, get_db
 from src.app.groups.models.database import models
+from src.app.people.models.database.models import Person, PersonImage
 
 
 class GroupDAO:
@@ -15,7 +16,10 @@ class GroupDAO:
         options = [joinedload(models.Group.category), joinedload(models.Group.department)]
         if include_members:
             options.append(
-                selectinload(models.Group.memberships).selectinload(models.GroupMembership.person)
+                selectinload(models.Group.memberships)
+                .selectinload(models.GroupMembership.person)
+                .selectinload(Person.profile_images)
+                .joinedload(PersonImage.image)
             )
             options.append(
                 selectinload(models.Group.memberships).selectinload(models.GroupMembership.role)
