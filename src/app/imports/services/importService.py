@@ -14,6 +14,7 @@ from src.app.people.factories.peopleFactory import PeopleFactory
 from src.app.people.models.database.models import Address, Household, PeopleCategory, Person
 from src.app.people.models.people import CreatePerson
 from src.app.people.personFields import PROFILE_PERSON_FIELDS
+from src.app.people.services.addressParts import normalize_address
 
 
 class ImportService:
@@ -174,22 +175,13 @@ class ImportService:
             household.notes = record.notes
             household.leader_id = leader.id
             household.people = members
+            if record.address:
+                self._apply_imported_address(household, record.address)
             self.import_dao.save_reference(source, "household", household.id, record.external_id, self._raw(record))
             return "updated"
         if not record.address:
             raise ValueError("A new household import needs an address")
-        address = Address(
-            type=record.address.get("type") or "home",
-            street_number=str(record.address.get("street_number") or ""),
-            street=record.address.get("street") or "",
-            suburb=record.address.get("suburb") or "",
-            city=record.address.get("city") or "",
-            province=record.address.get("province"),
-            country=record.address.get("country"),
-            postal_code=record.address.get("postal_code"),
-            building=record.address.get("building"),
-            unit=record.address.get("unit"),
-        )
+        address = self._address_from_import(record.address)
         self.db.add(address)
         self.db.flush()
         household = Household(name=record.name, notes=record.notes, leader_id=leader.id, address_id=address.id, people=members)
@@ -197,6 +189,22 @@ class ImportService:
         self.db.flush()
         self.import_dao.save_reference(source, "household", household.id, record.external_id, self._raw(record))
         return "created"
+
+    def _address_from_import(self, raw):
+        return Address(**normalize_address(raw))
+
+    def _apply_imported_address(self, household, raw):
+        parts = normalize_address(raw)
+        if household.address is None:
+            address = Address(**parts)
+            self.db.add(address)
+            self.db.flush()
+            household.address_id = address.id
+            return
+        for key, value in parts.items():
+            if key in ("latitude", "longitude") and value is None:
+                continue
+            setattr(household.address, key, value)
 
     def _upsert_group(self, source, record):
         category_id = None

@@ -52,6 +52,11 @@ class Settings(BaseSettings):
 
     flocki_google_client_id: str = "1026317288648-ig69iuhplrskjvuqtov66qu4bihlk27g.apps.googleusercontent.com"
 
+    # Geoapify address autocomplete. Leave the key empty to keep manual address entry only.
+    flocki_geoapify_api_key: str = ""
+    # ISO country code used to bias address suggestions, such as za.
+    flocki_address_country_code: str = "za"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

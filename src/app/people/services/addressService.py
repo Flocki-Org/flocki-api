@@ -1,11 +1,22 @@
 from fastapi import Depends
+import requests
 
+from src.app.config import settings
 from src.app.people.daos.addressDAO import AddressDAO
 from src.app.people.factories.addressFactory import AddressFactory
 from src.app.people.models.people import UpdateAddress, CreateAddress, ViewAddress
+from src.app.people.services.addressParts import suggestion_from_geoapify
 
 
 class NoAddressException(Exception):
+    pass
+
+
+class IncompleteAddress(Exception):
+    pass
+
+
+class AddressSearchUnavailable(Exception):
     pass
 
 class AddressAlreadyExists(Exception):
@@ -47,7 +58,37 @@ class AddressService:
         self.addressDAO.update_address(address.id, update_values)
         return self.addressFactory.create_address_from_address_entity(self.addressDAO.get_address_by_id(id))
 
+    def suggest(self, text: str):
+        query = (text or "").strip()
+        if len(query) < 3:
+            return []
+        api_key = (settings.flocki_geoapify_api_key or "").strip()
+        if not api_key:
+            raise AddressSearchUnavailable("Address search is not configured")
+        params = {
+            "text": query,
+            "format": "json",
+            "limit": 5,
+            "apiKey": api_key,
+        }
+        country = (settings.flocki_address_country_code or "").strip().lower()
+        if country:
+            params["filter"] = f"countrycode:{country}"
+        response = requests.get(
+            "https://api.geoapify.com/v1/geocode/autocomplete",
+            params=params,
+            timeout=8,
+        )
+        response.raise_for_status()
+        results = response.json().get("results") or []
+        return [suggestion_from_geoapify(row) for row in results if isinstance(row, dict)]
+
     def create_address(self, address: CreateAddress):
+        place = " ".join(((address.street or ""), (address.suburb or ""), (address.city or ""))).strip()
+        if not place:
+            raise IncompleteAddress("An address needs a street, suburb, or city")
+        if not (address.country or "").strip():
+            raise IncompleteAddress("An address needs a country")
         existing_address = self.addressDAO.find_address(
             address.type, address.street_number, address.street, address.suburb, address.city,
             address.province, address.country, address.postal_code,

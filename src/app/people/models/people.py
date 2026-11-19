@@ -70,15 +70,15 @@ class SocialMediaLink(BaseModel):
 
 
 class CreateAddress(BaseModel):
-    type: str
+    type: str = "home"
     building: Optional[str] = None
     unit: Optional[str] = None
-    street_number: str
-    street: str
-    suburb: str
-    city: str
-    province: str
-    country: str
+    street_number: str = ""
+    street: str = ""
+    suburb: str = ""
+    city: str = ""
+    province: str = ""
+    country: str = ""
     postal_code: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
